@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 # Objet d'une particule décrite avec son rapport masse/charge et sa vitesse initiale
 class particule :
     def __init__(self, rapport_masse_charge : float, v_initiale : float) :
@@ -18,6 +19,7 @@ class particule :
         """
         self.mq = rapport_masse_charge
         self.vo = v_initiale
+
 
     # Niveau 5 : L'equation de la trajectoire d'une particule en fonction de son rapport masse/charge et sa vitesse initiale
     def equation_trajectoire(self, x : float, Bz : float) -> float :    
@@ -38,6 +40,7 @@ class particule :
         """             
         prefix = self.mq / Bz
         return self.vo * prefix * np.sin(np.arccos(1 - x / (self.vo * prefix)))
+
 
     # Niveau 4 : Renvoie un tuple de la trajectoire de la particule (liste des abscisses, liste des ordonnées)
     def trajectoire(self, Bz : float, x_min : float, x_max : float, n_points : int = 10000) -> tuple[list[float], list[float]] :
@@ -65,6 +68,7 @@ class particule :
         x = np.linspace(x_min, x_max, n_points)
         return x, self.equation_trajectoire(x, Bz)
     
+
     # Niveau 3 : Trace la trajectoire de la particule dans le champ Bz avec matplotlib en 2d
     def tracer_trajectoire(self, ax, Bz : float, x_min : float, x_max : float, n_points : int = 10000) -> None : 
         """
@@ -113,6 +117,7 @@ def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float],
     
     ax.legend()
     plt.show()
+
 
 # Test du programme (valeurs non représentatives)
 rapports_masse_charge = [1e-27/1.602e-19, 2e-27/1.602e-19, 3e-27/1.602e-19]
