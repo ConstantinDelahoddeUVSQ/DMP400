@@ -6,4 +6,4 @@ Simulation SIMS DMP400
 
 /Code/partie_electroaimant : Déviation du faisceau par champ magnétique (partie verte sur SIMS diagram.png)
 
-/Code/Obsolète : Vieux programmes servant comme base
+/Code/Obsolète : Vieux programmes servant comme base de calculs
