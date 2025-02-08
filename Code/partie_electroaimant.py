@@ -93,7 +93,7 @@ class particule :
         ax.plot(x, y, label=str(self.mq))
     
 
-    # Niveau 2 bis : Détermine la puissance du champ magnétique nécéssaire pour dévier une particule à un point précis
+    # Niveau 2.1 : Détermine la puissance du champ magnétique nécéssaire pour dévier une particule à un point précis
     def determiner_champ_magnetique(self, x_objective : float, y_objective : float, B0 : float = None) -> float :
         """
         Donne le champ magnétique pour dévier la particule en (x_objective, y_objective) depuis l'origine
@@ -118,7 +118,7 @@ class particule :
         
 
 
-# Niveau 2 : Tracer l'ensemble des trajectoires des particules d'un faisceau
+# Niveau 2.2 : Tracer l'ensemble des trajectoires des particules d'un faisceau
 def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float], vitesse_initiale : float, Bz : float, x_min : float, x_max : float) -> None:
     """
     Trace les trajectoires entre x_min et x_max pour un ensemble de particules d'un faisceau

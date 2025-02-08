@@ -6,9 +6,9 @@
 
     - ~~ Niveau 3 : Créer une fonction qui permet de modéliser la trajectoire d'une particule. ~~
 
-    - ~~ Niveau 2.2 : Créer une fonction calculant la puissance du champ magnétique nécessaire pour dévier une particule de rapport q/m donné à un point précis. ~~
+    - ~~ Niveau 2.1 : Créer une fonction calculant la puissance du champ magnétique nécessaire pour dévier une particule de rapport q/m donné à un point précis. ~~
 
-    - ~~ Niveau 2.1 : Créer une fonction qui trace sur un même graphique l’ensemble des trajectoires des différentes particules du faisceau d’ions. ~~
+    - ~~ Niveau 2.2 : Créer une fonction qui trace sur un même graphique l’ensemble des trajectoires des différentes particules du faisceau d’ions. ~~
 
     - Niveau 1 : Arranger l'ensemble des fonctionnalités dans une intérface graphique où l-utilisateur peut faire varier les différents paramètres tel que le champs magnétique, la vitesse initiale de la particule de manière interactive (bouton glissant)
 
