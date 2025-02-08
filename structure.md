@@ -10,17 +10,25 @@
 
     - ~~ Niveau 2.1 : Créer une fonction qui trace sur un même graphique l’ensemble des trajectoires des différentes particules du faisceau d’ions. ~~
 
-    - Niveau 1 : Arranger l'ensemble des fonctionnalités dans une intérface graphique où l-utilisateur pour faire varier les différents paramètres
+    - Niveau 1 : Arranger l'ensemble des fonctionnalités dans une intérface graphique où l-utilisateur peut faire varier les différents paramètres tel que le champs magnétique, la vitesse initiale de la particule de manière interactive (bouton glissant)
 
 
 - Objectif 2 : Partie Bleue (accélération) :
-    - Niveau 4 : Créer une fonction qui permet de renvoyer l’équation de trajectoire d’un ion accéléré par un champ électrique connu jusqu’au moment où il percute la plaque chargée, en renvoyant l’angle d’incidence ainsi formé.
+    - Niveau 5.1 : Créer une fonction qui permet de renvoyer l’équation de trajectoire d’un ion accéléré par un champ électrique connu
+    
+    - Niveau 5.2 : déterminer l'angle incident entre la plaque chargée et une particule chargée qui va être dévié au abord de la plaque à cause de la différence de potentiel de la plaque chargée.
 
-    - Niveau 3 : Créer une fonction qui permet de renvoyer la trajectoire du faisceau d’ions accélérés jusqu’au moment où il percute la plaque chargée, en renvoyant l’angle d’incidence créé à cet instant précis.
+    - Niveau 4.1 : Créer une fonction qui permet de renvoyer la trajectoire du faisceau d’ions accélérés.
 
-    - Niveau 2 : Créer un programme qui trace la trajectoire du faisceau d’ions
+    - Niveau 4.2 : déterminer l'angle incident entre la plaque chargée et le faisceaud'ions accéléré qui va être dévié au abord de la plaque à cause de la différence de potentiel de la plaque chargée.
 
-    - Niveau 1 : Arranger l'ensemble des fonctionnalités dans une UI
+    - Niveau 3.1 : Créer une fonction qui trace la trajectoire du faisceau d’ions 
+    
+    - Niveau 3.2 : Créer une fonction qui trace la trajectoire dufaisceau d'ions déviés par la plauqe chargée (par la difference de potentiel créée par la plaque)
+
+    - Niveau 2 : Créer une fonction qui assemble les deux graphes créés par les fonctions des niveaux 3.1 et 3.2 sur une "figure"
+
+    - Niveau 1 : Arranger l'ensemble des fonctionnalités dans une interface graphique élaborée dans laquelle l'utilisateur pourra modifié à sa guise les différents parmamétres de manière interactive (bouton glissant).
 
 
 - Objectif 3 : Partie Violette simplifiée :
@@ -32,3 +40,16 @@
 
 
 - Objectif Final : Rassembler toutes les parties du SIMS en 1 interface
+
+- Paramétres d'entrées et de sorties des 4 objetcifs :
+    - objectif 1 :
+        - entrée :
+            - champs magnétique, vitesse initiale du faisceau d'ions, rapport masses sur charges
+        - sortie :
+            - trajectoire (positions succesive des particules au cours du temps) de facon a voir une séparation des différentes particules chargées
+
+    - objectif 2 :
+        - entrée : 
+            - différence de potentiel de la plaque chargée, rapport masses sur charges des ions que l'on connaît, champs magnétique qui accélére le fasceau
+        - sortie :
+            - angle incident du faisceau, accélération du faisceau d'ions par le champs électrique
