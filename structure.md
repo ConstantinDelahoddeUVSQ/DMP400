@@ -10,7 +10,7 @@
 
     - ~~ Niveau 2.1 : Créer une fonction qui trace sur un même graphique l’ensemble des trajectoires des différentes particules du faisceau d’ions. ~~
 
-    - Niveau 1 : Arranger l'ensemble des fonctionnalités dans une UI
+    - Niveau 1 : Arranger l'ensemble des fonctionnalités dans une intérface graphique
 
 
 - Objectif 2 : Partie Bleue (accélération) :
