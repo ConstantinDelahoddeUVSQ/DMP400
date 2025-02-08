@@ -14,17 +14,17 @@
 
 
 - Objectif 2 : Partie Bleue (accélération) :
-    - Niveau 5.1 : Créer une fonction qui permet de renvoyer l’équation de trajectoire d’un ion accéléré par un champ électrique connu
+    - Niveau 5.1 : Créer une fonction qui permet de renvoyer l’équation de la vitesse en fonction de sa position d’un ion accéléré par un champ électrique connu
     
     - Niveau 5.2 : déterminer l'angle incident entre la plaque chargée et une particule chargée qui va être dévié au abord de la plaque à cause de la différence de potentiel de la plaque chargée.
 
-    - Niveau 4.1 : Créer une fonction qui permet de renvoyer la trajectoire du faisceau d’ions accélérés.
+    - Niveau 4.1 : Créer une fonction qui calcule l'évolution de la vitesse par rapport à sa position des ions accélérés.
 
     - Niveau 4.2 : déterminer l'angle incident entre la plaque chargée et le faisceaud'ions accéléré qui va être dévié au abord de la plaque à cause de la différence de potentiel de la plaque chargée.
 
     - Niveau 3.1 : Créer une fonction qui trace la trajectoire du faisceau d’ions 
     
-    - Niveau 3.2 : Créer une fonction qui trace la trajectoire dufaisceau d'ions déviés par la plauqe chargée (par la difference de potentiel créée par la plaque)
+    - Niveau 3.2 : Créer une fonction qui trace la trajectoire du faisceau d'ions déviés par la plaque chargée (par la difference de potentiel créée par la plaque)
 
     - Niveau 2 : Créer une fonction qui assemble les deux graphes créés par les fonctions des niveaux 3.1 et 3.2 sur une "figure"
 
