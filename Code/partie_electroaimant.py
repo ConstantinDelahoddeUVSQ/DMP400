@@ -167,12 +167,11 @@ On cherche le champ magnétique pour dévier la trajectoire en x_max, x_max
 Puis on trace la trajectoire jusqu'en x_max
 On remarque que la particule finit effectivement à la position prévue
 '''
-# if __name__ == '__main__' :
-#     rapports_masse_charge, vi = [1e-27/1.602e-19], 1
-#     p = particule(rapports_masse_charge[0], vi)
+if __name__ == '__main__' :
+    rapports_masse_charge, vi = [1e-27/1.602e-19], 1
+    p = particule(rapports_masse_charge[0], vi)
+    x_min, x_max = 0, 0.5
+    Bz = p.determiner_champ_magnetique(x_max, x_max)
 
-#     x_min, x_max = 0, 0.5
-#     Bz = p.determiner_champ_magnetique(x_max, x_max)
-
-#     tracer_ensemble_trajectoires(rapports_masse_charge, vi, Bz, x_min, x_max)
+    tracer_ensemble_trajectoires(rapports_masse_charge, vi, Bz, x_min, x_max)
     

@@ -1,1 +1,0 @@
-Equations temporelles et de la trajectoire dans un champ magnétique
