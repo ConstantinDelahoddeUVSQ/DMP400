@@ -1,6 +1,7 @@
 # Tracer la trajectoire avec le champ magnétique axé selon z
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import fsolve 
 
 m = 1e-30
 q = 1.6e-19

@@ -2,6 +2,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import fsolve 
 
 
 # Objet d'une particule décrite avec son rapport masse/charge et sa vitesse initiale
@@ -90,9 +91,34 @@ class particule :
         """
         x, y = self.trajectoire(Bz, x_min, x_max, n_points)
         ax.plot(x, y, label=str(self.mq))
+    
+
+    # Niveau 2 bis : Détermine la puissance du champ magnétique nécéssaire pour dévier une particule à un point précis
+    def determiner_champ_magnetique(self, x_objective : float, y_objective : float, B0 : float = None) -> float :
+        """
+        Donne le champ magnétique pour dévier la particule en (x_objective, y_objective) depuis l'origine
+
+        Parameters
+        ----------
+        x_objective : float
+            Position en x voulue à l'état final
+        y_objective : float
+            Position en y voulue à l'état final
+        B0 : float
+            Valeur de départ de recherche du champ magnétique (pour la fonction fsolve de scipy)
+
+        Returns
+        -------
+        float
+            Champ magnétique (en T)
+        """
+        if B0 == None : B0 = self.mq
+        equation_func = lambda B : y_objective - (self.mq * self.vo / B) * np.sin(np.arccos(1 - x_objective * B / (self.vo * self.mq)))
+        return fsolve(equation_func, B0)[0]
+        
 
 
-
+# Niveau 2 : Tracer l'ensemble des trajectoires des particules d'un faisceau
 def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float], vitesse_initiale : float, Bz : float, x_min : float, x_max : float) -> None:
     """
     Trace les trajectoires entre x_min et x_max pour un ensemble de particules d'un faisceau
@@ -119,11 +145,34 @@ def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float],
     plt.show()
 
 
-# Test du programme (valeurs non représentatives)
-rapports_masse_charge = [1e-27/1.602e-19, 2e-27/1.602e-19, 3e-27/1.602e-19]
-vitesse_initiale = 1
-Bz = 10e-10
-x_min, x_max = 0, 5
 
-tracer_ensemble_trajectoires(rapports_masse_charge, vitesse_initiale, Bz, x_min, x_max)
+'''
+Test de la fonction tracer_ensemble_trajectoires (valeurs non représentatives)
 
+On trace les trajectoires de particules avec des rapports m/q différents dans un champ magnétique donné
+'''
+# if __name__ == '__main__' :
+#     rapports_masse_charge = [1e-27/1.602e-19, 2e-27/1.602e-19, 3e-27/1.602e-19]
+#     vitesse_initiale = 1
+#     Bz = 1.25e-08
+#     x_min, x_max = 0, 3
+    
+#     tracer_ensemble_trajectoires(rapports_masse_charge, vitesse_initiale, Bz, x_min, x_max)
+
+
+'''
+Test de la fonction déterminer_champ_magnétique (valeurs non représentatives)
+
+On cherche le champ magnétique pour dévier la trajectoire en x_max, x_max
+Puis on trace la trajectoire jusqu'en x_max
+On remarque que la particule finit effectivement à la position prévue
+'''
+# if __name__ == '__main__' :
+#     rapports_masse_charge, vi = [1e-27/1.602e-19], 1
+#     p = particule(rapports_masse_charge[0], vi)
+
+#     x_min, x_max = 0, 0.5
+#     Bz = p.determiner_champ_magnetique(x_max, x_max)
+
+#     tracer_ensemble_trajectoires(rapports_masse_charge, vi, Bz, x_min, x_max)
+    
