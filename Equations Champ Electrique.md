@@ -1,25 +1,26 @@
 # Champ électrique
 
+Soit une particule de charge $q$ et de masse $m$.  
 L'expression de la force de Lorentz est donnée par :
 $
 \vec{f} = q(\vec{E} + \vec{v}\wedge\vec{B}),
 $
-avec $\vec{E}$ le champ magnétique, $\vec{B}$ le champ magnétique, et q la charge de la particule que l'on considère.  
+avec $\vec{E}$ le champ magnétique et $\vec{B}$ le champ magnétique.  
 
-Ici, on suppose un champ électrique constant dans l'espace, et un champ magnétique nul.  
+Ici, on suppose un champ électrique constant dans l'espace contenant notre particule, et un champ magnétique nul.  
 Ainsi, on a : 
 $$    
 \boldsymbol{\vec{f} = \vec{F}_E = q\vec{E}}
 $$
 
-On applique ensuite le Principe Fondamental de la Dynamique à notre particule.
+On applique ensuite le Principe Fondamental de la Dynamique à la particule.
 $$
 \sum\vec{F}_{ext} = m \vec{a}  
 \Rightarrow q\vec{E} = m \vec{a}$$
 $$
 \Rightarrow \vec{E} = \frac{m}{q} \, \vec{a}
 $$
-avec $\vec{a}$ l'accélération de la particule et $m$ sa masse.  
+avec $\vec{a}$ son accélération.  
 En exprimant nos vecteurs dans la base cartésienne $(\vec{u_x}, \vec{u_y}, \vec{u_z})$, on a : 
 $$
 \begin{pmatrix}
@@ -136,3 +137,9 @@ $
 \boldsymbol{z(t) = \frac{q}{2m} E_z t^2}
 \end{cases}
 $
+
+On sait que la particule subie une accélération et possède une vitesse initiale selon $\vec{u_y}$. C'est pourquoi on ne s'intéréssera maintenant qu'à $v_y$. D'ailleurs, on peux exprimer celle-ci en fonction de la position de la particule selon $\vec{u_y}$. En effet, $ y(t) = \frac{q}{2m} E_y t^2 + v_0 \Rightarrow t = \sqrt{\frac{2m(y-v_0)}{qE_y}}$  
+En remplaçant t par cette expression dans $v_y$, on obtient : $ v_y(y) = \frac{q}{m} E_y \sqrt{\frac{2m(y-v_0)}{qE_y}} + v_0 $, ce qui se simplifie en : 
+$$
+\boldsymbol{ v_y(y) = \sqrt{\frac{2q}{m}E_y(y-v_0)} + v_0 }
+$$
