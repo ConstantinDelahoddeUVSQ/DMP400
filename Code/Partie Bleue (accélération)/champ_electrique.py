@@ -21,7 +21,7 @@ class particule :
     
     
     # Niveau 5 : L'equation de la trajectoire d'une particule en fonction de son rapport masse/charge et sa vitesse initiale
-    def equation_trajectoire(self, x : float, Bz : float) -> float :    
+    def equation_trajectoire(self, x : float, Ex : float, Ey : float, Ez : float) -> float :    
         """
         La position y de la particule en x
 
@@ -37,5 +37,5 @@ class particule :
         float
             Position en y de la particule (en m)
         """             
-        prefix = self.mq / Bz
+       
         return self.vo * prefix * np.sin(np.arccos(1 - x / (self.vo * prefix)))
