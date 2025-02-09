@@ -14,15 +14,13 @@
 
 
 - Objectif 2 : Partie Bleue (accélération) :
-    - ~~ Niveau 5.1 : Créer une fonction représentant l'équation temporelle de la particule ~~
-
-    - ~~ Niveau 5.2 : Créer une fonction représentant l’équation de la vitesse en fonction de la position d’un ion accéléré par un champ électrique connu. ~~
+    - Niveau 5.1 : Créer une fonction qui permet de renvoyer l’équation de trajectoire d’un ion accéléré par un champ électrique connu
     
     - Niveau 5.3 : déterminer l'angle incident entre la plaque chargée et une particule chargée qui va être dévié au abord de la plaque à cause de la différence de potentiel de la plaque chargée.
 
     - ~~ Niveau 4.1 : Créer une fonction qui calcule l'évolution de la position des ions accélérés sur une échelle de temps. ~~
 
-    - ~~ Niveau 4.2 : Créer une fonction qui calcule l'évolution de la vitesse par rapport à la position des ions accélérés (échelle donnée). ~~
+    - Niveau 4.1 : Créer une fonction qui permet de renvoyer la trajectoire du faisceau d’ions accélérés.
 
     - Niveau 4.3 : déterminer l'angle incident entre la plaque chargée et le faisceau d'ions accéléré qui va être dévié au bord de la plaque à cause de la différence de potentiel de la plaque chargée.
 
