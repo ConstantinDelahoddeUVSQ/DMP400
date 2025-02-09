@@ -6,25 +6,27 @@
 
     - ~~ Niveau 3 : Créer une fonction qui permet de modéliser la trajectoire d'une particule. ~~
 
-    - ~~ Niveau 2.2 : Créer une fonction calculant la puissance du champ magnétique nécessaire pour dévier une particule de rapport q/m donné à un point précis. ~~
+    - ~~ Niveau 2.1 : Créer une fonction calculant la puissance du champ magnétique nécessaire pour dévier une particule de rapport q/m donné à un point précis. ~~
 
-    - ~~ Niveau 2.1 : Créer une fonction qui trace sur un même graphique l’ensemble des trajectoires des différentes particules du faisceau d’ions. ~~
+    - ~~ Niveau 2.2 : Créer une fonction qui trace sur un même graphique l’ensemble des trajectoires des différentes particules du faisceau d’ions. ~~
 
     - Niveau 1 : Arranger l'ensemble des fonctionnalités dans une intérface graphique où l-utilisateur peut faire varier les différents paramètres tel que le champs magnétique, la vitesse initiale de la particule de manière interactive (bouton glissant)
 
 
 - Objectif 2 : Partie Bleue (accélération) :
-    - Niveau 5.1 : Créer une fonction qui permet de renvoyer l’équation de trajectoire d’un ion accéléré par un champ électrique connu ainsi que sa vitesse 
+    - Niveau 5.1 : Créer une fonction qui permet de renvoyer l’équation de trajectoire d’un ion accéléré par un champ électrique connu
     
-    - Niveau 5.2 : déterminer l'angle incident entre la plaque chargée et une particule chargée qui va être dévié au abord de la plaque à cause de la différence de potentiel de la plaque chargée.
+    - Niveau 5.3 : déterminer l'angle incident entre la plaque chargée et une particule chargée qui va être dévié au abord de la plaque à cause de la différence de potentiel de la plaque chargée.
 
-    - Niveau 4.1 : Créer une fonction qui permet de renvoyer la trajectoire du faisceau d’ions accéléré ainsi quela vitesse du faisceau.
+    - ~~ Niveau 4.1 : Créer une fonction qui calcule l'évolution de la position des ions accélérés sur une échelle de temps. ~~
 
-    - Niveau 4.2 : déterminer l'angle incident entre la plaque chargée et le faisceaud'ions accéléré qui va être dévié au abord de la plaque à cause de la différence de potentiel de la plaque chargée.
+    - Niveau 4.1 : Créer une fonction qui permet de renvoyer la trajectoire du faisceau d’ions accélérés.
+
+    - Niveau 4.3 : déterminer l'angle incident entre la plaque chargée et le faisceau d'ions accéléré qui va être dévié au bord de la plaque à cause de la différence de potentiel de la plaque chargée.
 
     - Niveau 3.1 : Créer une fonction qui trace la trajectoire du faisceau d’ions 
     
-    - Niveau 3.2 : Créer une fonction qui trace la trajectoire dufaisceau d'ions déviés par la plauqe chargée (par la difference de potentiel créée par la plaque)
+    - Niveau 3.2 : Créer une fonction qui trace la trajectoire du faisceau d'ions déviés par la plaque chargée (par la difference de potentiel créée par la plaque)
 
     - Niveau 2 : Créer une fonction qui assemble les deux graphes créés par les fonctions des niveaux 3.1 et 3.2 sur une "figure"
 
