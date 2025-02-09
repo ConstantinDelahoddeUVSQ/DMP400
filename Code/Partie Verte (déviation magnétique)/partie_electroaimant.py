@@ -44,7 +44,7 @@ class particule :
 
 
     # Niveau 4 : Renvoie un tuple de la trajectoire de la particule (liste des abscisses, liste des ordonnées)
-    def trajectoire(self, Bz : float, x_min : float, x_max : float, n_points : int = 10000) -> tuple[list[float], list[float]] :
+    def trajectoire(self, Bz : float, x_min : float, x_max : float, n_points : int = 10000) -> tuple[np.ndarray, np.ndarray] :
         """
         Calcule la trajectoire entre un x minimum et un x maximum
 
@@ -61,7 +61,7 @@ class particule :
         
         Returns
         -------
-        tuple of (list of float, list of float)
+        tuple of (numpy.ndarray, numpy.ndarray)
             - Positions en x
             - Positions en y
         
@@ -167,11 +167,11 @@ On cherche le champ magnétique pour dévier la trajectoire en x_max, x_max
 Puis on trace la trajectoire jusqu'en x_max
 On remarque que la particule finit effectivement à la position prévue
 '''
-if __name__ == '__main__' :
-    rapports_masse_charge, vi = [1e-27/1.602e-19], 1
-    p = particule(rapports_masse_charge[0], vi)
-    x_min, x_max = 0, 0.5
-    Bz = p.determiner_champ_magnetique(x_max, x_max)
+# if __name__ == '__main__' :
+#     rapports_masse_charge, vi = [1e-27/1.602e-19], 1
+#     p = particule(rapports_masse_charge[0], vi)
+#     x_min, x_max = 0, 0.5
+#     Bz = p.determiner_champ_magnetique(x_max, x_max)
 
-    tracer_ensemble_trajectoires(rapports_masse_charge, vi, Bz, x_min, x_max)
+#     tracer_ensemble_trajectoires(rapports_masse_charge, vi, Bz, x_min, x_max)
     
