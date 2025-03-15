@@ -39,6 +39,8 @@ class particule :
             Vitesse initiale en y de la particule (en m/s)   
         angle_initial : float
             Angle initial entre v_initiale et l'axe y
+        hauteur_initiale : float
+            Coordonnée en y du point de départ
         """
         self.mq = rapport_masse_charge
         self.vo = v_initiale
@@ -151,21 +153,43 @@ class particule :
 
 
 
-def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float], vitesse_initiale : float, surface : float, charge_plaque : float) -> None :
-    particules = [particule(rapport_masse_charge, vitesse_initiale) for rapport_masse_charge in rapports_masse_charge_particules]
+def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float], vitesse_initiale : float, surface : float, charge_plaque : float, angle_initial=np.pi/4, hauteur_initiale = 0.5) -> None :
+    """
+    Trace les trajectoires entre jusqu'au contact de différentes particules
+
+    Parameters
+    ----------
+    rapports_masse_charge_particules : list of float
+        Masse (en Kg) / Charge (en C)  pour toutes les particules
+    vitesse_initiale : float
+        Vitesse intiale en y commune à toutes les particules du faisceau
+    surface : float
+        Surface totale de la plaque (en m²)
+    charge_plaque : float
+        Charge totale de la plaque (en C)
+    angle_initial : float
+            Angle initial entre v_initiale et l'axe y
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+
+    """
+    particules = [particule(rapport_masse_charge, vitesse_initiale, angle_initial, hauteur_initiale) for rapport_masse_charge in rapports_masse_charge_particules]
     E = calcul_champ_electrique(charge_plaque, surface)
-    fig, ax = plt.subplots()
-    ax.plot([0, x_max], [0, 0])
+    fig, ax = plt.subplots(figsize=(10, 5))
+    
+    all_x_max = []
     for p in particules :
         x_max = p.point_contact(E)
-        print(x_max)
+        all_x_max.append(x_max)
         p.tracer_trajectoire(ax, E, 0, x_max)
-        print(p.angle_incident(E))
-
-
-    
+        # print(p.angle_incident(E))
+    ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Echantillon')
     ax.legend()
     plt.show()
 
-rapports_mq, vo = [1e-27/1.602e-19], 1e8
-charge_plaque, surface = -1e-4, 0.01
+
+if __name__ == '__main__' :
+    rapports_mq, vo = [1e-27/1.602e-19, 2e-27/1.602e-19, 3e-27/1.602e-19], 1e8
+    charge_plaque, surface = -1e-4, 0.01
+
+    tracer_ensemble_trajectoires(rapports_mq, vo, surface, charge_plaque)
