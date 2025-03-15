@@ -105,10 +105,9 @@ class particule :
             Position en x maximale (en m)
         n_points : int
             Nombre de points où la position sera calculée entre x_min et x_max
-
         """
         x, y = self.trajectoire(E, x_min, x_max, n_points)
-        ax.plot(x, y, label="Trajectoire particule")
+        ax.plot(x, y, label=f"Trajectoire de rapport masse charge {self.mq}")
     
     
     def point_contact(self, E : float) -> float :
@@ -131,16 +130,14 @@ class particule :
             raise ValueError("La particule n'a aucun point de contact avec l'échantillon")
         
     
-    def angle_incident(self, charge_plaque : float, surface : float) -> float :
+    def angle_incident(self, E : float) -> float :
         """
         Calcule l'angle que la trajectoire forme avec l'axe y au point de contact avec la plaque
 
         Parameters
         ----------
-        charge_plaque : float
-            Charge totale de la plaque (en C)
-        surface : float
-            Surface totale de la plaque (en m²)
+        E : float
+            Valeur du champ électrique à proximité de la plaque dirigé selon y
         
         Returns
         -------
@@ -154,19 +151,21 @@ class particule :
 
 
 
+def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float], vitesse_initiale : float, surface : float, charge_plaque : float) -> None :
+    particules = [particule(rapport_masse_charge, vitesse_initiale) for rapport_masse_charge in rapports_masse_charge_particules]
+    E = calcul_champ_electrique(charge_plaque, surface)
+    fig, ax = plt.subplots()
+    ax.plot([0, x_max], [0, 0])
+    for p in particules :
+        x_max = p.point_contact(E)
+        print(x_max)
+        p.tracer_trajectoire(ax, E, 0, x_max)
+        print(p.angle_incident(E))
 
-mq = 1e-27/1.602e-19
-q = -1e-4
-s = 0.01
 
-p = particule(mq, 1e8)
-E = calcul_champ_electrique(q, s)
-fig, ax = plt.subplots()
-x_min = 0 
-x_max = p.point_contact(E)
-print(x_max)
-ax.plot([0, x_max], [0, 0])
-p.tracer_trajectoire(ax, E, x_min, x_max)
+    
+    ax.legend()
+    plt.show()
 
-print(p.angle_incident(q, s))
-plt.show()
+rapports_mq, vo = [1e-27/1.602e-19], 1e8
+charge_plaque, surface = -1e-4, 0.01
