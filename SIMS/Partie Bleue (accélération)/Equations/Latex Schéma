@@ -1,0 +1,66 @@
+\documentclass[tikz,border=3.14mm]{standalone}
+\usepackage{amsmath}
+\usepackage{tikz}
+
+\begin{document}
+\begin{tikzpicture}
+
+% Tracer l'axe des X (rectangle représentant l'axe des X)
+\draw[thick,->] (3,3) -- (4,3);
+\node at (2.8,4) {x};% Axe des X
+
+% Tracer l'axe des Y
+\draw[thick,->] (3,3) -- (3,4);
+\node at (4,2.8) {y};% Axe des Y
+
+% Trajectoire de la particule avant la déviation
+
+\draw[thick, red] (-5,2.4) -- (-1,1.5); 
+\node[red] at (-3.65,2.6) {ions primaires};
+
+\draw[thick] (-5,3.4) -- (-2,2.75);
+\draw[thick] (-5,1.4) -- (-2,0.75);
+\node at (-3.65,0.65) {armatures};
+
+
+
+% Tracer la trajectoire courbe après la déviation (cercle)
+\draw[green] (-1,1.5) .. controls (-0.25,1.25) and (0.75,0.66) .. (1,0);
+ % Trajectoire courbe
+
+% Ajouter le rectangle représentant l'axe des X
+\draw[thick] (-4,-0) rectangle (4,-0.5);
+\node at (-2,-0.25) {échantillon de charges Q};
+
+% Point de contact avec l'axe des X (1,0)
+\filldraw[red] (1,0) circle (2pt);
+\node at (1.2,0.2) {A};
+
+\filldraw[red] (-1,1.5) circle (2pt);
+\node at (-1.1,1.1) {(x0, y0)};
+
+% Ajouter les angles entre la trajectoire avant déviation et l'axe des Y
+\draw[thick,-] (-1,2.5) -- (-1,1.5);
+\draw (-1.4,1.65) .. controls (-1.37,1.8) and (-1.19,1.95) .. (-1,2);
+\node at (0.75,0.9) {$\phi$};
+\node at (1.9,0.9) {angle final};
+
+
+\draw[thick,-] (1,0) -- (1,1);
+\draw (0.7,0.5) .. controls (0.825,0.7) and (0.925,0.7) .. (1,0.5);
+\node at (-1.6,2) {$\theta$};
+\node at (0.05,2) {angle initial};
+
+
+% Ajouter la flèche représentant le champ magnétique (vers nous) et le cahmps E. Tracer un point entouré d'un cercle
+\draw[thick, ->, blue] (2,1.5) -- (2, 2);
+\node[blue] at (2.5,1.75) {Ex};
+
+\filldraw[red] (3.5,3.5) circle (1.5pt);  % Point au centre
+\draw[thick] (3.5,3.5) circle (0.1cm);    % Cercle autour du point% Champ magnétique pointant vers nous
+\node at (3.8,3.8) {B};
+
+\end{tikzpicture}
+\end{document}
+
+
