@@ -38,7 +38,7 @@ class particule :
         v_initiale : float
             Vitesse initiale en y de la particule (en m/s)   
         angle_initial : float
-            Angle initial entre v_initiale et l'axe y
+            Angle initial entre v_initiale et l'axe y en radians
         hauteur_initiale : float
             Coordonnée en y du point de départ
         """
@@ -134,7 +134,7 @@ class particule :
     
     def angle_incident(self, E : float) -> float :
         """
-        Calcule l'angle que la trajectoire forme avec l'axe y au point de contact avec la plaque
+        Calcule l'angle que la trajectoire forme avec l'axe y au point de contact avec la plaque en radians
 
         Parameters
         ----------
@@ -144,7 +144,7 @@ class particule :
         Returns
         -------
         float
-            Angle formé par la trajectoire et l'axe y au point de contact avec l'échantillon
+            Angle formé par la trajectoire et l'axe y au point de contact avec l'échantillon en radians
         """
         E = calcul_champ_electrique(charge_plaque, surface)
         x_contact = self.point_contact(E)
@@ -168,7 +168,7 @@ def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float],
     charge_plaque : float
         Charge totale de la plaque (en C)
     angle_initial : float
-            Angle initial entre v_initiale et l'axe y
+            Angle initial entre v_initiale et l'axe y en radians
     hauteur_initiale : float
         Coordonnée en y du point de départ
 
