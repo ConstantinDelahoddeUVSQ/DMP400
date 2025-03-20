@@ -27,14 +27,14 @@ def calcul_champ_electrique(charge_plaque : float, surface : float) -> float :
 
 
 class particule :
-    def __init__(self, rapport_masse_charge : float, v_initiale : float = 0, angle_initial : float = np.pi / 4, hauteur_initiale : float = 0.5) -> None :
+    def __init__(self, masse_charge : tuple[int, int], v_initiale : float = 0, angle_initial : float = np.pi / 4, hauteur_initiale : float = 0.5) -> None :
         """
         Objet particule avec vitesse initiale dévié par un champ électrique d'axe y
 
         Parameters
         ----------
-        rapport_masse_charge : float
-            Masse (en Kg) / Charge (en C) de la particule
+        masse_charge : tuple of int
+            Masse (en u) / Charge (en eV) de la particule
         v_initiale : float
             Vitesse initiale en y de la particule (en m/s)   
         angle_initial : float
@@ -42,10 +42,12 @@ class particule :
         hauteur_initiale : float
             Coordonnée en y du point de départ
         """
-        self.mq = rapport_masse_charge
+        self.mq = masse_charge[0] * constants.u / masse_charge[1] / constants.eV
         self.vo = v_initiale
         self.angle = angle_initial
         self.height = hauteur_initiale
+        self.m = masse_charge[0]
+        self.c = masse_charge[1]
 
     def equation_trajectoire(self, x : float, E : float) -> float:
         """
@@ -109,7 +111,7 @@ class particule :
             Nombre de points où la position sera calculée entre x_min et x_max
         """
         x, y = self.trajectoire(E, x_min, x_max, n_points)
-        ax.plot(x, y, label=f"Trajectoire de rapport masse charge {self.mq}")
+        ax.plot(x, y, label=f"Trajectoire de {self.m}u, {self.c}eV")
     
     
     def point_contact(self, E : float) -> float :
@@ -153,14 +155,14 @@ class particule :
 
 
 
-def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float], vitesse_initiale : float, surface : float, charge_plaque : float, angle_initial=np.pi/4, hauteur_initiale = 0.5) -> None :
+def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]], vitesse_initiale : float, surface : float, charge_plaque : float, angle_initial=np.pi/4, hauteur_initiale = 0.5) -> None :
     """
     Trace les trajectoires entre jusqu'au contact de différentes particules
 
     Parameters
     ----------
-    rapports_masse_charge_particules : list of float
-        Masse (en Kg) / Charge (en C)  pour toutes les particules
+    masse_charge_particules : list of tupleof int
+        Masse (en unités atomiques), Charge (en eV)  pour toutes les particules
     vitesse_initiale : float
         Vitesse intiale en y commune à toutes les particules du faisceau
     surface : float
@@ -173,7 +175,7 @@ def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float],
         Coordonnée en y du point de départ
 
     """
-    particules = [particule(rapport_masse_charge, vitesse_initiale, angle_initial, hauteur_initiale) for rapport_masse_charge in rapports_masse_charge_particules]
+    particules = [particule(masse_charge, vitesse_initiale, angle_initial, hauteur_initiale) for masse_charge in masse_charge_particules]
     E = calcul_champ_electrique(charge_plaque, surface)
     fig, ax = plt.subplots(figsize=(10, 5))
     
@@ -189,7 +191,7 @@ def tracer_ensemble_trajectoires(rapports_masse_charge_particules : list[float],
 
 
 if __name__ == '__main__' :
-    rapports_mq, vo = [1e-27/1.602e-19, 2e-27/1.602e-19, 3e-27/1.602e-19], 1e8
+    rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e8
     charge_plaque, surface = -1e-4, 0.01
 
     tracer_ensemble_trajectoires(rapports_mq, vo, surface, charge_plaque)

@@ -2,21 +2,22 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.constants as constants
 
 
 class particule :
-    def __init__(self, rapport_masse_charge : float, v_initiale : float = 0) :
+    def __init__(self, masse_charge : float, v_initiale : float = 0) :
         """
         Objet particule accéléré dans un champ électrique d'axe y
 
         Parameters
         ----------
-        rapport_masse_charge : float
-            Masse (en Kg) / Charge (en C) de la particule
+        masse_charge : tuple of int
+            Masse (en u) / Charge (en eV) de la particule
         v_initiale : float
             Vitesse initiale en y de la particule (en m/s)   
         """
-        self.mq = rapport_masse_charge
+        self.mq = masse_charge[0] * constants.u / masse_charge[1] / constants.eV
         self.vo = v_initiale
     
 
@@ -131,6 +132,6 @@ class particule :
 
 
 # # Test fonction position
-# if __name__ == '__main__' :
-#     p = particule(1e-27/1.602e-19, 0)
-#     print(p.position(1, 2))
+if __name__ == '__main__' :
+    p = particule((1, 1), 0)
+    print(p.position(1, 2))
