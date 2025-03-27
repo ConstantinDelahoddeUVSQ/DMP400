@@ -1,6 +1,7 @@
 # Objectif 2
 
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
 import numpy as np
 import scipy.constants as constants
 
@@ -24,6 +25,10 @@ def calcul_champ_electrique(charge_plaque : float, surface : float) -> float :
     if surface > 0 :
         return charge_plaque / (2 * surface * constants.epsilon_0)
     else : raise ValueError("La surface ne peut être nulle ou négative")
+
+
+def champ_electrique_v2(distance : float, différence_potentiel : float) -> float :
+    return différence_potentiel / distance
 
 
 class particule :
@@ -155,7 +160,7 @@ class particule :
 
 
 
-def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]], vitesse_initiale : float, surface : float, charge_plaque : float, angle_initial=np.pi/4, hauteur_initiale = 0.5) -> None :
+def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]], vitesse_initiale : float, surface : float, charge_plaque : float, angle_initial=np.pi/6, hauteur_initiale = 0.15) -> None :
     """
     Trace les trajectoires entre jusqu'au contact de différentes particules
 
@@ -176,16 +181,36 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
 
     """
     particules = [particule(masse_charge, vitesse_initiale, angle_initial, hauteur_initiale) for masse_charge in masse_charge_particules]
-    E = calcul_champ_electrique(charge_plaque, surface)
-    fig, ax = plt.subplots(figsize=(10, 5))
+    # E = calcul_champ_electrique(charge_plaque, surface)
+    E = champ_electrique_v2(0.15, -5000)
+    fig, ax = plt.subplots(figsize=(10, 6))
     
     all_x_max = []
     for p in particules :
         x_max = p.point_contact(E)
         all_x_max.append(x_max)
+        
         p.tracer_trajectoire(ax, E, 0, x_max)
-        # print(p.angle_incident(E))
+        angle_incident = p.angle_incident(E)
+        print(angle_incident, angle_incident * 180 / np.pi)
+
     ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Echantillon')
+
+    zoom_target_x, zoom_target_y = (min(all_x_max) + max(all_x_max)) * 0.5, 0
+    zoom_factor_x, zoom_factor_y = (min(all_x_max) + max(all_x_max)) * 0.5, hauteur_initiale * 1.1
+    ax.set_xlim(zoom_target_x - zoom_factor_x * 1.05, zoom_target_x + zoom_factor_x * 0.3)
+    ax.set_ylim(zoom_target_y - zoom_factor_y * 0.05, zoom_target_y + zoom_factor_y)
+
+    ax_zoom = plt.axes([0.1, 0.02, 0.8, 0.03])
+    slider = Slider(ax_zoom, 'Zoom', 1, 2, valinit=1, valstep= 0.01)
+
+    def update(val):
+        zoom_factor = 10**(10 * ((1 / slider.val) - 1))
+        ax.set_xlim(zoom_target_x - zoom_factor * zoom_factor_x * 1.05, zoom_target_x + zoom_factor * zoom_factor_x * 0.3)
+        ax.set_ylim(zoom_target_y - zoom_factor * zoom_factor_y * 0.05, zoom_target_y + zoom_factor * zoom_factor_y)
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update)
     ax.legend()
     plt.show()
 

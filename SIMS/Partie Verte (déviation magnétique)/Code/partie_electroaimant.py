@@ -230,9 +230,9 @@ On remarque que la particule finit effectivement à la position prévue
 # if __name__ == '__main__' :
 #     rapports_masse_charge, vi = [(1, 1)], 1e7
 #     p = particule(rapports_masse_charge[0], vi)
-#     x_min, x_max = 0, 0.5
+#     x_max = 4.95e-2
 #     Bz = p.determiner_champ_magnetique(x_max, x_max)
-
+#     print(Bz)
 #     tracer_ensemble_trajectoires(rapports_masse_charge, vi, Bz, x_max)
     
 
@@ -242,7 +242,7 @@ Test de la fonction tracer_trajectoires_dynamiquement (valeurs non représentati
 if __name__ == '__main__' :
     rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
     vi_min, vi_max = 1e7, 1e8
-    Bz_min, Bz_max = 0.1, 1
-    x_detecteur = 1e-3
+    Bz_min, Bz_max = 1, 5
+    x_detecteur = 4.95e-2
     
     tracer_trajectoires_dynamiquement(rapports_masse_charge, vi_min, vi_max, Bz_min, Bz_max, x_detecteur)
