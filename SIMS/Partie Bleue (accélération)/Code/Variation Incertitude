@@ -1,0 +1,86 @@
+import numpy as np
+
+def calculate_xs(v0, theta, y0, q, m, E):
+    """
+    Calcule xs selon la formule donnée
+    """
+    # if np.any(discriminant < 0):
+    #     raise ValueError("Le discriminant est négatif, pas de solution réelle")
+    # D = np.sqrt(discriminant)
+
+    A = v0 * np.cos(theta)
+    B = 2 * y0 * q * E / m
+    C = q * E / m
+    discriminant = A**2 - B
+    
+    # Utilisation de la racine carrée complexe si nécessaire
+    D = np.sqrt(discriminant + 0j)  # +0j permet le calcul complexe
+    xs = ((A - D) / C) * v0 * np.sin(theta)
+    
+    # Retourne seulement la partie réelle
+    return np.real(xs)
+
+def partial_derivatives(v0, theta, y0, q, m, E):
+    """
+    Calcule les dérivées partielles de xs par rapport à chaque variable
+    """
+    A = v0 * np.cos(theta)
+    B = 2 * y0 * q * E / m
+    C = q * E / m
+    D = np.sqrt(A**2 - B)
+    
+    # Dérivée par rapport à v0
+    dxs_dv0 = (np.sin(theta) / C) * (A - D) + (v0 * np.sin(theta) * np.cos(theta) / C) * (1 - A / D)
+    
+    # Dérivée par rapport à theta
+    dxs_dtheta = (v0 * np.cos(theta) / C) * (A - D) - (v0**2 * np.sin(theta)**2 / C) * (1 - A / D)
+    
+    # Dérivée par rapport à y0
+    dxs_dy0 = -v0 * np.sin(theta) * q * E / (C * m * D)
+    
+    # Dérivée par rapport à q
+    dxs_dq = -(A - D) * E * v0 * np.sin(theta) / (C**2 * m) - v0 * np.sin(theta) * y0 * E / (C * m * D)
+    
+    # Dérivée par rapport à m
+    dxs_dm = (A - D) * q * E * v0 * np.sin(theta) / (C**2 * m**2) + v0 * np.sin(theta) * y0 * q * E / (C * m**2 * D)
+    
+    # Dérivée par rapport à E
+    dxs_dE = -(A - D) * q * v0 * np.sin(theta) / (C**2 * m) - v0 * np.sin(theta) * y0 * q / (C * m * D)
+    
+    return dxs_dv0, dxs_dtheta, dxs_dy0, dxs_dq, dxs_dm, dxs_dE
+
+def calculate_uncertainty(v0, theta, y0, q, m, E, delta_v0, delta_theta, delta_y0, delta_q, delta_m, delta_E):
+    """
+    Calcule l'incertitude totale sur xs
+    """
+    dxs_dv0, dxs_dtheta, dxs_dy0, dxs_dq, dxs_dm, dxs_dE = partial_derivatives(v0, theta, y0, q, m, E)
+    
+    # Calcul de l'incertitude totale
+    delta_xs = np.sqrt(
+        (dxs_dv0 * delta_v0)**2 +
+        (dxs_dtheta * delta_theta)**2 +
+        (dxs_dy0 * delta_y0)**2 +
+        (dxs_dq * delta_q)**2 +
+        (dxs_dm * delta_m)**2 +
+        (dxs_dE * delta_E)**2
+    )
+    
+    return delta_xs
+
+# Exemple d'utilisation du code
+if __name__ == "__main__":
+    # Valeurs par défaut pour les paramètres
+    v0 = 1e6  # m/s
+    theta = np.pi/4  # rad
+    y0 = 1e-2  # m
+    q = 1.602e-19  # C
+    m = 9.109e-31  # kg
+    E = 1e3  # V/m
+    
+    # Incertitudes sur les paramètres (exemple)
+    delta_v0 = v0 * 0.01  # 1% d'incertitude sur v0
+    delta_theta = theta * 0.02  # 2% d'incertitude sur theta
+    delta_y0 = y0 * 0.05  # 5% d'incertitude sur y0
+    delta_q = q * 0.001  # 0.1% d'incertitude sur q (généralement très bien connu)
+    delta_m = m * 0.001  # 0.1% d'incertitude sur m (généralement très bien connu)
+    delta_E = E * 0.03  # 3% d'incertitude sur E
