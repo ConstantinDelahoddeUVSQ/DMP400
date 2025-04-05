@@ -219,4 +219,5 @@ if __name__ == '__main__' :
     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e8
     charge_plaque, surface = -1e-4, 0.01
 
+
     tracer_ensemble_trajectoires(rapports_mq, vo, surface, charge_plaque)
