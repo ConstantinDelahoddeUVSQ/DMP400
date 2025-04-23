@@ -193,6 +193,7 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
         p.tracer_trajectoire(ax, E, 0, x_max)
         angle_incident = p.angle_incident(E)
         print(angle_incident, angle_incident * 180 / np.pi)
+        
 
     ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Echantillon')
 
@@ -221,3 +222,6 @@ if __name__ == '__main__' :
 
 
     tracer_ensemble_trajectoires(rapports_mq, vo, surface, charge_plaque)
+
+
+
