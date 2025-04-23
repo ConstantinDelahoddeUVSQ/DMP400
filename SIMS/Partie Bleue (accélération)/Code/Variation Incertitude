@@ -4,21 +4,19 @@ def calculer_xs(v0, theta, y0, q, m, E):
     """
     Calcule xs selon la formule donnée
     """
-    # if np.any(discriminant < 0):
-    #     raise ValueError("Le discriminant est négatif, pas de solution réelle")
-    # D = np.sqrt(discriminant)
+    if np.any(discriminant < 0):
+        raise ValueError("Le discriminant est négatif, pas de solution réelle")
+    D = np.sqrt(discriminant)
 
     A = v0 * np.cos(theta)
     B = 2 * y0 * q * E / m
     C = q * E / m
     discriminant = A**2 - B
     
-    # Utilisation de la racine carrée complexe si nécessaire
-    D = np.sqrt(discriminant + 0j)  # +0j permet le calcul complexe
+    D = np.sqrt(discriminant)
     xs = ((A - D) / C) * v0 * np.sin(theta)
     
-    # Retourne seulement la partie réelle
-    return np.real(xs)
+    return xs
 
 def derivees_partielles(v0, theta, y0, q, m, E):
     """
