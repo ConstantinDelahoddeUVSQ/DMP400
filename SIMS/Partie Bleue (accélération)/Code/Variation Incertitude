@@ -6,7 +6,6 @@ def calculer_xs(v0, theta, y0, q, m, E):
     """
     if np.any(discriminant < 0):
         raise ValueError("Le discriminant est négatif, pas de solution réelle")
-    D = np.sqrt(discriminant)
 
     A = v0 * np.cos(theta)
     B = 2 * y0 * q * E / m
