@@ -1,6 +1,6 @@
 import numpy as np
 
-def calculate_xs(v0, theta, y0, q, m, E):
+def calculer_xs(v0, theta, y0, q, m, E):
     """
     Calcule xs selon la formule donnée
     """
@@ -20,7 +20,7 @@ def calculate_xs(v0, theta, y0, q, m, E):
     # Retourne seulement la partie réelle
     return np.real(xs)
 
-def partial_derivatives(v0, theta, y0, q, m, E):
+def derivees_partielles(v0, theta, y0, q, m, E):
     """
     Calcule les dérivées partielles de xs par rapport à chaque variable
     """
@@ -49,11 +49,11 @@ def partial_derivatives(v0, theta, y0, q, m, E):
     
     return dxs_dv0, dxs_dtheta, dxs_dy0, dxs_dq, dxs_dm, dxs_dE
 
-def calculate_uncertainty(v0, theta, y0, q, m, E, delta_v0, delta_theta, delta_y0, delta_q, delta_m, delta_E):
+def calculer_incertitude(v0, theta, y0, q, m, E, delta_v0, delta_theta, delta_y0, delta_q, delta_m, delta_E):
     """
     Calcule l'incertitude totale sur xs
     """
-    dxs_dv0, dxs_dtheta, dxs_dy0, dxs_dq, dxs_dm, dxs_dE = partial_derivatives(v0, theta, y0, q, m, E)
+    dxs_dv0, dxs_dtheta, dxs_dy0, dxs_dq, dxs_dm, dxs_dE = derivees_partielles(v0, theta, y0, q, m, E)
     
     # Calcul de l'incertitude totale
     delta_xs = np.sqrt(
