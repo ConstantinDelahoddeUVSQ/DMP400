@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import scipy.constants as constants
 
 def calculer_xs(v0: float, theta: float, y0: float, q: float, m: float, E: float) -> float:
     """
@@ -154,20 +156,67 @@ def calculer_incertitude(v0: float, theta: float, y0: float, q: float, m: float,
     
     return delta_xs
 
-# Exemple d'utilisation du code
+def champ_electrique_v2(distance: float, différence_potentiel: float) -> float:
+    """
+    Calcule le champ électrique uniforme entre deux plaques parallèles.
+
+    Parameters
+    ----------
+    distance : float
+        Distance entre les plaques (en m).
+    difference_potentiel : float
+        Différence de potentiel entre les plaques (en V).
+
+    Returns
+    -------
+    float
+        Intensité du champ électrique E = V/d (en V/m).
+
+    Raises
+    ------
+    ValueError
+        Si la distance est nulle ou négative.
+    """
+    if distance <= 0:
+        raise ValueError("La distance doit être positive.")
+    return différence_potentiel / distance
+
 if __name__ == "__main__":
-    # Valeurs par défaut pour les paramètres
-    v0 = 1e6  # m/s
-    theta = np.pi/4  # rad
-    y0 = 1e-2  # m
-    q = 1.602e-19  # C
-    m = 9.109e-31  # kg
-    E = 1e3  # V/m
-    
-    # Incertitudes sur les paramètres (exemple)
-    delta_v0 = v0 * 0.01  # 1% d'incertitude sur v0
-    delta_theta = theta * 0.02  # 2% d'incertitude sur theta
-    delta_y0 = y0 * 0.05  # 5% d'incertitude sur y0
-    delta_q = q * 0.001  # 0.1% d'incertitude sur q (généralement très bien connu)
-    delta_m = m * 0.001  # 0.1% d'incertitude sur m (généralement très bien connu)
-    delta_E = E * 0.03  # 3% d'incertitude sur E
+    # Paramètres communs pour le tracé
+    v0        = 1e8       # m/s
+    theta     = np.pi/6
+    y0        = 0.15      # m
+    distance  = 0.15      # m
+    delta_V   = -5000     # V
+
+    # Générer 1 000 masses de 1 à 10 u
+    m_u_list = np.linspace(1, 10, 1000)
+    q_e_list = np.ones_like(m_u_list)
+
+    E = champ_electrique_v2(distance, delta_V)
+
+    mq_vals = np.empty_like(m_u_list)
+    inc_vals = np.empty_like(m_u_list)
+
+    for i, (m_u, q_e) in enumerate(zip(m_u_list, q_e_list)):
+        m_si = m_u * constants.u
+        q_si = q_e * constants.e
+        mq_vals[i] = m_si / q_si
+        deltas = (
+            v0*0.01,        # Δv0 = 1%
+            theta*0.02,     # Δθ = 2%
+            y0*0.05,        # Δy0 = 5%
+            q_si*0.001,     # Δq = 0.1%
+            m_si*0.001,     # Δm = 0.1%
+            abs(E)*0.03     # ΔE = 3%
+        )
+        inc_vals[i] = calculer_incertitude(v0, theta, y0, q_si, m_si, E, *deltas)
+
+    # Tracé final
+    plt.figure(figsize=(8,5))
+    plt.plot(mq_vals, inc_vals)
+    plt.xscale('log')
+    plt.xlabel("m/q (kg/C)")
+    plt.ylabel("Δ xs (m)")
+    plt.title("Incertitude sur xs avec 1 000 points (1–10 u)")
+    plt.show()

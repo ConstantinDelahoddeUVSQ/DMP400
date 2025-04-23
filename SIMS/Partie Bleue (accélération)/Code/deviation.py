@@ -27,7 +27,29 @@ def calcul_champ_electrique(charge_plaque : float, surface : float) -> float :
     else : raise ValueError("La surface ne peut être nulle ou négative")
 
 
-def champ_electrique_v2(distance : float, différence_potentiel : float) -> float :
+def champ_electrique_v2(distance: float, différence_potentiel: float) -> float:
+    """
+    Calcule le champ électrique uniforme entre deux plaques parallèles.
+
+    Parameters
+    ----------
+    distance : float
+        Distance entre les plaques (en m).
+    difference_potentiel : float
+        Différence de potentiel entre les plaques (en V).
+
+    Returns
+    -------
+    float
+        Intensité du champ électrique E = V/d (en V/m).
+
+    Raises
+    ------
+    ValueError
+        Si la distance est nulle ou négative.
+    """
+    if distance <= 0:
+        raise ValueError("La distance doit être positive.")
     return différence_potentiel / distance
 
 
@@ -180,8 +202,6 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
         Coordonnée en y du point de départ
 
     """
-def tracer_ensemble_trajectoires(masse_charge_particules, vitesse_initiale, surface, charge_plaque,
-                                  angle_initial=np.pi / 6, hauteur_initiale=0.15):
     particules_init = masse_charge_particules
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -193,7 +213,17 @@ def tracer_ensemble_trajectoires(masse_charge_particules, vitesse_initiale, surf
     slider_zoom = Slider(ax_zoom, 'Zoom', 1, 2, valinit=1, valstep=0.01)
     slider_E = Slider(ax_E, 'Champ E (V/m)', 1000, 100000, valinit=abs(champ_electrique_v2(0.15, -5000)), valstep=100)
 
-    def tracer(E_val, zoom_val):
+    def tracer(E_val : float, zoom_val : float) -> None:
+        """
+        Fonction interne pour effacer et redessiner le graphique en fonction des valeurs actuelles.
+
+        Parameters
+        ----------
+        E_val : float
+            Valeur actuelle du champ électrique (V/m) issue du slider.
+        zoom_val : float
+            Valeur actuelle du facteur de zoom issue du slider.
+        """
         ax.clear()
 
         particules = [particule(mq, vitesse_initiale, angle_initial, hauteur_initiale) for mq in particules_init]
@@ -207,8 +237,6 @@ def tracer_ensemble_trajectoires(masse_charge_particules, vitesse_initiale, surf
 
                 angle_incident = p.angle_incident(E_val)
                 angle_deg = angle_incident * 180 / np.pi
-                x_contact = p.point_contact(E_val)
-                y_contact = 0  
                 texte_angles += f"- {p.m}u, {p.c}eV : {angle_deg:.2f}°\n"
 
             else : 
@@ -232,10 +260,12 @@ def tracer_ensemble_trajectoires(masse_charge_particules, vitesse_initiale, surf
 
     tracer(slider_E.val, slider_zoom.val)
 
-    def update_zoom(val):
+    def update_zoom(val : float) -> None:
+        """ Fonction appelée lors du changement du slider de zoom. """
         tracer(slider_E.val, val)
 
-    def update_E(val):
+    def update_E(val : float) -> None:
+        """ Fonction appelée lors du changement du slider de champ E. """
         tracer(val, slider_zoom.val)
 
     slider_zoom.on_changed(update_zoom)
