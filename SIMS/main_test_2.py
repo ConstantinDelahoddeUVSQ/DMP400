@@ -176,7 +176,7 @@ class ParticleApp:
         ttk.Label(frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
         self.slider_frame_bz = ttk.Frame(self.dynamic_inputs_frame)
         self.slider_frame_bz.pack(fill=tk.X, pady=(0,5))
-        self.bz_var = tk.DoubleVar(value=0.5)
+        self.bz_var = tk.DoubleVar(value=1)
         self.bz_slider = ttk.Scale(self.slider_frame_bz, from_=0.001, to=1.0, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._on_bz_slider_change)
         self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
@@ -186,7 +186,7 @@ class ParticleApp:
         ttk.Label(frame, text="Vitesse initiale (m/s):").pack(anchor=tk.W, pady=(5,0))
         self.slider_frame_v0 = ttk.Frame(self.dynamic_inputs_frame)
         self.slider_frame_v0.pack(fill=tk.X, pady=(0,5))
-        self.v0_var = tk.DoubleVar(value=0.5)
+        self.v0_var = tk.DoubleVar(value=1e6)
         self.v0_slider = ttk.Scale(self.slider_frame_v0, from_=1e6, to=1e7, orient=tk.HORIZONTAL, variable=self.v0_var, command=self._on_v0_slider_change)
         self.v0_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.v0_label_var = tk.StringVar(value=f"{self.v0_var.get():.3f} (m/s)")
@@ -386,11 +386,10 @@ class ParticleApp:
                 self.status_var.set("Calcul déviation magnétique en cours...")
                 self.root.update_idletasks() # Mettre à jour l'UI
                 
-                
-                # Appeler la fonction de traçage modifiée
-                # print(self.particles_data)
+                if self.dynamic_trace_var.get() : 
+                    v0, bz = self.v0_var.get(), self.bz_var.get()
                 partie_electroaimant.tracer_ensemble_trajectoires(
-                        self.particles_data, self.v0_var.get(), self.bz_var.get(), x_detecteur, create_plot = False, ax=self.ax
+                        self.particles_data, v0, bz, x_detecteur, create_plot = False, ax=self.ax
                     )
 
                 # Mettre à jour le canvas
