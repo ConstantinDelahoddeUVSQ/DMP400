@@ -20,39 +20,41 @@ class particule :
         v_initiale : float
             Vitesse initiale en y de la particule (en m/s).
         """
-        # --- MODIFICATION OBLIGATOIRE ---
         mass_u = masse_charge[0]
         charge_e = masse_charge[1]
         if charge_e == 0:
              raise ValueError("La charge de la particule ne peut pas être nulle.")
-        # Utilisation de constants.e (charge élémentaire en C) au lieu de constants.eV
         self.mq = (mass_u * constants.u) / (charge_e * constants.e) # kg/C
-        # --- FIN MODIFICATION ---
-
         self.vo = v_initiale
         self.m = mass_u
-        self.c = charge_e # Garde la charge en unités 'e' pour l'affichage
+        self.c = charge_e
 
 
     # Niveau 5 : L'equation de la trajectoire d'une particule en fonction de son rapport masse/charge et sa vitesse initiale
-    def equation_trajectoire(self, x : float, Bz : float) -> float :    
+    def equation_trajectoire(self, x : float | np.ndarray, Bz : float) -> float | np.ndarray :
         """
-        La position y de la particule en x
+        La position y de la particule en x. Retourne NaN si x n'est pas physiquement atteignable.
 
         Parameters
         ----------
-        x : float
-            Position en x de la particule (en m)
+        x : float or np.ndarray
+            Position(s) en x de la particule (en m)
         Bz : float
             Valeur du champ magnétique d'axe z (en T)
 
         Returns
         -------
-        float
-            Position en y de la particule (en m)
-        """             
+        float or np.ndarray
+            Position(s) en y de la particule (en m), ou NaN si x est hors de portée.
+        """
         prefix = self.mq / Bz
-        return self.vo * prefix * np.sin(np.arccos(1 - x / (self.vo * prefix)))
+        arg = 1 - x / (self.vo * prefix) # Calcul de l'argument
+
+        # --- MODIFICATION : Suppression de l'avertissement ---
+        with np.errstate(invalid='ignore'): # Ignore l'avertissement 'invalid value' ici
+            # Le calcul se fait, mais arccos retournera NaN si arg est hors de [-1, 1]
+            return self.vo * prefix * np.sin(np.arccos(arg))
+        # --- FIN MODIFICATION ---
 
 
     # Niveau 4 : Renvoie un tuple de la trajectoire de la particule (liste des abscisses, liste des ordonnées)
@@ -103,10 +105,7 @@ class particule :
         """
         x, y = self.trajectoire(Bz, x_min, x_max, n_points)
         if len(x) > 0:
-            # --- MODIFICATION OBLIGATOIRE ---
-            # Correction du label pour afficher 'e' au lieu de 'eV'
             ax.plot(x, y, label=f'{self.m}u, {self.c:+}e') # :+ pour afficher le signe de la charge
-            # --- FIN MODIFICATION ---
         
 
     # Niveau 2.1 : Détermine la puissance du champ magnétique nécéssaire pour dévier une particule à un point précis
@@ -228,9 +227,10 @@ Test de la fonction tracer_ensemble_trajectoires (valeurs non représentatives)
 On trace les trajectoires de particules avec des rapports m/q différents dans un champ magnétique donné
 '''
 if __name__ == '__main__' :
-    rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
-    vitesse_initiale = 1e7
-    Bz = 1
+    # rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
+    rapports_masse_charge = [(1, 1)]
+    vitesse_initiale = 1e6
+    Bz = 0.025
     x_detecteur = 1e-4
     
     tracer_ensemble_trajectoires(rapports_masse_charge, vitesse_initiale, Bz, x_detecteur)
