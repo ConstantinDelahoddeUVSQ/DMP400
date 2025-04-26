@@ -11,7 +11,7 @@ sys.path.append("./SIMS/Partie Verte (déviation magnétique)/Code")
 
 try:
     import deviation2 # type: ignore
-    import partie_electroaimant # type: ignore
+    import partie_electroaimant2 # type: ignore
 except ImportError as e:
     print(f"Erreur d'importation: {e}")
     print("Assurez-vous que les chemins sys.path sont corrects et que les fichiers existent.")
@@ -133,9 +133,9 @@ class ParticleApp:
         ttk.Label(frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
         slider_frame_bz = ttk.Frame(frame)
         slider_frame_bz.pack(fill=tk.X, pady=(0,5))
-        self.bz_var = tk.DoubleVar(value=0.5)
+        self.bz_var = tk.DoubleVar(value=0.025)
         # --- MODIFICATION ICI : Changement de la commande ---
-        self.bz_slider = ttk.Scale(slider_frame_bz, from_=0.001, to=1.0, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._on_bz_slider_change)
+        self.bz_slider = ttk.Scale(slider_frame_bz, from_=0.001, to=0.05, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._on_bz_slider_change)
         self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
         ttk.Label(slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT)
@@ -169,7 +169,7 @@ class ParticleApp:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Vitesse initiale
-        self.v0_elec_var = tk.StringVar(value="1e5")
+        self.v0_elec_var = tk.StringVar(value="1e6")
         self.add_labeled_entry(frame, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
 
         # Angle initial
@@ -322,7 +322,7 @@ class ParticleApp:
             # L'appel actuel suppose que la fonction attend:
             # list[tuple(int, int)], float (v0), float (Bz), float (x_detecteur), ax=matplotlib.axes.Axes
             # Si x_min est utilisé, adaptez l'appel. Ici, x_max est utilisé comme x_detecteur
-            partie_electroaimant.tracer_ensemble_trajectoires(
+            partie_electroaimant2.tracer_ensemble_trajectoires(
                 particles_ue, v0, bz, x_max, ax=self.ax, create_plot=False # Assurez-vous que create_plot=False est accepté
             )
             # --- FIN VÉRIFICATION ---
@@ -358,7 +358,7 @@ class ParticleApp:
         try:
             # Récupérer et valider les paramètres
             v0 = float(self.v0_elec_var.get())
-            angle_deg = float(self.angle_var.get())
+            angle_deg = -float(self.angle_var.get())
             y0 = float(self.y0_var.get())
             potentiel = self.pot_var.get() # Directement du slider
             distance = float(self.dist_var.get())
@@ -366,7 +366,7 @@ class ParticleApp:
             if v0 <= 0 : raise ValueError("V0 > 0 requis.")
             if y0 <= 0 : raise ValueError("Hauteur Initiale > 0 requis.")
             if distance <= 0 : raise ValueError("Distance Plaque > 0 requis.")
-            if not (0 <= angle_deg < 90): # Angle typiquement aigu par rapport à y
+            if not (-90 < angle_deg <= 0): # Angle typiquement aigu par rapport à y
                  raise ValueError("Angle doit être entre 0° et < 90°.")
 
             # Convertir angle en radians
