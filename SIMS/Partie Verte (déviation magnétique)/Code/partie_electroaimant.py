@@ -123,7 +123,7 @@ class particule :
 
 
 # Niveau 2.2 : Tracer l'ensemble des trajectoires des particules d'un faisceau
-def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[int, int]], vitesse_initiale : float, Bz : float, x_detecteur : float) -> None:
+def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[int, int]], vitesse_initiale : float, Bz : float, x_detecteur : float, create_plot=True, ax=None) -> None:
     """
     Trace les trajectoires entre 0 et x_detecteur pour un ensemble de particules d'un faisceau
 
@@ -139,7 +139,8 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[int, int
         L'abscisse du détecteur (en m)
     """
     particules = [particule(masse_charge, vitesse_initiale) for masse_charge in masses_charges_particules]    # Liste d'objets particule représentant toutes les particules
-    fig, ax = plt.subplots()
+    if ax == None or create_plot == True :
+        fig, ax = plt.subplots()
     
     all_y_contact = []
     for particule_locale in particules :
@@ -147,9 +148,11 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[int, int
         all_y_contact.append(particule_locale.equation_trajectoire(x_detecteur, Bz))
 
     ax.plot([x_detecteur, x_detecteur], [min(all_y_contact) * 0.8, max(all_y_contact) * 1.1], c='black', linewidth=5, label='Détecteur')
-
+    ax.set_xlabel('Position x (en m)')
+    ax.set_ylabel('Position y (en m)')
     ax.legend()
-    plt.show()
+    if create_plot :
+        plt.show()
 
 
 def tracer_trajectoires_dynamiquement(masses_charges_particules : list[tuple[int, int]], vi_min : float, vi_max : float, Bz_min : float, Bz_max : float, x_detecteur : float) -> None:
@@ -211,13 +214,13 @@ Test de la fonction tracer_ensemble_trajectoires (valeurs non représentatives)
 
 On trace les trajectoires de particules avec des rapports m/q différents dans un champ magnétique donné
 '''
-# if __name__ == '__main__' :
-#     rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
-#     vitesse_initiale = 1e7
-#     Bz = 1
-#     x_detecteur = 1e-4
+if __name__ == '__main__' :
+    rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
+    vitesse_initiale = 1e7
+    Bz = 1
+    x_detecteur = 1e-4
     
-#     tracer_ensemble_trajectoires(rapports_masse_charge, vitesse_initiale, Bz, x_detecteur)
+    tracer_ensemble_trajectoires(rapports_masse_charge, vitesse_initiale, Bz, x_detecteur)
 
 
 '''
@@ -239,10 +242,10 @@ On remarque que la particule finit effectivement à la position prévue
 """
 Test de la fonction tracer_trajectoires_dynamiquement (valeurs non représentatives)
 """
-if __name__ == '__main__' :
-    rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
-    vi_min, vi_max = 1e7, 1e8
-    Bz_min, Bz_max = 1, 5
-    x_detecteur = 4.95e-2
+# if __name__ == '__main__' :
+#     rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
+#     vi_min, vi_max = 1e7, 1e8
+#     Bz_min, Bz_max = 1, 5
+#     x_detecteur = 4.95e-2
     
-    tracer_trajectoires_dynamiquement(rapports_masse_charge, vi_min, vi_max, Bz_min, Bz_max, x_detecteur)
+#     tracer_trajectoires_dynamiquement(rapports_masse_charge, vi_min, vi_max, Bz_min, Bz_max, x_detecteur)
