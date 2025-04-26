@@ -123,7 +123,7 @@ class particule :
 
 
 # Niveau 2.2 : Tracer l'ensemble des trajectoires des particules d'un faisceau
-def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[int, int]], vitesse_initiale : float, Bz : float, x_detecteur : float, create_plot=True, ax=None) -> None:
+def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[int, int]], vitesse_initiale : float, Bz : float, x_detecteur : float, create_plot : bool = True, ax = None) -> None:
     """
     Trace les trajectoires entre 0 et x_detecteur pour un ensemble de particules d'un faisceau
 
@@ -155,7 +155,7 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[int, int
         plt.show()
 
 
-def tracer_trajectoires_dynamiquement(masses_charges_particules : list[tuple[int, int]], vi_min : float, vi_max : float, Bz_min : float, Bz_max : float, x_detecteur : float) -> None:
+def tracer_trajectoires_dynamiquement(masses_charges_particules : list[tuple[int, int]], vi_min : float, vi_max : float, Bz_min : float, Bz_max : float, x_detecteur : float, create_plot : bool = True, fig = None, ax = None) -> None:
     """
     Trace les trajectoires entre 0 et x_detecteur pour un ensemble de particules d'un faisceau de manière dynamique
 
@@ -175,8 +175,9 @@ def tracer_trajectoires_dynamiquement(masses_charges_particules : list[tuple[int
         L'abscisse du détecteur (en m)
     """
     particules = [particule(masse_charge, 0.5 * (vi_min + vi_max)) for masse_charge in masses_charges_particules]
-    fig, ax = plt.subplots()
-    plt.subplots_adjust(left=0.1, bottom=0.25)
+    if create_plot or ax == None : 
+        fig, ax = plt.subplots()
+        plt.subplots_adjust(left=0.1, bottom=0.25)
     
     all_y_contact = []
     all_lines = []
@@ -204,7 +205,7 @@ def tracer_trajectoires_dynamiquement(masses_charges_particules : list[tuple[int
     
     slider_a.on_changed(update)
     slider_b.on_changed(update)
-
+    return ax
     plt.show()
 
 

@@ -127,29 +127,73 @@ class ParticleApp:
         frame = ttk.Frame(parent, padding="10")
         frame.pack(fill=tk.BOTH, expand=True)
 
+        # Frame for dynamic inputs (initially hidden)
+        self.dynamic_inputs_frame = ttk.Frame(frame)
+
+        self.base_inputs_frame = ttk.Frame(frame)
+        self.base_inputs_frame.pack(fill=tk.X, pady=5)
+
+        # Display x_detecteur
+        self.x_detecteur_var = tk.StringVar(value="1e-4")
+        self.add_labeled_entry(frame, "X détecteur (m) :", self.x_detecteur_var).pack(fill=tk.X, pady=3)
+
+        # Checkbox "Tracer dynamiquement"
+        self.dynamic_trace_var = tk.BooleanVar(value=False)
+        dynamic_check = ttk.Checkbutton(frame, text="Tracer dynamiquement", variable=self.dynamic_trace_var, command=self.toggle_dynamic_inputs)
+        dynamic_check.pack(anchor=tk.W, pady=5)
+
+
+        # # Champ Magnétique (Slider)
+        # ttk.Label(frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
+        # slider_frame_bz = ttk.Frame(frame)
+        # slider_frame_bz.pack(fill=tk.X, pady=(0,5))
+        # self.bz_var = tk.DoubleVar(value=0.1)
+        # self.bz_slider = ttk.Scale(slider_frame_bz, from_=0.001, to=1.0, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._update_bz_label)
+        # self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        # self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
+        # ttk.Label(slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT)
+
+
+        # Inside base frame : 
+
         # Vitesse initiale
         self.v0_mag_var = tk.StringVar(value="1e6")
-        self.add_labeled_entry(frame, "Vitesse Initiale (m/s):", self.v0_mag_var).pack(fill=tk.X, pady=3)
+        self.add_labeled_entry(self.base_inputs_frame, "Vitesse Initiale (m/s) : ", self.v0_mag_var).pack(fill=tk.X, pady=3)
 
-        # Champ Magnétique (Slider)
-        ttk.Label(frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
-        slider_frame_bz = ttk.Frame(frame)
-        slider_frame_bz.pack(fill=tk.X, pady=(0,5))
-        self.bz_var = tk.DoubleVar(value=0.1)
-        self.bz_slider = ttk.Scale(slider_frame_bz, from_=0, to=1.0, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._update_bz_label)
-        self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
-        ttk.Label(slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT)
-
-        # Domaine x
-        self.xmin_mag_var = tk.StringVar(value="0.0")
-        self.add_labeled_entry(frame, "X min (m):", self.xmin_mag_var).pack(fill=tk.X, pady=3)
-        self.xmax_mag_var = tk.StringVar(value="0.5")
-        self.add_labeled_entry(frame, "X max (m):", self.xmax_mag_var).pack(fill=tk.X, pady=3)
+        # Bz
+        self.bz_mag_var = tk.StringVar(value="1")
+        self.add_labeled_entry(self.base_inputs_frame, "Champ magnétique Bz (T) : ", self.bz_mag_var).pack(fill=tk.X, pady=3)
 
         # Bouton Tracer
-        trace_btn = ttk.Button(frame, text="Tracer Déviation Magnétique", command=self.run_magnetic_simulation)
+        trace_btn = ttk.Button(self.base_inputs_frame, text="Tracer Déviation Magnétique", command=self.run_magnetic_simulation)
         trace_btn.pack(pady=15)
+        
+
+        # Inside dynamic frame : 
+
+        # Bz
+        self.bz_min_var = tk.StringVar(value="0.0")
+        self.add_labeled_entry(self.dynamic_inputs_frame, "Bz min (T) :", self.bz_min_var).pack(fill=tk.X, pady=3)
+        self.bz_max_var = tk.StringVar(value="0.5")
+        self.add_labeled_entry(self.dynamic_inputs_frame, "Bz max (T) :", self.bz_max_var).pack(fill=tk.X, pady=3)
+        
+        # V0
+        self.v0_min_var = tk.StringVar(value="1e6")
+        self.add_labeled_entry(self.dynamic_inputs_frame, "V0 min (m/s) :", self.v0_min_var).pack(fill=tk.X, pady=3)
+        self.v0_max_var = tk.StringVar(value="1e7")
+        self.add_labeled_entry(self.dynamic_inputs_frame, "V0 max (m/s) :", self.v0_max_var).pack(fill=tk.X, pady=3)
+
+        # Bouton Tracer
+        trace_btn = ttk.Button(self.dynamic_inputs_frame, text="Tracer Déviation Magnétique", command=self.run_magnetic_simulation)
+        trace_btn.pack(pady=15)
+
+    def toggle_dynamic_inputs(self):
+        if self.dynamic_trace_var.get():
+            self.base_inputs_frame.pack_forget()
+            self.dynamic_inputs_frame.pack(fill=tk.X, pady=5)
+        else:
+            self.dynamic_inputs_frame.pack_forget()
+            self.base_inputs_frame.pack(fill=tk.X, pady=5)
 
     def _update_bz_label(self, event=None):
         self.bz_label_var.set(f"{self.bz_var.get():.3f} T")
@@ -261,40 +305,73 @@ class ParticleApp:
             return
 
         try:
+            allow_trace = True
             # Récupérer et valider les paramètres
-            v0 = float(self.v0_mag_var.get())
-            bz = self.bz_var.get() # Directement du slider
-            # x_min = float(self.xmin_mag_var.get())
-            # x_max = float(self.xmax_mag_var.get())
+            x_detecteur = float(self.x_detecteur_var.get())
+            
+            if not self.dynamic_trace_var.get() :
+                v0 = float(self.v0_mag_var.get())
+                bz = float(self.bz_mag_var.get())
+                if v0 <= 0 :
+                    messagebox.showerror("Valeur incorrecte", "La valeur de vitesse initiale ne peut être négative ou nulle")
+                    self.status_var.set("Erreur de simulation magnétique.")
+                    allow_trace = False
+                elif bz <= 0 :
+                    messagebox.showerror("Valeur incorrecte", "La valeur de champ magnétique ne peut être négative ou nulle")
+                    self.status_var.set("Erreur de simulation magnétique.")
+                    allow_trace = False
+            else :
+                bz_min = float(self.bz_min_var.get())
+                bz_max = float(self.bz_max_var.get())
+                v0_min = float(self.v0_min_var.get())
+                v0_max = float(self.v0_max_var.get())
+                if v0_min <= 0 :
+                    messagebox.showerror("Valeur incorrecte", "La valeur de vitesse initiale minimale ne peut être négative ou nulle")
+                    self.status_var.set("Erreur de simulation magnétique.")
+                    allow_trace = False
+                elif bz_min <= 0 :
+                    messagebox.showerror("Valeur incorrecte", "La valeur de champ magnétique minimale ne peut être négative ou nulle")
+                    self.status_var.set("Erreur de simulation magnétique.")
+                    allow_trace = False
+                elif v0_min >= v0_max :
+                    messagebox.showerror("Valeur incorrecte", "La valeur de vitesse initiale maximale ne peut inférieure ou égale à la valeur minimale")
+                    self.status_var.set("Erreur de simulation magnétique.")
+                    allow_trace = False
+                elif bz_min >= bz_max :
+                    messagebox.showerror("Valeur incorrecte", "La valeur de champ magnétique maximale ne peut inférieure ou égale à la valeur minimale")
+                    self.status_var.set("Erreur de simulation magnétique.")
+                    allow_trace = False
 
-            # if v0 <= 0 or x_max <= x_min:
-            #     raise ValueError("V0 > 0 et X max > X min requis.")
+            if allow_trace : 
+                # Préparer le plot
+                self.ax.cla() # Effacer l'axe précédent
+                self.status_var.set("Calcul déviation magnétique en cours...")
+                self.root.update_idletasks() # Mettre à jour l'UI
+                
+                
+                # Appeler la fonction de traçage modifiée
+                # print(self.particles_data)
+                if not self.dynamic_trace_var.get() :
+                    partie_electroaimant.tracer_ensemble_trajectoires(
+                        self.particles_data, v0, bz, x_detecteur, create_plot = False, ax=self.ax
+                    )
+                else :
+                    partie_electroaimant.tracer_trajectoires_dynamiquement(
+                        self.particles_data, v0_min, v0_max, bz_min, bz_max, x_detecteur, create_plot = False, ax=self.ax, fig=self.fig
+                    )
 
-            # Convertir les particules pour le backend (liste de m/q en kg/C)
-    
-            # Préparer le plot
-            self.ax.cla() # Effacer l'axe précédent
-            self.status_var.set("Calcul déviation magnétique en cours...")
-            self.root.update_idletasks() # Mettre à jour l'UI
-
-            # Appeler la fonction de traçage modifiée
-            print(self.particles_data)
-            partie_electroaimant.tracer_ensemble_trajectoires(
-                self.particles_data, v0, bz, 1e-4, create_plot = False, ax=self.ax
-            )
-
-            # Mettre à jour le canvas
-            self.ax.relim() # Recalculer les limites si nécessaire
-            self.ax.autoscale_view() # Ajuster la vue
-            self.canvas.draw()
-            self.status_var.set("Tracé déviation magnétique terminé.")
+                # Mettre à jour le canvas
+                self.ax.relim() # Recalculer les limites si nécessaire
+                self.ax.autoscale_view() # Ajuster la vue
+                self.canvas.draw()
+                self.status_var.set("Tracé déviation magnétique terminé.")
 
         except ValueError as e:
             messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
             self.status_var.set("Erreur de simulation magnétique.")
-        # except Exception as e:
-        #     messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue: {e}")
-        #     self.status_var.set("Erreur de simulation magnétique.")
+        except Exception as e:
+            messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue: {e}")
+            self.status_var.set("Erreur de simulation magnétique.")
 
 
     def run_electric_simulation(self):
