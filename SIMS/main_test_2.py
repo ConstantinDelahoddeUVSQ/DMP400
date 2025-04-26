@@ -143,17 +143,6 @@ class ParticleApp:
         dynamic_check.pack(anchor=tk.W, pady=5)
 
 
-        # # Champ Magnétique (Slider)
-        # ttk.Label(frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
-        # slider_frame_bz = ttk.Frame(frame)
-        # slider_frame_bz.pack(fill=tk.X, pady=(0,5))
-        # self.bz_var = tk.DoubleVar(value=0.1)
-        # self.bz_slider = ttk.Scale(slider_frame_bz, from_=0.001, to=1.0, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._update_bz_label)
-        # self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        # self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
-        # ttk.Label(slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT)
-
-
         # Inside base frame : 
 
         # Vitesse initiale
@@ -172,7 +161,7 @@ class ParticleApp:
         # Inside dynamic frame : 
 
         # Bz
-        self.bz_min_var = tk.StringVar(value="0.0")
+        self.bz_min_var = tk.StringVar(value="0.001")
         self.add_labeled_entry(self.dynamic_inputs_frame, "Bz min (T) :", self.bz_min_var).pack(fill=tk.X, pady=3)
         self.bz_max_var = tk.StringVar(value="0.5")
         self.add_labeled_entry(self.dynamic_inputs_frame, "Bz max (T) :", self.bz_max_var).pack(fill=tk.X, pady=3)
@@ -182,6 +171,26 @@ class ParticleApp:
         self.add_labeled_entry(self.dynamic_inputs_frame, "V0 min (m/s) :", self.v0_min_var).pack(fill=tk.X, pady=3)
         self.v0_max_var = tk.StringVar(value="1e7")
         self.add_labeled_entry(self.dynamic_inputs_frame, "V0 max (m/s) :", self.v0_max_var).pack(fill=tk.X, pady=3)
+
+        # Champ Magnétique (Slider)
+        ttk.Label(frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
+        self.slider_frame_bz = ttk.Frame(self.dynamic_inputs_frame)
+        self.slider_frame_bz.pack(fill=tk.X, pady=(0,5))
+        self.bz_var = tk.DoubleVar(value=0.5)
+        self.bz_slider = ttk.Scale(self.slider_frame_bz, from_=0.001, to=1.0, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._on_bz_slider_change)
+        self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
+        ttk.Label(self.slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT)
+
+        # Vitesse initiale (Slider)
+        ttk.Label(frame, text="Vitesse initiale (m/s):").pack(anchor=tk.W, pady=(5,0))
+        self.slider_frame_v0 = ttk.Frame(self.dynamic_inputs_frame)
+        self.slider_frame_v0.pack(fill=tk.X, pady=(0,5))
+        self.v0_var = tk.DoubleVar(value=0.5)
+        self.v0_slider = ttk.Scale(self.slider_frame_v0, from_=1e6, to=1e7, orient=tk.HORIZONTAL, variable=self.v0_var, command=self._on_v0_slider_change)
+        self.v0_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.v0_label_var = tk.StringVar(value=f"{self.v0_var.get():.3f} (m/s)")
+        ttk.Label(self.slider_frame_v0, textvariable=self.v0_label_var, width=10).pack(side=tk.LEFT)
 
         # Bouton Tracer
         trace_btn = ttk.Button(self.dynamic_inputs_frame, text="Tracer Déviation Magnétique", command=self.run_magnetic_simulation)
@@ -195,8 +204,28 @@ class ParticleApp:
             self.dynamic_inputs_frame.pack_forget()
             self.base_inputs_frame.pack(fill=tk.X, pady=5)
 
+        # --- NOUVELLE FONCTION CALLBACK pour slider Bz ---
+    def _on_bz_slider_change(self, event=None):
+        """Appelé lorsque le slider Bz est modifié."""
+        self._update_bz_label() # Met à jour le label texte
+        # Lance la simulation seulement s'il y a des particules
+        if self.particles_data:
+            # Pas besoin de update_idletasks ici, run_magnetic_simulation le fera
+            self.run_magnetic_simulation(called_by_slider=True) # Indique d'où vient l'appel
+
     def _update_bz_label(self, event=None):
         self.bz_label_var.set(f"{self.bz_var.get():.3f} T")
+
+    def _on_v0_slider_change(self, event=None):
+        """Appelé lorsque le slider v0 est modifié."""
+        self._update_v0_label() # Met à jour le label texte
+        # Lance la simulation seulement s'il y a des particules
+        if self.particles_data:
+            # Pas besoin de update_idletasks ici, run_magnetic_simulation le fera
+            self.run_magnetic_simulation(called_by_slider=True) # Indique d'où vient l'appel
+
+    def _update_v0_label(self, event=None):
+        self.v0_label_var.set(f"{self.v0_var.get():.3f} (m/s)")
 
     # --- Widgets pour la déviation électrique ---
     def create_electric_widgets(self, parent):
@@ -299,12 +328,13 @@ class ParticleApp:
         self.status_var.set(f"{len(selected_items)} particule(s) supprimée(s).")
 
 
-    def run_magnetic_simulation(self):
+    def run_magnetic_simulation(self, called_by_slider=False):
         if not self.particles_data:
             messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
             return
 
-        try:
+        # try:
+        if True :
             allow_trace = True
             # Récupérer et valider les paramètres
             x_detecteur = float(self.x_detecteur_var.get())
@@ -321,26 +351,34 @@ class ParticleApp:
                     self.status_var.set("Erreur de simulation magnétique.")
                     allow_trace = False
             else :
-                bz_min = float(self.bz_min_var.get())
-                bz_max = float(self.bz_max_var.get())
-                v0_min = float(self.v0_min_var.get())
-                v0_max = float(self.v0_max_var.get())
-                if v0_min <= 0 :
-                    messagebox.showerror("Valeur incorrecte", "La valeur de vitesse initiale minimale ne peut être négative ou nulle")
-                    self.status_var.set("Erreur de simulation magnétique.")
-                    allow_trace = False
-                elif bz_min <= 0 :
-                    messagebox.showerror("Valeur incorrecte", "La valeur de champ magnétique minimale ne peut être négative ou nulle")
-                    self.status_var.set("Erreur de simulation magnétique.")
-                    allow_trace = False
-                elif v0_min >= v0_max :
-                    messagebox.showerror("Valeur incorrecte", "La valeur de vitesse initiale maximale ne peut inférieure ou égale à la valeur minimale")
-                    self.status_var.set("Erreur de simulation magnétique.")
-                    allow_trace = False
-                elif bz_min >= bz_max :
-                    messagebox.showerror("Valeur incorrecte", "La valeur de champ magnétique maximale ne peut inférieure ou égale à la valeur minimale")
-                    self.status_var.set("Erreur de simulation magnétique.")
-                    allow_trace = False
+                if not called_by_slider : 
+                    bz_min = float(self.bz_min_var.get())
+                    bz_max = float(self.bz_max_var.get())
+                    v0_min = float(self.v0_min_var.get())
+                    v0_max = float(self.v0_max_var.get())
+                    if v0_min <= 0 :
+                        messagebox.showerror("Valeur incorrecte", "La valeur de vitesse initiale minimale ne peut être négative ou nulle")
+                        self.status_var.set("Erreur de simulation magnétique.")
+                        allow_trace = False
+                    elif bz_min <= 0 :
+                        messagebox.showerror("Valeur incorrecte", "La valeur de champ magnétique minimale ne peut être négative ou nulle")
+                        self.status_var.set("Erreur de simulation magnétique.")
+                        allow_trace = False
+                    elif v0_min >= v0_max :
+                        messagebox.showerror("Valeur incorrecte", "La valeur de vitesse initiale maximale ne peut inférieure ou égale à la valeur minimale")
+                        self.status_var.set("Erreur de simulation magnétique.")
+                        allow_trace = False
+                    elif bz_min >= bz_max :
+                        messagebox.showerror("Valeur incorrecte", "La valeur de champ magnétique maximale ne peut inférieure ou égale à la valeur minimale")
+                        self.status_var.set("Erreur de simulation magnétique.")
+                        allow_trace = False
+                    if allow_trace : 
+                        self.bz_slider.config(from_=bz_min, to=bz_max)
+                        self.bz_var.set((bz_max - bz_min) / 2)
+                        self.bz_label_var.set(f"{self.bz_var.get():.3f} T")
+                        self.v0_slider.config(from_=v0_min, to=v0_max)
+                        self.v0_var.set((v0_max - v0_min) / 2)
+                        self.v0_label_var.set(f"{self.v0_var.get():.3f} T")
 
             if allow_trace : 
                 # Préparer le plot
@@ -351,13 +389,8 @@ class ParticleApp:
                 
                 # Appeler la fonction de traçage modifiée
                 # print(self.particles_data)
-                if not self.dynamic_trace_var.get() :
-                    partie_electroaimant.tracer_ensemble_trajectoires(
-                        self.particles_data, v0, bz, x_detecteur, create_plot = False, ax=self.ax
-                    )
-                else :
-                    partie_electroaimant.tracer_trajectoires_dynamiquement(
-                        self.particles_data, v0_min, v0_max, bz_min, bz_max, x_detecteur, create_plot = False, ax=self.ax, fig=self.fig
+                partie_electroaimant.tracer_ensemble_trajectoires(
+                        self.particles_data, self.v0_var.get(), self.bz_var.get(), x_detecteur, create_plot = False, ax=self.ax
                     )
 
                 # Mettre à jour le canvas
@@ -366,12 +399,12 @@ class ParticleApp:
                 self.canvas.draw()
                 self.status_var.set("Tracé déviation magnétique terminé.")
 
-        except ValueError as e:
-            messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
-            self.status_var.set("Erreur de simulation magnétique.")
-        except Exception as e:
-            messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue: {e}")
-            self.status_var.set("Erreur de simulation magnétique.")
+        # except ValueError as e:
+        #     messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
+        #     self.status_var.set("Erreur de simulation magnétique.")
+        # except Exception as e:
+        #     messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue: {e}")
+        #     self.status_var.set("Erreur de simulation magnétique.")
 
 
     def run_electric_simulation(self):
