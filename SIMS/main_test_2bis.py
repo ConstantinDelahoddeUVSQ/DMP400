@@ -228,8 +228,10 @@ class ParticleApp:
 
             if mass_u <= 0:
                 raise ValueError("Masse doit être > 0.")
-            if charge_e == 0:
-                raise ValueError("Charge doit être != 0.")
+            # if charge_e == 0:
+            #     raise ValueError("Charge doit être != 0.")
+            if charge_e <= 0:
+                raise ValueError("Veuillez rentrer une charge positive.")
 
             particle_info = (mass_u, charge_e)
             if particle_info not in self.particles_data :

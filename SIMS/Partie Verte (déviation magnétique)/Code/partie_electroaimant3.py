@@ -1,9 +1,10 @@
+
 # Objectif 1
 
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import numpy as np
-from scipy.optimize import fsolve 
+from scipy.optimize import fsolve
 import scipy.constants as constants
 
 
@@ -35,7 +36,7 @@ class particule :
 
 
     # Niveau 5 : L'equation de la trajectoire d'une particule en fonction de son rapport masse/charge et sa vitesse initiale
-    def equation_trajectoire(self, x : float, Bz : float) -> float :    
+    def equation_trajectoire(self, x : float, Bz : float) -> float :
         """
         La position y de la particule en x
 
@@ -50,9 +51,18 @@ class particule :
         -------
         float
             Position en y de la particule (en m)
-        """             
-        prefix = self.mq / Bz
-        return self.vo * prefix * np.sin(np.arccos(1 - x / (self.vo * prefix)))
+        """
+        prefix = self.mq / Bz # C'est R = rayon de Larmor * signe(q*Bz)
+        arg_arccos = 1 - x / (self.vo * prefix)
+
+        # --- Gestion des erreurs arccos ---
+        # Clipper l'argument pour éviter les erreurs dues aux imprécisions numériques
+        arg_arccos = np.clip(arg_arccos, -1.0, 1.0)
+        # --- Fin Gestion ---
+
+        # L'angle phi de rotation est arccos(1 - x/R)
+        # y = R * sin(phi)
+        return self.vo * prefix * np.sin(np.arccos(arg_arccos))
 
 
     # Niveau 4 : Renvoie un tuple de la trajectoire de la particule (liste des abscisses, liste des ordonnées)
@@ -67,20 +77,23 @@ class particule :
         x_min : float
             Position en x minimale (en m)
         x_max : float
-            Position en x maximale (en m)   
+            Position en x maximale (en m)
         n_points : int
             Nombre de points où la position sera calculée entre x_min et x_max
-        
+
         Returns
         -------
         tuple of (numpy.ndarray, numpy.ndarray)
             - Positions en x
             - Positions en y
-        
+
         """
         x = np.linspace(x_min, x_max, n_points)
-        return x, self.equation_trajectoire(x, Bz)
-    
+        y = self.equation_trajectoire(x, Bz)
+        # Filtrer les NaN qui pourraient apparaître si Bz=0 ou si x > diamètre
+        mask = ~np.isnan(y)
+        return x[mask], y[mask]
+
 
     # Niveau 3 : Trace la trajectoire de la particule dans le champ Bz avec matplotlib en 2d
     def tracer_trajectoire(self, ax, Bz : float, x_min : float, x_max : float, n_points : int = 10000) -> None :
@@ -107,7 +120,7 @@ class particule :
             # Correction du label pour afficher 'e' au lieu de 'eV'
             ax.plot(x, y, label=f'{self.m}u, {self.c:+}e') # :+ pour afficher le signe de la charge
             # --- FIN MODIFICATION ---
-        
+
 
     # Niveau 2.1 : Détermine la puissance du champ magnétique nécéssaire pour dévier une particule à un point précis
     def determiner_champ_magnetique(self, x_objective : float, y_objective : float, B0 : float = None) -> float :
@@ -128,11 +141,47 @@ class particule :
         float
             Champ magnétique (en T)
         """
-        if B0 == None : B0 = self.mq
-        equation_func = lambda B : y_objective - (self.mq * self.vo / B) * np.sin(np.arccos(1 - x_objective * B / (self.vo * self.mq)))
-        return fsolve(equation_func, B0)[0]
-        
+        # Note: fsolve peut avoir des difficultés si l'équation a plusieurs solutions ou des discontinuités.
+        # La valeur initiale B0 peut être importante.
+        # Si mq est négatif, le sens de déviation change.
+        if B0 is None :
+            # Heuristique simple pour B0 : basé sur le rayon R approx y_objective (si x petit) ou x_objective/2 (si demi-cercle)
+            # R = vo * mq / B => B = vo * mq / R
+            # Utilisons une estimation basée sur R ~ sqrt(x^2+y^2) ? Non, plus complexe.
+            # Tentons une valeur basée sur mq, mais en valeur absolue pour éviter B0 négatif
+            B0 = abs(self.vo * self.mq / max(x_objective, y_objective, 1e-6)) # Estimation grossière
+            if B0 == 0: B0 = 1e-3 # Éviter B0 nul
 
+        # Définir l'équation à résoudre : y_calc(B) - y_objective = 0
+        def equation_func(B):
+            if abs(B) < 1e-15: return np.inf # Éviter division par zéro
+            prefix = self.mq / B
+            arg_arccos = 1 - x_objective / (self.vo * prefix)
+            # Vérifier le domaine de arccos
+            if not (-1.0 <= arg_arccos <= 1.0):
+                # Retourner une grande valeur si hors domaine pour guider fsolve
+                return 1e10 * np.sign(arg_arccos)
+            y_calc = self.vo * prefix * np.sin(np.arccos(arg_arccos))
+            return y_calc - y_objective
+
+        # Utiliser fsolve pour trouver B
+        B_solution, infodict, ier, mesg = fsolve(equation_func, B0, full_output=True)
+
+        # Vérifier si fsolve a convergé
+        if ier == 1:
+            return B_solution[0]
+        else:
+            print(f"Avertissement: fsolve n'a pas convergé pour déterminer Bz ({mesg})")
+            # Essayer une autre valeur initiale?
+            # Tenter avec -B0 si la première tentative échoue?
+            B0_alt = -B0
+            B_solution_alt, infodict_alt, ier_alt, mesg_alt = fsolve(equation_func, B0_alt, full_output=True)
+            if ier_alt == 1:
+                 print(f"   -> Convergence réussie avec B0={B0_alt:.2e}")
+                 return B_solution_alt[0]
+            else:
+                 print(f"   -> Échec aussi avec B0={B0_alt:.2e}")
+                 return np.nan # Retourner NaN si aucune solution trouvée
 
 # Niveau 2.2 : Tracer l'ensemble des trajectoires des particules d'un faisceau
 def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[int, int]], vitesse_initiale : float, Bz : float, x_detecteur : float, create_plot : bool = True, ax = None) -> None:
