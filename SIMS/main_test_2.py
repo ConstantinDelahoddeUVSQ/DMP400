@@ -333,8 +333,7 @@ class ParticleApp:
             messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
             return
 
-        # try:
-        if True :
+        try:
             allow_trace = True
             # Récupérer et valider les paramètres
             x_detecteur = float(self.x_detecteur_var.get())
@@ -398,12 +397,12 @@ class ParticleApp:
                 self.canvas.draw()
                 self.status_var.set("Tracé déviation magnétique terminé.")
 
-        # except ValueError as e:
-        #     messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
-        #     self.status_var.set("Erreur de simulation magnétique.")
-        # except Exception as e:
-        #     messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue: {e}")
-        #     self.status_var.set("Erreur de simulation magnétique.")
+        except ValueError as e:
+            messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
+            self.status_var.set("Erreur de simulation magnétique.")
+        except Exception as e:
+            messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue: {e}")
+            self.status_var.set("Erreur de simulation magnétique.")
 
 
     def run_electric_simulation(self):
@@ -411,7 +410,8 @@ class ParticleApp:
             messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
             return
 
-        try:
+        # try:
+        if True :
             # Récupérer et valider les paramètres
             v0 = float(self.v0_elec_var.get())
             angle_deg = float(self.angle_var.get())
@@ -428,11 +428,7 @@ class ParticleApp:
             angle_rad = np.radians(angle_deg)
 
             # Calculer le champ électrique
-            E = potentiel / distance # E est dirigé de +V vers -V
-
-            # Convertir les particules pour le backend (liste de tuples (masse_u, charge_eV))
-            # Ici on utilise directement la charge en eV comme demandé par la classe particule de deviation.py
-            particles_ueV = [(p['mass_u'], p['charge_e']) for p in self.particles_data]
+            E = deviation.champ_electrique_v2(distance, potentiel)
 
             # Préparer le plot
             self.ax.cla() # Effacer l'axe précédent
@@ -441,7 +437,7 @@ class ParticleApp:
 
             # Appeler la fonction de traçage modifiée
             deviation.tracer_ensemble_trajectoires(
-                particles_ueV, v0, angle_rad, y0, E, ax=self.ax
+                self.particles_data, v0, angle_rad, y0, E, ax=self.ax
             )
 
             # Mettre à jour le canvas
@@ -449,12 +445,12 @@ class ParticleApp:
             self.canvas.draw()
             self.status_var.set("Tracé déviation électrique terminé.")
 
-        except ValueError as e:
-            messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
-            self.status_var.set("Erreur de simulation électrique.")
-        except Exception as e:
-            messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue: {e}")
-            self.status_var.set("Erreur de simulation électrique.")
+        # except ValueError as e:
+        #     messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
+        #     self.status_var.set("Erreur de simulation électrique.")
+        # except Exception as e:
+        #     messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue: {e}")
+        #     self.status_var.set("Erreur de simulation électrique.")
 
 
 if __name__ == "__main__":
