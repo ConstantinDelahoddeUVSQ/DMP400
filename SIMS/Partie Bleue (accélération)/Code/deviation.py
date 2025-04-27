@@ -159,7 +159,10 @@ class particule :
         """
         with np.errstate(invalid='ignore') :
             if (self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq >= 0 :
-                return self.mq * self.vo * np.sin(self.angle) / E * (self.vo * np.cos(self.angle) - np.sqrt((self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq))
+                if E != 0 :
+                    return self.mq * self.vo * np.sin(self.angle) / E * (self.vo * np.cos(self.angle) - np.sqrt((self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq))
+                else :
+                    return self.height / (self.vo * np.cos(self.angle))
             else :
                 return None
                 # raise ValueError("La particule n'a aucun point de contact avec l'échantillon")

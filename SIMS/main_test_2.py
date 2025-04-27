@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import tkinter as tk
 from tkinter import ttk, messagebox, font
 import numpy as np
@@ -6,10 +6,9 @@ import scipy.constants as constants
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
-# Permettre l'import des fichiers (ajustez les chemins si nécessaire)
-# Suppose que le script main.py est dans le dossier parent de SIMS
-sys.path.append("./SIMS/Partie Bleue (accélération)/Code")
-sys.path.append("./SIMS/Partie Verte (déviation magnétique)/Code")
+folder = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(f"{folder}/Partie Bleue (accélération)/Code")
+sys.path.append(f"{folder}//Partie Verte (déviation magnétique)/Code")
 
 try:
     import deviation # type: ignore

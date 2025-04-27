@@ -208,16 +208,7 @@ class particule :
         float or None
             Abscisse x du point de contact (si elle existe et est positive), sinon None.
         """
-        # Résoudre y(x) = 0 pour x.
-        # y(x) = height + x/tan(angle) + 0.5*(E/mq)*(x / (v0*sin(angle)))^2 = 0
-        # Posons vx0 = v0*sin(angle), vy0 = v0*cos(angle), ay = E/mq
-        # height + vy0*(x/vx0) + 0.5*ay*(x/vx0)^2 = 0
-        # C'est une équation du second degré en x:
-        # (0.5*ay/vx0^2) * x^2 + (vy0/vx0) * x + height = 0
-        # a*x^2 + b*x + c = 0
-        # avec a = 0.5*ay/vx0^2 = 0.5*(E/mq) / (v0*sin(angle))^2
-        #      b = vy0/vx0 = 1/tan(angle)
-        #      c = height
+
 
         vx0 = self.vo * np.sin(self.angle)
         vy0 = self.vo * np.cos(self.angle)
@@ -226,13 +217,10 @@ class particule :
             return None
 
         a = 0.5 * (E / self.mq) / (vx0**2)
-        # Gérer le cas d'un champ nul (trajectoire droite)
         if abs(a) < 1e-15: # Si a est très proche de zéro
             if abs(vy0) < 1e-15: # Tir horizontal (angle=pi/2)
                 return None # Jamais de contact si height > 0
             else:
-                # y = height + vy0*t = height + vy0*(x/vx0) = 0
-                # x = -height * vx0 / vy0 = -height * tan(angle)
                 x_contact = -self.height * (vx0 / vy0)
                 return x_contact if x_contact > 0 else None
         else:
@@ -244,12 +232,9 @@ class particule :
             if delta < 0: # Pas de solution réelle
                 return None
             else:
-                # Deux solutions potentielles
                 sqrt_delta = np.sqrt(delta)
                 x1 = (-b + sqrt_delta) / (2*a)
                 x2 = (-b - sqrt_delta) / (2*a)
-
-                # On cherche la solution positive physiquement pertinente (généralement la plus petite positive)
                 solutions_positives = []
                 if x1 > 1e-9: solutions_positives.append(x1) # Utiliser une petite tolérance > 0
                 if x2 > 1e-9: solutions_positives.append(x2)
@@ -401,8 +386,8 @@ if __name__ == '__main__':
     # E = -10000 / 0.05 # Champ pour -10kV sur la plaque à y=0, E dirigé vers -y
     potentiel_plaque = -5000 # V
     distance_plaques = 0.05 # m
-    E_calc = champ_electrique_v2(distance_plaques, potentiel_plaque)
-
+    # E_calc = champ_electrique_v2(distance_plaques, potentiel_plaque)
+    E_calc = 0
     # Pour tester, on crée une figure et un axe ici
     fig_test, ax_test = plt.subplots(figsize=(8, 6))
 
