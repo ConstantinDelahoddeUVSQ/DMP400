@@ -155,10 +155,12 @@ class particule :
         float
             abscisse du point de contact (depuis son abscisse initiale)
         """
-        if (self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq >= 0 :
-            return self.mq * self.vo * np.sin(self.angle) / E * (self.vo * np.cos(self.angle) - np.sqrt((self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq))
-        else :
-            raise ValueError("La particule n'a aucun point de contact avec l'échantillon")
+        with np.errstate(invalid='ignore') :
+            if (self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq >= 0 :
+                return self.mq * self.vo * np.sin(self.angle) / E * (self.vo * np.cos(self.angle) - np.sqrt((self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq))
+            else :
+                return None
+                # raise ValueError("La particule n'a aucun point de contact avec l'échantillon")
         
     
     def angle_incident(self, E : float) -> float :
@@ -175,16 +177,77 @@ class particule :
         float
             Angle formé par la trajectoire et l'axe y au point de contact avec l'échantillon en radians
         """
-        E = calcul_champ_electrique(charge_plaque, surface)
         x_contact = self.point_contact(E)
         return  np.arctan(-1 / (E * x_contact / (self.mq * self.vo * np.sin(self.angle) * self.vo * np.sin(self.angle)) - 1 / np.tan(self.angle)))
     
 
 
-
-def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]], vitesse_initiale : float, surface : float, charge_plaque : float, angle_initial=np.pi/6, hauteur_initiale = 0.15) -> None :
+def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]], vitesse_initiale : float, potentiel : float = 5000, angle_initial=np.pi/6, hauteur_initiale = 0.15, create_plot=True, ax=None) -> None :
     """
-    Trace les trajectoires entre jusqu'au contact de différentes particules
+    Trace les trajectoires entre jusqu'au contact de différentes particules de manière statique
+
+    Parameters
+    ----------
+    masse_charge_particules : list of tupleof int
+        Masse (en unités atomiques), Charge (en eV)  pour toutes les particules
+    vitesse_initiale : float
+        Vitesse intiale en y commune à toutes les particules du faisceau
+    surface : float
+        Surface totale de la plaque (en m²)
+    charge_plaque : float
+        Charge totale de la plaque (en C)
+    angle_initial : float
+            Angle initial entre v_initiale et l'axe y en radians
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+
+    """
+    particules_init = masse_charge_particules
+    
+    if create_plot or ax == None : 
+        fig, ax = plt.subplots(figsize=(8, 4))
+
+    E = champ_electrique_v2(hauteur_initiale, potentiel)
+
+    particules = [particule(mq, vitesse_initiale, angle_initial, hauteur_initiale) for mq in particules_init]
+    all_x_max = []
+    non_contact_particules = []
+    texte_angles = "Angles incidents :\n"
+    for p in particules:
+        if p.point_contact(E) is not None:
+            x_max = p.point_contact(E)
+            all_x_max.append(x_max)
+            p.tracer_trajectoire(ax, E, 0, x_max)
+
+            angle_incident = p.angle_incident(E)
+            angle_deg = angle_incident * 180 / np.pi
+            texte_angles += f"- {p.m}u, {p.c}eV : {angle_deg:.2f}°\n"
+
+        else : 
+            non_contact_particules.append(p)
+    
+    for p in non_contact_particules : 
+        local_x_max = hauteur_initiale 
+        if len(all_x_max) != 0 :
+            local_x_max = max(all_x_max)
+        p.tracer_trajectoire(ax, E, 0, local_x_max)
+        all_x_max.append(local_x_max)
+    
+    if len(all_x_max) > 0:
+        ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
+        ax.text(0.8, 0.5, texte_angles, transform=ax.transAxes,
+            fontsize=10,bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray"))
+
+    ax.legend()
+
+    if create_plot :
+        plt.show()
+    return ax
+
+
+def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[int, int]], vitesse_initiale : float, potentiel_min : float = -5000, potentiel_max : float = 5000, angle_initial=np.pi/6, hauteur_initiale = 0.15) -> None :
+    """
+    Trace les trajectoires entre jusqu'au contact de différentes particules dynamiquement (sliders)
 
     Parameters
     ----------
@@ -211,16 +274,16 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
     ax_E = plt.axes([0.1, 0.01, 0.8, 0.03])
 
     slider_zoom = Slider(ax_zoom, 'Zoom', 1, 2, valinit=1, valstep=0.01)
-    slider_E = Slider(ax_E, 'Champ E (V/m)', 1000, 100000, valinit=abs(champ_electrique_v2(0.15, -5000)), valstep=100)
+    slider_E = Slider(ax_E, 'Potentiel (V)', potentiel_min, potentiel_max, valinit=abs(champ_electrique_v2(hauteur_initiale, (potentiel_max - potentiel_min) / 2)), valstep=potentiel_max / 1000)
 
-    def tracer(E_val : float, zoom_val : float) -> None:
+    def tracer(pot_val : float, zoom_val : float) -> None:
         """
         Fonction interne pour effacer et redessiner le graphique en fonction des valeurs actuelles.
 
         Parameters
         ----------
-        E_val : float
-            Valeur actuelle du champ électrique (V/m) issue du slider.
+        pot_val : float
+            Valeur actuelle du potentiel (V) issue du slider.
         zoom_val : float
             Valeur actuelle du facteur de zoom issue du slider.
         """
@@ -229,6 +292,7 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
         particules = [particule(mq, vitesse_initiale, angle_initial, hauteur_initiale) for mq in particules_init]
         all_x_max = []
         texte_angles = "Angles incidents :\n"
+        E_val = champ_electrique_v2(hauteur_initiale, pot_val)
         for p in particules:
             if p.point_contact(E_val) is not None:
                 x_max = p.point_contact(E_val)
@@ -244,15 +308,16 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
 
         if len(all_x_max) > 0:
             ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
-            zoom_target_x = (min(all_x_max) + max(all_x_max)) * 0.5
-            zoom_factor_x = (min(all_x_max) + max(all_x_max)) * 0.5
-            zoom_factor_y = hauteur_initiale * 1.1
-            zoom_factor = 10 ** (10 * ((1 / zoom_val) - 1))
-            ax.set_xlim(zoom_target_x - zoom_factor * zoom_factor_x * 1.05,
-                        zoom_target_x + zoom_factor * zoom_factor_x * 0.3)
-            ax.set_ylim(-zoom_factor * zoom_factor_y * 0.05, zoom_factor * zoom_factor_y)
-            ax.text(0.8, 0.5, texte_angles, transform=ax.transAxes,
-                fontsize=10,bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray"))
+            if pot_val != 0 :
+                zoom_target_x = (min(all_x_max) + max(all_x_max)) * 0.5
+                zoom_factor_x = (min(all_x_max) + max(all_x_max)) * 0.5
+                zoom_factor_y = hauteur_initiale * 1.1
+                zoom_factor = 10 ** (10 * ((1 / zoom_val) - 1))
+                ax.set_xlim(zoom_target_x - zoom_factor * zoom_factor_x * 1.05,
+                            zoom_target_x + zoom_factor * zoom_factor_x * 0.3)
+                ax.set_ylim(-zoom_factor * zoom_factor_y * 0.05, zoom_factor * zoom_factor_y)
+                ax.text(0.8, 0.5, texte_angles, transform=ax.transAxes,
+                    fontsize=10,bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray"))
 
         ax.legend()
         fig.canvas.draw_idle()
@@ -275,8 +340,17 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
 
 
 if __name__ == '__main__' :
-    rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e8
-    charge_plaque, surface = -1e-4, 0.01
+    rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
+    pot_min, pot_max = -5000, 5000
+    h_initiale = 0.1
 
 
-    tracer_ensemble_trajectoires(rapports_mq, vo, surface, charge_plaque)
+    tracer_ensemble_trajectoires_dynamique(rapports_mq, vo, potentiel_min=pot_min, potentiel_max=pot_max, hauteur_initiale=h_initiale)
+
+
+# if __name__ == '__main__' :
+#     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e7
+#     potentiel, hauteur_initiale = 5000, 0.05
+
+
+#     tracer_ensemble_trajectoires(rapports_mq, vo, potentiel=potentiel, hauteur_initiale=hauteur_initiale)

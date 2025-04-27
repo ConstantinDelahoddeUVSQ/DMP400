@@ -12,8 +12,8 @@ sys.path.append("./SIMS/Partie Bleue (accélération)/Code")
 sys.path.append("./SIMS/Partie Verte (déviation magnétique)/Code")
 
 try:
-    import deviation2 # type: ignore
-    import partie_electroaimant2 # type: ignore
+    import deviation # type: ignore
+    import partie_electroaimant # type: ignore
 except ImportError as e:
     print(f"Erreur d'importation: {e}")
     print("Assurez-vous que les chemins sys.path sont corrects et que les fichiers existent.")
@@ -24,7 +24,7 @@ class ParticleApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Simulateur SIMS - Déviations")
-        self.root.geometry("1400x800") # Taille initiale
+        self.root.geometry("1500x800") # Taille initiale
 
         # Style
         style = ttk.Style()
@@ -127,13 +127,9 @@ class ParticleApp:
         frame = ttk.Frame(parent, padding="10")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        # Frame for dynamic inputs (initially hidden)
         self.dynamic_inputs_frame = ttk.Frame(frame)
-
         self.base_inputs_frame = ttk.Frame(frame)
-        self.base_inputs_frame.pack(fill=tk.X, pady=5)
 
-        # Display x_detecteur
         self.x_detecteur_var = tk.StringVar(value="1e-4")
         self.add_labeled_entry(frame, "X détecteur (m) :", self.x_detecteur_var).pack(fill=tk.X, pady=3)
 
@@ -173,25 +169,26 @@ class ParticleApp:
         self.add_labeled_entry(self.dynamic_inputs_frame, "V0 max (m/s) :", self.v0_max_var).pack(fill=tk.X, pady=3)
 
         # Champ Magnétique (Slider)
-        ttk.Label(frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
+        ttk.Label(self.dynamic_inputs_frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
         self.slider_frame_bz = ttk.Frame(self.dynamic_inputs_frame)
         self.slider_frame_bz.pack(fill=tk.X, pady=(0,5))
         self.bz_var = tk.DoubleVar(value=1)
         self.bz_slider = ttk.Scale(self.slider_frame_bz, from_=0.001, to=1.0, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._on_bz_slider_change)
         self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
-        ttk.Label(self.slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT)
+        ttk.Label(self.slider_frame_bz, textvariable=self.bz_label_var, width=15).pack(side=tk.LEFT)
 
         # Vitesse initiale (Slider)
-        ttk.Label(frame, text="Vitesse initiale (m/s):").pack(anchor=tk.W, pady=(5,0))
+        ttk.Label(self.dynamic_inputs_frame, text="Vitesse initiale (m/s):").pack(anchor=tk.W, pady=(5,0))
         self.slider_frame_v0 = ttk.Frame(self.dynamic_inputs_frame)
         self.slider_frame_v0.pack(fill=tk.X, pady=(0,5))
         self.v0_var = tk.DoubleVar(value=1e6)
         self.v0_slider = ttk.Scale(self.slider_frame_v0, from_=1e6, to=1e7, orient=tk.HORIZONTAL, variable=self.v0_var, command=self._on_v0_slider_change)
         self.v0_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        self.v0_label_var = tk.StringVar(value=f"{self.v0_var.get():.3f} (m/s)")
-        ttk.Label(self.slider_frame_v0, textvariable=self.v0_label_var, width=10).pack(side=tk.LEFT)
+        self.v0_label_var = tk.StringVar(value=f"{self.v0_var.get():.2e} (m/s)")
+        ttk.Label(self.slider_frame_v0, textvariable=self.v0_label_var, width=15).pack(side=tk.LEFT)
 
+        self.base_inputs_frame.pack(fill=tk.X, pady=5)
         # Bouton Tracer
         trace_btn = ttk.Button(self.dynamic_inputs_frame, text="Tracer Déviation Magnétique", command=self.run_magnetic_simulation)
         trace_btn.pack(pady=15)
@@ -225,7 +222,7 @@ class ParticleApp:
             self.run_magnetic_simulation(called_by_slider=True) # Indique d'où vient l'appel
 
     def _update_v0_label(self, event=None):
-        self.v0_label_var.set(f"{self.v0_var.get():.3f} (m/s)")
+        self.v0_label_var.set(f"{self.v0_var.get():.2e} (m/s)")
 
     # --- Widgets pour la déviation électrique ---
     def create_electric_widgets(self, parent):
@@ -387,7 +384,7 @@ class ParticleApp:
                         self.bz_label_var.set(f"{self.bz_var.get():.3f} T")
                         self.v0_slider.config(from_=v0_min, to=v0_max)
                         self.v0_var.set((v0_max - v0_min) / 2)
-                        self.v0_label_var.set(f"{self.v0_var.get():.3f} T")
+                        self.v0_label_var.set(f"{self.v0_var.get():.2e} (m/s)")
 
             if allow_trace : 
                 # Préparer le plot
@@ -397,7 +394,7 @@ class ParticleApp:
                 
                 if self.dynamic_trace_var.get() : 
                     v0, bz = self.v0_var.get(), self.bz_var.get()
-                partie_electroaimant2.tracer_ensemble_trajectoires(
+                partie_electroaimant.tracer_ensemble_trajectoires(
                         self.particles_data, v0, bz, x_detecteur, create_plot = False, ax=self.ax
                     )
 
@@ -424,7 +421,8 @@ class ParticleApp:
             self.canvas.draw()
             return
 
-        try:
+        # try:
+        if True :
             # Récupérer et valider les paramètres
             v0 = float(self.v0_elec_var.get())
             angle_deg = float(self.angle_var.get())
@@ -442,10 +440,7 @@ class ParticleApp:
             angle_rad = np.radians(angle_deg)
 
             # Calculer le champ électrique signé
-            E = deviation2.champ_electrique_v2(distance, potentiel) # Utilise la fonction du module
-
-            # Convertir les particules (u, e) -> list[tuple(u, e)]
-            particles_ue = [(p[0], p[1]) for p in self.particles_data]
+            E = deviation.champ_electrique_v2(distance, potentiel) # Utilise la fonction du module
 
             # Préparer le plot
             self.ax.cla() # Effacer l'axe précédent
@@ -453,8 +448,8 @@ class ParticleApp:
             self.root.update_idletasks() # Mettre à jour l'UI avant calcul
 
             # Appeler la fonction de traçage
-            deviation2.tracer_ensemble_trajectoires(
-                particles_ue, v0, angle_rad, y0, E, ax=self.ax
+            deviation.tracer_ensemble_trajectoires(
+                self.particles_data, v0, potentiel, angle_rad, distance, create_plot = False, ax=self.ax
             )
 
             # Mettre à jour le canvas
@@ -462,15 +457,15 @@ class ParticleApp:
             self.canvas.draw()
             self.status_var.set("Tracé déviation électrique terminé.")
 
-        except ValueError as e:
-            if not called_by_slider:
-                messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
-            self.status_var.set(f"Erreur paramètre (Elec): {e}")
-        except Exception as e:
-            if not called_by_slider:
-                messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue (Elec): {e}")
-            print(f"Erreur Simulation Électrique: {e}") # Toujours logger l'erreur
-            self.status_var.set("Erreur de simulation électrique.")
+        # except ValueError as e:
+        #     if not called_by_slider:
+        #         messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
+        #     self.status_var.set(f"Erreur paramètre (Elec): {e}")
+        # except Exception as e:
+        #     if not called_by_slider:
+        #         messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue (Elec): {e}")
+        #     print(f"Erreur Simulation Électrique: {e}") # Toujours logger l'erreur
+        #     self.status_var.set("Erreur de simulation électrique.")
 
 
 if __name__ == "__main__":
