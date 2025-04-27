@@ -170,7 +170,7 @@ class ParticleApp:
 
         # Bz
         self.bz_mag_var = tk.StringVar(value="1")
-        self.add_labeled_entry(self.base_inputs_frame, "Champ magnétique Bz (T) : ", self.bz_mag_var).pack(fill=tk.X, pady=3)
+        self.add_labeled_entry(self.base_inputs_frame, "Champ magnétique absolu (T) : ", self.bz_mag_var).pack(fill=tk.X, pady=3)
 
         # Bouton Tracer
         trace_btn = ttk.Button(self.base_inputs_frame, text="Tracer Déviation Magnétique", command=self.run_magnetic_simulation)
@@ -380,8 +380,9 @@ class ParticleApp:
 
             if mass_u <= 0:
                 raise ValueError("Masse doit être > 0.")
-            if charge_e <= 0:
-                raise ValueError("Veuillez rentrer une charge positive.")
+            if len(self.particles_data) > 0 :
+                if charge_e * self.particles_data[0][1] <= 0 :
+                    raise ValueError("Veuillez rentrer des particules de charge identique")
 
             particle_info = (mass_u, charge_e)
             if particle_info not in self.particles_data :

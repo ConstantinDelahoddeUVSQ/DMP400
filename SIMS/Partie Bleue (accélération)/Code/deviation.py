@@ -163,6 +163,7 @@ class particule :
                     return self.mq * self.vo * np.sin(self.angle) / E * (self.vo * np.cos(self.angle) - np.sqrt((self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq))
                 else :
                     return self.height / (self.vo * np.cos(self.angle))
+                # else : return None
             else :
                 return None
                 # raise ValueError("La particule n'a aucun point de contact avec l'échantillon")
@@ -353,10 +354,19 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
     plt.show()
 
 
+
 if __name__ == '__main__' :
     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
-    pot_min, pot_max = -5000, 5000
+    potentiel = 0
     h_initiale = 0.1
 
 
-    tracer_ensemble_trajectoires_dynamique(rapports_mq, vo, potentiel_min=pot_min, potentiel_max=pot_max, hauteur_initiale=h_initiale)
+    tracer_ensemble_trajectoires(rapports_mq, vo, potentiel=potentiel, hauteur_initiale=h_initiale)
+
+# if __name__ == '__main__' :
+#     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
+#     pot_min, pot_max = -5000, 5000
+#     h_initiale = 0.1
+
+
+#     tracer_ensemble_trajectoires_dynamique(rapports_mq, vo, potentiel_min=pot_min, potentiel_max=pot_max, hauteur_initiale=h_initiale)
