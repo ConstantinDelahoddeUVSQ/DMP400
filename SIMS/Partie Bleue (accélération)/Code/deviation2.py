@@ -81,7 +81,7 @@ class particule :
         # --- FIN MODIFICATION ---
 
         self.vo = v_initiale
-        self.angle = angle_initial
+        self.angle = -angle_initial
         self.height = hauteur_initiale
         # Gardons m et c pour l'affichage potentiel dans les labels
         self.m = mass_u

@@ -12,8 +12,8 @@ sys.path.append("./SIMS/Partie Bleue (accélération)/Code")
 sys.path.append("./SIMS/Partie Verte (déviation magnétique)/Code")
 
 try:
-    import deviation # type: ignore
-    import partie_electroaimant # type: ignore
+    import deviation2 # type: ignore
+    import partie_electroaimant2 # type: ignore
 except ImportError as e:
     print(f"Erreur d'importation: {e}")
     print("Assurez-vous que les chemins sys.path sont corrects et que les fichiers existent.")
@@ -233,7 +233,7 @@ class ParticleApp:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Vitesse initiale
-        self.v0_elec_var = tk.StringVar(value="1e5")
+        self.v0_elec_var = tk.StringVar(value="1e6")
         self.add_labeled_entry(frame, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
 
         # Angle initial
@@ -241,7 +241,7 @@ class ParticleApp:
         self.add_labeled_entry(frame, "Angle Initial (° vs y):", self.angle_var).pack(fill=tk.X, pady=3)
 
         # Hauteur initiale
-        self.y0_var = tk.StringVar(value="0.15")
+        self.y0_var = tk.StringVar(value="0.05")
         self.add_labeled_entry(frame, "Hauteur Initiale (m):", self.y0_var).pack(fill=tk.X, pady=3)
 
         # Potentiel (Slider)
@@ -249,20 +249,31 @@ class ParticleApp:
         slider_frame_v = ttk.Frame(frame)
         slider_frame_v.pack(fill=tk.X, pady=(0,5))
         self.pot_var = tk.DoubleVar(value=-5000)
-        self.pot_slider = ttk.Scale(slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL, variable=self.pot_var, command=self._update_pot_label)
+
+        self.pot_slider = ttk.Scale(slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL, variable=self.pot_var, command=self._on_pot_slider_change)
         self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.0f} V")
         ttk.Label(slider_frame_v, textvariable=self.pot_label_var, width=10).pack(side=tk.LEFT)
 
         # Distance entre plaques
-        self.dist_var = tk.StringVar(value="0.15") # Doit correspondre à y0 si la plaque est à y=0
+        self.dist_var = tk.StringVar(value="0.05") 
         self.add_labeled_entry(frame, "Distance Plaque (m):", self.dist_var).pack(fill=tk.X, pady=3)
 
-        # Bouton Tracer
+        # Bouton Tracer (reste utile pour lancer après modif de V0, angle, y0, dist)
         trace_btn = ttk.Button(frame, text="Tracer Déviation Électrique", command=self.run_electric_simulation)
         trace_btn.pack(pady=15)
 
+    # --- NOUVELLE FONCTION CALLBACK pour slider Potentiel ---
+    def _on_pot_slider_change(self, event=None):
+        """Appelé lorsque le slider Potentiel est modifié."""
+        self._update_pot_label() # Met à jour le label texte
+        # Lance la simulation seulement s'il y a des particules
+        if self.particles_data:
+             # Pas besoin de update_idletasks ici, run_electric_simulation le fera
+            self.run_electric_simulation(called_by_slider=True) # Indique d'où vient l'appel
+
     def _update_pot_label(self, event=None):
+        """Met à jour le label du slider Potentiel."""
         self.pot_label_var.set(f"{self.pot_var.get():.0f} V")
 
     # --- Helper pour ajouter Label + Entry ---
@@ -279,24 +290,19 @@ class ParticleApp:
             mass_u = float(self.mass_entry.get())
             charge_e = float(self.charge_entry.get())
 
-            if mass_u <= 0 or charge_e == 0: # Masse doit être > 0, charge != 0
-                raise ValueError("Masse > 0 et Charge != 0 requis.")
+            if mass_u <= 0:
+                raise ValueError("Masse doit être > 0.")
+            if charge_e <= 0:
+                raise ValueError("Veuillez rentrer une charge positive.")
 
             particle_info = (mass_u, charge_e)
             if particle_info not in self.particles_data :
                 self.particles_data.append(particle_info)
-                # Ajouter à Treeview
-                self.particle_tree.insert('', tk.END, values=(f"{mass_u:.2f}", f"{charge_e:.2f}"))
+                self.particle_tree.insert('', tk.END, values=(f"{mass_u:.3f}", f"{charge_e:+.2f}")) # Formatage amélioré
+                self.status_var.set(f"Particule ajoutée: {mass_u:.3f} u, {charge_e:+.2f} e")
             else :
-                messagebox.showerror("Erreur d'entrée", "On ne peut pas rajouter 2 fois la même particule")
-                self.status_var.set("Erreur d'ajout de particule.")
-
-            
-
-            # Optionnel: Réinitialiser les champs
-            # self.mass_entry.delete(0, tk.END)
-            # self.charge_entry.delete(0, tk.END)
-            self.status_var.set(f"Particule ajoutée: {mass_u:.2f} u, {charge_e:.2f} e")
+                messagebox.showwarning("Doublon", "Cette particule est déjà dans la liste.")
+                self.status_var.set("Ajout annulé (doublon).")
 
         except ValueError as e:
             messagebox.showerror("Erreur d'entrée", f"Entrée invalide : {e}")
@@ -330,7 +336,11 @@ class ParticleApp:
 
     def run_magnetic_simulation(self, called_by_slider=False):
         if not self.particles_data:
-            messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
+            if not called_by_slider: # N'affiche le message que si le bouton est cliqué
+                messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
+            self.status_var.set("Ajoutez des particules pour simuler.")
+            self.ax.cla() # Efface le graphe s'il n'y a pas de particules
+            self.canvas.draw()
             return
 
         try:
@@ -387,7 +397,7 @@ class ParticleApp:
                 
                 if self.dynamic_trace_var.get() : 
                     v0, bz = self.v0_var.get(), self.bz_var.get()
-                partie_electroaimant.tracer_ensemble_trajectoires(
+                partie_electroaimant2.tracer_ensemble_trajectoires(
                         self.particles_data, v0, bz, x_detecteur, create_plot = False, ax=self.ax
                     )
 
@@ -405,52 +415,62 @@ class ParticleApp:
             self.status_var.set("Erreur de simulation magnétique.")
 
 
-    def run_electric_simulation(self):
+    def run_electric_simulation(self, called_by_slider=False):
         if not self.particles_data:
-            messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
+            if not called_by_slider:
+                messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
+            self.status_var.set("Ajoutez des particules pour simuler.")
+            self.ax.cla() # Efface le graphe
+            self.canvas.draw()
             return
 
-        # try:
-        if True :
+        try:
             # Récupérer et valider les paramètres
             v0 = float(self.v0_elec_var.get())
             angle_deg = float(self.angle_var.get())
             y0 = float(self.y0_var.get())
-            potentiel = self.pot_var.get() # Directement du slider
+            potentiel = self.pot_var.get()
             distance = float(self.dist_var.get())
 
-            if v0 <= 0 or y0 <= 0 or distance <= 0:
-                 raise ValueError("V0 > 0, Hauteur > 0 et Distance > 0 requis.")
-            if not (0 <= angle_deg < 90): # Angle typiquement aigu par rapport à y
-                 raise ValueError("Angle doit être entre 0° et 90°.")
+            if v0 <= 0 : raise ValueError("V0 > 0 requis.")
+            if y0 <= 0 : raise ValueError("Hauteur Initiale > 0 requis.")
+            if distance <= 0 : raise ValueError("Distance Plaque > 0 requis.")
+            if not (0 < angle_deg < 90):
+                raise ValueError("Angle doit être entre 0° et 90°.")
 
             # Convertir angle en radians
             angle_rad = np.radians(angle_deg)
 
-            # Calculer le champ électrique
-            E = deviation.champ_electrique_v2(distance, potentiel)
+            # Calculer le champ électrique signé
+            E = deviation2.champ_electrique_v2(distance, potentiel) # Utilise la fonction du module
+
+            # Convertir les particules (u, e) -> list[tuple(u, e)]
+            particles_ue = [(p[0], p[1]) for p in self.particles_data]
 
             # Préparer le plot
             self.ax.cla() # Effacer l'axe précédent
             self.status_var.set("Calcul déviation électrique en cours...")
-            self.root.update_idletasks() # Mettre à jour l'UI
+            self.root.update_idletasks() # Mettre à jour l'UI avant calcul
 
-            # Appeler la fonction de traçage modifiée
-            deviation.tracer_ensemble_trajectoires(
-                self.particles_data, v0, angle_rad, y0, E, ax=self.ax
+            # Appeler la fonction de traçage
+            deviation2.tracer_ensemble_trajectoires(
+                particles_ue, v0, angle_rad, y0, E, ax=self.ax
             )
 
             # Mettre à jour le canvas
-            # Les limites sont gérées dans la fonction de traçage modifiée pour ce cas
+            # Les limites sont gérées dans la fonction de traçage modifiée
             self.canvas.draw()
             self.status_var.set("Tracé déviation électrique terminé.")
 
-        # except ValueError as e:
-        #     messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
-        #     self.status_var.set("Erreur de simulation électrique.")
-        # except Exception as e:
-        #     messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue: {e}")
-        #     self.status_var.set("Erreur de simulation électrique.")
+        except ValueError as e:
+            if not called_by_slider:
+                messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
+            self.status_var.set(f"Erreur paramètre (Elec): {e}")
+        except Exception as e:
+            if not called_by_slider:
+                messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue (Elec): {e}")
+            print(f"Erreur Simulation Électrique: {e}") # Toujours logger l'erreur
+            self.status_var.set("Erreur de simulation électrique.")
 
 
 if __name__ == "__main__":

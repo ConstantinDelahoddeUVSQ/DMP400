@@ -126,16 +126,16 @@ class ParticleApp:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Vitesse initiale
-        self.v0_mag_var = tk.StringVar(value="1e6")
+        self.v0_mag_var = tk.StringVar(value="1e7")
         self.add_labeled_entry(frame, "Vitesse Initiale (m/s):", self.v0_mag_var).pack(fill=tk.X, pady=3)
 
         # Champ Magnétique (Slider)
         ttk.Label(frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
         slider_frame_bz = ttk.Frame(frame)
         slider_frame_bz.pack(fill=tk.X, pady=(0,5))
-        self.bz_var = tk.DoubleVar(value=0.025)
+        self.bz_var = tk.DoubleVar(value=0.5)
         # --- MODIFICATION ICI : Changement de la commande ---
-        self.bz_slider = ttk.Scale(slider_frame_bz, from_=0.001, to=0.05, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._on_bz_slider_change)
+        self.bz_slider = ttk.Scale(slider_frame_bz, from_=0.001, to=1.0, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._on_bz_slider_change)
         self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
         ttk.Label(slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT)
@@ -143,7 +143,7 @@ class ParticleApp:
         # Domaine x (GARDÉ mais non utilisé dans l'appel actuel à tracer_ensemble_trajectoires)
         self.xmin_mag_var = tk.StringVar(value="0.0")
         self.add_labeled_entry(frame, "X min (m):", self.xmin_mag_var).pack(fill=tk.X, pady=3)
-        self.xmax_mag_var = tk.StringVar(value="0.5")
+        self.xmax_mag_var = tk.StringVar(value="0.25")
         self.add_labeled_entry(frame, "X max (m):", self.xmax_mag_var).pack(fill=tk.X, pady=3)
 
         # Bouton Tracer (reste utile pour lancer après modif de V0 ou X)
@@ -169,7 +169,7 @@ class ParticleApp:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Vitesse initiale
-        self.v0_elec_var = tk.StringVar(value="1e6")
+        self.v0_elec_var = tk.StringVar(value="1e7")
         self.add_labeled_entry(frame, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
 
         # Angle initial
@@ -186,7 +186,7 @@ class ParticleApp:
         slider_frame_v.pack(fill=tk.X, pady=(0,5))
         self.pot_var = tk.DoubleVar(value=-5000)
         # --- MODIFICATION ICI : Changement de la commande ---
-        self.pot_slider = ttk.Scale(slider_frame_v, from_=-500, to=500, orient=tk.HORIZONTAL, variable=self.pot_var, command=self._on_pot_slider_change)
+        self.pot_slider = ttk.Scale(slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL, variable=self.pot_var, command=self._on_pot_slider_change)
         self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.0f} V")
         ttk.Label(slider_frame_v, textvariable=self.pot_label_var, width=10).pack(side=tk.LEFT)
@@ -228,8 +228,6 @@ class ParticleApp:
 
             if mass_u <= 0:
                 raise ValueError("Masse doit être > 0.")
-            # if charge_e == 0:
-            #     raise ValueError("Charge doit être != 0.")
             if charge_e <= 0:
                 raise ValueError("Veuillez rentrer une charge positive.")
 
