@@ -23,6 +23,7 @@ class particule :
         self.mq = masse_charge[0] * constants.u / abs(masse_charge[1]) / constants.e
         self.vo = v_initiale
         self.m = masse_charge[0]
+        self.charge_affichage = masse_charge[1]
         self.c = abs(masse_charge[1])
 
 
@@ -94,7 +95,7 @@ class particule :
 
         """
         x, y = self.trajectoire(Bz, x_min, x_max, n_points)
-        return ax.plot(x, y, label=f'{self.m}u, {self.c}eV')
+        return ax.plot(x, y, label=f'{self.m}u, {self.charge_affichage}e')
         
 
     # Niveau 2.1 : Détermine la puissance du champ magnétique nécéssaire pour dévier une particule à un point précis

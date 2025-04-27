@@ -162,8 +162,7 @@ class particule :
                 if E != 0 :
                     return self.mq * self.vo * np.sin(self.angle) / E * (self.vo * np.cos(self.angle) - np.sqrt((self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq))
                 else :
-                    return self.height / (self.vo * np.cos(self.angle))
-                # else : return None
+                    return self.height * np.tan(self.angle)
             else :
                 return None
                 # raise ValueError("La particule n'a aucun point de contact avec l'échantillon")
@@ -224,6 +223,7 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
     for p in particules:
         if p.point_contact(E) is not None:
             x_max = p.point_contact(E)
+            print(x_max)
             all_x_max.append(x_max)
             p.tracer_trajectoire(ax, E, 0, x_max)
 
@@ -324,16 +324,15 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
 
         if len(all_x_max) > 0:
             ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
-            if pot_val != 0 :
-                zoom_target_x = (min(all_x_max) + max(all_x_max)) * 0.5
-                zoom_factor_x = (min(all_x_max) + max(all_x_max)) * 0.5
-                zoom_factor_y = hauteur_initiale * 1.1
-                zoom_factor = 10 ** (10 * ((1 / zoom_val) - 1))
-                ax.set_xlim(zoom_target_x - zoom_factor * zoom_factor_x * 1.05,
-                            zoom_target_x + zoom_factor * zoom_factor_x * 0.3)
-                ax.set_ylim(-zoom_factor * zoom_factor_y * 0.05, zoom_factor * zoom_factor_y)
-                ax.text(0.8, 0.5, texte_angles, transform=ax.transAxes,
-                    fontsize=10,bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray"))
+            zoom_target_x = (min(all_x_max) + max(all_x_max)) * 0.5
+            zoom_factor_x = (min(all_x_max) + max(all_x_max)) * 0.5
+            zoom_factor_y = hauteur_initiale * 1.1
+            zoom_factor = 10 ** (10 * ((1 / zoom_val) - 1))
+            ax.set_xlim(zoom_target_x - zoom_factor * zoom_factor_x * 1.05,
+                        zoom_target_x + zoom_factor * zoom_factor_x * 0.3)
+            ax.set_ylim(-zoom_factor * zoom_factor_y * 0.05, zoom_factor * zoom_factor_y)
+            ax.text(0.8, 0.5, texte_angles, transform=ax.transAxes,
+                fontsize=10,bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray"))
 
         ax.legend()
         fig.canvas.draw_idle()
@@ -354,15 +353,21 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
     plt.show()
 
 
+"""
+Test fonction tracer_ensemble_trajectoires
+"""
+# if __name__ == '__main__' :
+#     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
+#     potentiel = 0
+#     h_initiale = 0.1
 
-if __name__ == '__main__' :
-    rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
-    potentiel = 0
-    h_initiale = 0.1
+
+#     tracer_ensemble_trajectoires(rapports_mq, vo, potentiel=potentiel, hauteur_initiale=h_initiale)
 
 
-    tracer_ensemble_trajectoires(rapports_mq, vo, potentiel=potentiel, hauteur_initiale=h_initiale)
-
+"""
+Test fonction tracer_ensemble_trajectoires_dynamique
+"""
 # if __name__ == '__main__' :
 #     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
 #     pot_min, pot_max = -5000, 5000
