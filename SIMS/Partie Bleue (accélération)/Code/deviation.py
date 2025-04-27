@@ -69,7 +69,7 @@ class particule :
         hauteur_initiale : float
             Coordonnée en y du point de départ
         """
-        self.mq = masse_charge[0] * constants.u / masse_charge[1] / constants.eV
+        self.mq = masse_charge[0] * constants.u / masse_charge[1] / constants.e
         self.vo = v_initiale
         self.angle = angle_initial
         self.height = hauteur_initiale
@@ -213,6 +213,8 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
     all_x_max = []
     non_contact_particules = []
     texte_angles = "Angles incidents :\n"
+    is_contact = False
+
     for p in particules:
         if p.point_contact(E) is not None:
             x_max = p.point_contact(E)
@@ -222,15 +224,20 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
             angle_incident = p.angle_incident(E)
             angle_deg = angle_incident * 180 / np.pi
             texte_angles += f"- {p.m}u, {p.c}eV : {angle_deg:.2f}°\n"
-
+            is_contact = True
         else : 
             non_contact_particules.append(p)
     
+    if is_contact :
+        ax.set_xlim(0, max(all_x_max) * 1.2)
+    else :
+        ax.set_xlim(0, hauteur_initiale)
+
     for p in non_contact_particules : 
-        local_x_max = hauteur_initiale 
-        if len(all_x_max) != 0 :
-            local_x_max = max(all_x_max)
-        p.tracer_trajectoire(ax, E, 0, local_x_max)
+        local_x_max = ax.get_xlim()[1]
+        # if len(all_x_max) != 0 :
+        #     local_x_max = max(all_x_max)
+        p.tracer_trajectoire(ax, E, 0, local_x_max * 1.2)
         all_x_max.append(local_x_max)
     
     if len(all_x_max) > 0:
