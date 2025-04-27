@@ -358,7 +358,7 @@ class ParticleApp:
         try:
             # Récupérer et valider les paramètres
             v0 = float(self.v0_elec_var.get())
-            angle_deg = -float(self.angle_var.get())
+            angle_deg = float(self.angle_var.get())
             y0 = float(self.y0_var.get())
             potentiel = self.pot_var.get() # Directement du slider
             distance = float(self.dist_var.get())
@@ -366,7 +366,7 @@ class ParticleApp:
             if v0 <= 0 : raise ValueError("V0 > 0 requis.")
             if y0 <= 0 : raise ValueError("Hauteur Initiale > 0 requis.")
             if distance <= 0 : raise ValueError("Distance Plaque > 0 requis.")
-            if not (-90 < angle_deg <= 0): # Angle typiquement aigu par rapport à y
+            if not (0 < angle_deg < 90): # Angle typiquement aigu par rapport à y
                  raise ValueError("Angle doit être entre 0° et < 90°.")
 
             # Convertir angle en radians
