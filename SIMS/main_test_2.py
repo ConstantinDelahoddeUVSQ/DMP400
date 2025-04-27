@@ -22,6 +22,14 @@ except ImportError as e:
 
 class ParticleApp:
     def __init__(self, root):
+        """
+        Définition de la classe ParticleApp
+
+        Parameters
+        ----------
+        root : tkinter.Tk (ou tk.Frame)	
+            Fenêtre principale Tkinter dans laquelle l'application sera construite.
+        """
         self.root = root
         self.root.title("Simulateur SIMS - Déviations")
         self.root.geometry("1500x800") # Taille initiale
@@ -86,6 +94,14 @@ class ParticleApp:
 
     # --- Widgets pour la gestion des particules ---
     def create_particle_widgets(self, parent):
+        """
+        Widget pour la création des particules
+
+        Parameters
+        ----------
+        parent : tkinter.frame
+            Le conteneur (Frame) dans lequel placer les widgets.
+        """
         input_frame = ttk.Frame(parent)
         input_frame.pack(pady=5, padx=5, fill=tk.X)
 
@@ -124,6 +140,14 @@ class ParticleApp:
 
     # --- Widgets pour la déviation magnétique ---
     def create_magnetic_widgets(self, parent):
+        """
+        Widgets pour la déviation magnétique
+
+        Parameters
+        ----------
+        parent : tkinter.frame
+            Le conteneur (Frame) dans lequel placer les widgets.
+        """
         frame = ttk.Frame(parent, padding="10")
         frame.pack(fill=tk.BOTH, expand=True)
 
@@ -203,7 +227,14 @@ class ParticleApp:
 
         # --- NOUVELLE FONCTION CALLBACK pour slider Bz ---
     def _on_bz_slider_change(self, event=None):
-        """Appelé lorsque le slider Bz est modifié."""
+        """
+        Callback pour slider Bz
+        Appelé lorsque le slider Bz est modifié.
+        
+        Parameters
+        ----------
+        event : Event ou None
+        """
         self._update_bz_label() # Met à jour le label texte
         # Lance la simulation seulement s'il y a des particules
         if self.particles_data:
@@ -211,10 +242,26 @@ class ParticleApp:
             self.run_magnetic_simulation(called_by_slider=True) # Indique d'où vient l'appel
 
     def _update_bz_label(self, event=None):
+        """
+        Label du champ Bz
+
+        Parameters
+        ----------
+        event : Event ou None
+        """
+
         self.bz_label_var.set(f"{self.bz_var.get():.3f} T")
 
     def _on_v0_slider_change(self, event=None):
-        """Appelé lorsque le slider v0 est modifié."""
+        """
+        Slider de v0, la vitesse initiale
+        Appelé lorsque le slider v0 est modifié.
+
+        Parameters
+        ----------
+        event : Event ou None
+        """
+
         self._update_v0_label() # Met à jour le label texte
         # Lance la simulation seulement s'il y a des particules
         if self.particles_data:
@@ -222,10 +269,25 @@ class ParticleApp:
             self.run_magnetic_simulation(called_by_slider=True) # Indique d'où vient l'appel
 
     def _update_v0_label(self, event=None):
+        """
+        Label de v0
+
+        Parameters
+        ----------
+        event : Event ou None
+        """
         self.v0_label_var.set(f"{self.v0_var.get():.2e} (m/s)")
 
     # --- Widgets pour la déviation électrique ---
     def create_electric_widgets(self, parent):
+        """
+        Widgets pour la déviation électrique
+
+        Parameters
+        ----------
+        parent : tkinter.frame
+            Le conteneur (Frame) dans lequel placer les widgets.
+        """
         frame = ttk.Frame(parent, padding="10")
         frame.pack(fill=tk.BOTH, expand=True)
 
@@ -262,7 +324,14 @@ class ParticleApp:
 
     # --- NOUVELLE FONCTION CALLBACK pour slider Potentiel ---
     def _on_pot_slider_change(self, event=None):
-        """Appelé lorsque le slider Potentiel est modifié."""
+        """
+        Callback pour slider le potentiel
+        Appelé lorsque le slider potentiel est modifié.
+        
+        Parameters
+        ----------
+        event : Event ou None
+        """
         self._update_pot_label() # Met à jour le label texte
         # Lance la simulation seulement s'il y a des particules
         if self.particles_data:
@@ -270,11 +339,28 @@ class ParticleApp:
             self.run_electric_simulation(called_by_slider=True) # Indique d'où vient l'appel
 
     def _update_pot_label(self, event=None):
-        """Met à jour le label du slider Potentiel."""
+        """
+        Met à jour le label du slider Potentiel.
+        
+        Parameters
+        ----------
+        event : Event ou None
+        """
         self.pot_label_var.set(f"{self.pot_var.get():.0f} V")
 
     # --- Helper pour ajouter Label + Entry ---
     def add_labeled_entry(self, parent, label_text, string_var):
+        """
+        Helper pour ajouter Label + Entry.
+        
+        Parameters
+        ----------
+        parent : tkinter.frame
+            Le conteneur (Frame) dans lequel placer les widgets.
+        label_text : string
+            texte de la légende
+        string_var : string
+        """
         entry_frame = ttk.Frame(parent)
         ttk.Label(entry_frame, text=label_text, width=20).pack(side=tk.LEFT, padx=5)
         entry = ttk.Entry(entry_frame, textvariable=string_var)
@@ -283,6 +369,12 @@ class ParticleApp:
 
     # --- Logique métier ---
     def add_particle(self):
+        """
+        Logique métier
+
+        Parameters
+        ----------
+        """
         try:
             mass_u = float(self.mass_entry.get())
             charge_e = float(self.charge_entry.get())
@@ -306,6 +398,12 @@ class ParticleApp:
             self.status_var.set("Erreur d'ajout de particule.")
 
     def remove_particle(self):
+        """
+        Enlever la particule.
+        
+        Parameters
+        ----------
+        """
         selected_items = self.particle_tree.selection()
         if not selected_items:
             messagebox.showwarning("Aucune sélection", "Veuillez sélectionner une particule à supprimer.")
@@ -332,6 +430,13 @@ class ParticleApp:
 
 
     def run_magnetic_simulation(self, called_by_slider=False):
+        """
+        Simulation du champ magnétique ()
+        
+        Parameters
+        ----------
+        called_by_slider : booléen
+        """
         if not self.particles_data:
             if not called_by_slider: # N'affiche le message que si le bouton est cliqué
                 messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
@@ -413,6 +518,13 @@ class ParticleApp:
 
 
     def run_electric_simulation(self, called_by_slider=False):
+        """
+        Simulation du champ électrique ()
+        
+        Parameters
+        ----------
+        called_by_slider : booléen
+        """
         if not self.particles_data:
             if not called_by_slider:
                 messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
