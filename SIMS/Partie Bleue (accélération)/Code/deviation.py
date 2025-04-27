@@ -189,7 +189,7 @@ class particule :
 
 def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]], vitesse_initiale : float, potentiel : float = 5000, angle_initial=np.pi/6, hauteur_initiale = 0.15, create_plot=True, ax=None) -> None :
     """
-    Trace les trajectoires entre jusqu'au contact de différentes particules de manière statique
+    Trace les trajectoires jusqu'au contact de différentes particules de manière statique
 
     Parameters
     ----------
@@ -197,14 +197,16 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
         Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
     vitesse_initiale : float
         Vitesse intiale en y commune à toutes les particules du faisceau
-    surface : float
-        Surface totale de la plaque (en m²)
-    charge_plaque : float
-        Charge totale de la plaque (en C)
+    potentiel : float
+        Différence de potentiel entre les plaques (en V)
     angle_initial : float
             Angle initial entre v_initiale et l'axe y en radians
     hauteur_initiale : float
         Coordonnée en y du point de départ
+    create_plot : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+    ax : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
 
     """
     particules_init = masse_charge_particules
@@ -223,7 +225,6 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
     for p in particules:
         if p.point_contact(E) is not None:
             x_max = p.point_contact(E)
-            print(x_max)
             all_x_max.append(x_max)
             p.tracer_trajectoire(ax, E, 0, x_max)
 
@@ -266,10 +267,10 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
         Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
     vitesse_initiale : float
         Vitesse intiale en y commune à toutes les particules du faisceau
-    surface : float
-        Surface totale de la plaque (en m²)
-    charge_plaque : float
-        Charge totale de la plaque (en C)
+    potentiel_min : float
+        Valeur minimale du potentiel 
+    potentiel_max : float
+        Valeur maximale du potentiel
     angle_initial : float
             Angle initial entre v_initiale et l'axe y en radians
     hauteur_initiale : float
