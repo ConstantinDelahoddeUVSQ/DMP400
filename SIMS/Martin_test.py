@@ -327,8 +327,7 @@ class ParticleApp:
         # Bouton Tracer (à placer après le slider ou la case de saisie)
         trace_btn = ttk.Button(self.base_electric_inputs_frame, text="Tracer Déviation Électrique", command=self.run_electric_simulation)
         trace_btn.pack(pady=15)
-        trace_btn = ttk.Button(self.dynamic_electric_inputs_frame
-        , text="Tracer Déviation Électrique", command=self.run_electric_simulation)
+        trace_btn = ttk.Button(self.dynamic_electric_inputs_frame, text="Tracer Déviation Électrique", command=self.run_electric_simulation)
         trace_btn.pack(pady=15)
         
         # Pack enfin la base frame 
