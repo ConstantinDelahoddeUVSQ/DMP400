@@ -293,48 +293,54 @@ class ParticleApp:
         self.dynamic_electric_inputs_frame = ttk.Frame(frame)
         self.base_electric_inputs_frame = ttk.Frame(frame)
 
+        # --- Checkbox "Tracer dynamiquement (électrique)" ---
+        self.dynamic_elec_var = tk.BooleanVar(value=False)
+        dynamic_elec_check = ttk.Checkbutton(frame, text="Tracer dynamiquement (électrique)", variable=self.dynamic_elec_var, command=self.toggle_dynamic_electric)
+        dynamic_elec_check.pack(anchor=tk.W, pady=5)
+
         # Vitesse initiale
         self.v0_elec_var = tk.StringVar(value="1e6")
         self.add_labeled_entry(frame, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
 
         # Angle initial
-        self.angle_var = tk.StringVar(value="30.0") # En degrés pour l'utilisateur
+        self.angle_var = tk.StringVar(value="30.0")  # En degrés pour l'utilisateur
         self.add_labeled_entry(frame, "Angle Initial (° vs y):", self.angle_var).pack(fill=tk.X, pady=3)
 
-        # --- Checkbox "Tracer dynamiquement (électrique)" ---
-        self.dynamic_elec_var = tk.BooleanVar(value=False)
-        dynamic_elec_check = ttk.Checkbutton(frame, text="Tracer dynamiquement (électrique)",variable=self.dynamic_elec_var,command=self.toggle_dynamic_electric)
-        dynamic_elec_check.pack(anchor=tk.W, pady=5)
-
         # Hauteur initiale
-        self.dist_var = tk.StringVar(value="0.1") 
+        self.dist_var = tk.StringVar(value="0.1")
         self.add_labeled_entry(frame, "Hauteur initiale (m):", self.dist_var).pack(fill=tk.X, pady=3)
 
-        # Potentiel (Slider)
-        ttk.Label(frame, text="Diff. Potentiel Plaque (V):").pack(anchor=tk.W, pady=(5,0))
-        slider_frame_v = ttk.Frame(frame)
-        slider_frame_v.pack(fill=tk.X, pady=(0,5))
-        self.pot_var = tk.DoubleVar(value=-5000)
+        # Potentiel
+        self.diff_pot_var = tk.StringVar(value=0)
+        self.add_labeled_entry(self.base_electric_inputs_frame, "Différence de potentiel (V):", self.diff_pot_var).pack(fill=tk.X, pady=3)
 
-        self.pot_slider = ttk.Scale(slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL, variable=self.pot_var, command=self._on_pot_slider_change)
+        # Potentiel (Slider)
+        ttk.Label(self.dynamic_electric_inputs_frame, text="Diff. Potentiel Plaque (V):").pack(anchor=tk.W, pady=(5, 0))
+        self.slider_frame_v = ttk.Frame(self.dynamic_electric_inputs_frame)
+        self.slider_frame_v.pack(fill=tk.X, pady=(0, 5))
+        self.pot_var = tk.DoubleVar(value=-5000)
+        self.pot_slider = ttk.Scale(self.slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL, variable=self.pot_var, command=self._on_pot_slider_change)
         self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.0f} V")
-        ttk.Label(slider_frame_v, textvariable=self.pot_label_var, width=10).pack(side=tk.LEFT)
-
-        # Bouton Tracer (reste utile pour lancer après modif de V0, angle, dist)
+        ttk.Label(self.slider_frame_v, textvariable=self.pot_label_var, width=10).pack(side=tk.LEFT)
+        
+        # Bouton Tracer (à placer après le slider ou la case de saisie)
         trace_btn = ttk.Button(frame, text="Tracer Déviation Électrique", command=self.run_electric_simulation)
         trace_btn.pack(pady=15)
+        
+        # Pack enfin la base frame 
+        self.base_electric_inputs_frame.pack(fill=tk.X, pady=5)
 
     def toggle_dynamic_electric(self):
         """ 
         Fonction pour changer l'affichage du menu lorsque la checkbox dynamique du champ électrique est activée.
         """
         if self.dynamic_elec_var.get():
-            # Si la case est cochée, afficher les entrées dynamiques pour le champ électrique
+            # Afficher les éléments dynamiques (slider)
             self.base_electric_inputs_frame.pack_forget()
             self.dynamic_electric_inputs_frame.pack(fill=tk.X, pady=5)
         else:
-            # Si la case est décochée, afficher les entrées de base pour le champ électrique
+            # Afficher la case pour entrer le potentiel (entrée textuelle)
             self.dynamic_electric_inputs_frame.pack_forget()
             self.base_electric_inputs_frame.pack(fill=tk.X, pady=5)
 
