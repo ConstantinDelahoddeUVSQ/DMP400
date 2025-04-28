@@ -20,10 +20,11 @@ class particule :
         v_initiale : float
             Vitesse initiale en y de la particule (en m/s)   
         """
-        self.mq = masse_charge[0] * constants.u / masse_charge[1] / constants.eV
+        self.mq = masse_charge[0] * constants.u / abs(masse_charge[1]) / constants.e
         self.vo = v_initiale
         self.m = masse_charge[0]
-        self.c = masse_charge[1]
+        self.charge_affichage = masse_charge[1]
+        self.c = abs(masse_charge[1])
 
 
     # Niveau 5 : L'equation de la trajectoire d'une particule en fonction de son rapport masse/charge et sa vitesse initiale
@@ -94,7 +95,7 @@ class particule :
 
         """
         x, y = self.trajectoire(Bz, x_min, x_max, n_points)
-        return ax.plot(x, y, label=f'{self.m}u, {self.c}eV')
+        return ax.plot(x, y, label=f'{self.m}u, {self.charge_affichage}e')
         
 
     # Niveau 2.1 : Détermine la puissance du champ magnétique nécéssaire pour dévier une particule à un point précis
