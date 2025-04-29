@@ -530,7 +530,7 @@ class ParticleApp:
     def run_electric_simulation(self, called_by_slider=False):
         """
         Simulation du champ électrique ()
-        
+
         Parameters
         ----------
         called_by_slider : booléen
@@ -539,41 +539,47 @@ class ParticleApp:
             if not called_by_slider:
                 messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
             self.status_var.set("Ajoutez des particules pour simuler.")
-            self.ax.cla() 
+            self.ax.cla()
             self.canvas.draw()
             return
 
         try:
             v0 = float(self.v0_elec_var.get())
             angle_deg = float(self.angle_var.get())
-            potentiel = self.pot_var.get()
-            distance = float(self.dist_var.get())
+            distance = float(self.dist_var.get()) # Peut être lue avant
+
+            if self.dynamic_elec_var.get():
+                potentiel = self.pot_var.get()
+            else:
+                potentiel_str = self.diff_pot_var.get()
+                if not potentiel_str: # Gérer le cas où l'entrée est vide
+                    raise ValueError("La différence de potentiel ne peut être vide.")
+                potentiel = float(potentiel_str)
 
             if v0 <= 0 : raise ValueError("V0 > 0 requis.")
-            if distance <= 0 : raise ValueError("Hauteur Initiale > 0 requis.")
+            if distance <= 0 : raise ValueError("Hauteur/Distance > 0 requis.")
             if not (0 < angle_deg < 90):
                 raise ValueError("Angle doit être entre 0° et 90°.")
-            
-            angle_rad = np.radians(angle_deg)   # Convertir angle en radians (car la fonction de deviation prend l'angle en radians)
-            self.ax.cla() 
-            self.status_var.set("Calcul déviation électrique en cours...")
-            self.root.update_idletasks() 
 
-            deviation.tracer_ensemble_trajectoires(
-                self.particles_data, v0, potentiel, angle_rad, distance, create_plot = False, ax=self.ax
-            )
+            angle_rad = np.radians(angle_deg)   # Convertir angle en radians
+
+            self.ax.cla()
+            self.status_var.set("Calcul déviation électrique en cours...")
+            self.root.update_idletasks()
+
+            deviation.tracer_ensemble_trajectoires(self.particles_data, v0, potentiel, angle_rad, distance, create_plot=False, ax=self.ax)
 
             self.canvas.draw()
             self.status_var.set("Tracé déviation électrique terminé.")
 
-        except ValueError as e:
+        except ValueError as e: # Attrape aussi l'erreur de conversion float()
             if not called_by_slider:
                 messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
             self.status_var.set(f"Erreur paramètre (Elec): {e}")
         except Exception as e:
             if not called_by_slider:
                 messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue (Elec): {e}")
-            print(f"Erreur Simulation Électrique: {e}") 
+            print(f"Erreur Simulation Électrique: {type(e).__name__}: {e}")
             self.status_var.set("Erreur de simulation électrique.")
 
 
