@@ -35,6 +35,8 @@ class ParticleApp:
         self.root.title("Simulateur SIMS - Déviations")
         self.root.geometry("1500x800") # Taille initiale
 
+        self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+
         style = ttk.Style()
         style.theme_use('clam')
         style.configure("TButton", padding=6, relief="flat", background="#ccc")
@@ -91,6 +93,23 @@ class ParticleApp:
         self.status_var.set("Prêt.")
         status_bar = ttk.Label(root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def _on_closing(self):
+        """
+        Fonction appelée lorsque l'utilisateur ferme la fenêtre.
+        Nettoie les ressources Matplotlib et Tkinter.
+        """
+        try:
+            # Ferme la figure Matplotlib pour libérer ses ressources
+            plt.close(self.fig)
+        except Exception as e:
+            print(f"Erreur lors de la fermeture de la figure Matplotlib: {e}")
+
+        try:
+            # Détruit la fenêtre principale Tkinter et termine proprement
+            self.root.destroy()
+        except Exception as e:
+            print(f"Erreur lors de la destruction de la fenêtre Tkinter: {e}")
 
     # Widgets pour la gestion des particules
     def create_particle_widgets(self, parent):
