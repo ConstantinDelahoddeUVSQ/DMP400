@@ -77,7 +77,7 @@ class particule :
     
 
     # Niveau 3 : Trace la trajectoire de la particule dans le champ Bz avec matplotlib en 2d
-    def tracer_trajectoire(self, ax, Bz : float, x_min : float, x_max : float, n_points : int = 300000) -> None : 
+    def tracer_trajectoire(self, ax, Bz : float, x_min : float, x_max : float, n_points : int = 10000) -> None : 
         """
         Trace la trajectoire entre x_min et x_max sur ax
 

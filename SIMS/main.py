@@ -6,9 +6,7 @@ import scipy.constants as constants
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
-# Utilisation de __file__ pour rendre le chemin relatif robuste
 folder = os.path.dirname(os.path.abspath(__file__))
-# Ajustement des chemins pour correspondre à la structure probable
 sys.path.append(os.path.join(folder, "Partie Bleue (accélération)", "Code"))
 sys.path.append(os.path.join(folder, "Partie Verte (déviation magnétique)", "Code"))
 
@@ -17,7 +15,6 @@ try:
     import partie_electroaimant # type: ignore
 except ImportError as e:
     print(f"Erreur d'importation: {e}")
-    # Fournir des chemins plus explicites en cas d'erreur
     print(f"Vérifiez l'existence des fichiers dans:")
     print(f"  {os.path.join(folder, 'Partie Bleue (accélération)', 'Code')}")
     print(f"  {os.path.join(folder, 'Partie Verte (déviation magnétique)', 'Code')}")
@@ -158,7 +155,7 @@ class ParticleApp:
         self.dynamic_inputs_frame = ttk.Frame(frame)
         self.base_inputs_frame = ttk.Frame(frame)
 
-        self.x_detecteur_var = tk.StringVar(value="1e-4")
+        self.x_detecteur_var = tk.StringVar(value="0.1")
         self.add_labeled_entry(frame, "X détecteur (m) :", self.x_detecteur_var).pack(fill=tk.X, pady=3)
 
         # Checkbox "Tracer dynamiquement"
@@ -177,15 +174,11 @@ class ParticleApp:
 
         # --- Widgets Dynamiques ---
         parent_dyn = self.dynamic_inputs_frame
-        # Entrées pour les limites
+        # Limites Bz
         self.bz_min_var = tk.StringVar(value="0.01")
         self.add_labeled_entry(parent_dyn, "Bz min (T):", self.bz_min_var).pack(fill=tk.X, pady=3)
         self.bz_max_var = tk.StringVar(value="0.5")
         self.add_labeled_entry(parent_dyn, "Bz max (T):", self.bz_max_var).pack(fill=tk.X, pady=3)
-        self.v0_min_var = tk.StringVar(value="1e5")
-        self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.v0_min_var).pack(fill=tk.X, pady=3)
-        self.v0_max_var = tk.StringVar(value="1e6")
-        self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.v0_max_var).pack(fill=tk.X, pady=3)
 
         # Slider Bz
         ttk.Label(parent_dyn, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
@@ -197,6 +190,12 @@ class ParticleApp:
         self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
         ttk.Label(self.slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT) # Largeur réduite
+
+        # Limites v0
+        self.v0_min_var = tk.StringVar(value="1e5")
+        self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.v0_min_var).pack(fill=tk.X, pady=3)
+        self.v0_max_var = tk.StringVar(value="1e6")
+        self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.v0_max_var).pack(fill=tk.X, pady=3)
 
         # Slider V0
         ttk.Label(parent_dyn, text="Vitesse initiale (m/s):").pack(anchor=tk.W, pady=(5,0))
@@ -268,8 +267,6 @@ class ParticleApp:
         self.base_electric_inputs_frame = ttk.Frame(frame)
 
         # --- Widgets Communs ---
-        self.v0_elec_var = tk.StringVar(value="1e6")
-        self.add_labeled_entry(frame, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
         self.angle_var = tk.StringVar(value="30")
         self.add_labeled_entry(frame, "Angle Initial (° vs +y):", self.angle_var).pack(fill=tk.X, pady=3) # Précisé vs +y
         self.dist_var = tk.StringVar(value="0.1") # Distance/hauteur réaliste
@@ -283,6 +280,9 @@ class ParticleApp:
         # --- Widgets Non-Dynamiques (Base) ---
         parent_base = self.base_electric_inputs_frame
         # Potentiel statique
+        self.v0_elec_var = tk.StringVar(value="1e6")
+        self.add_labeled_entry(parent_base, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
+
         self.diff_pot_var = tk.StringVar(value="0") # Valeur réaliste
         self.add_labeled_entry(parent_base, "Diff. Potentiel (V):", self.diff_pot_var).pack(fill=tk.X, pady=3)
         # Bouton Tracer statique
@@ -291,10 +291,29 @@ class ParticleApp:
 
         # --- Widgets Dynamiques ---
         parent_dyn = self.dynamic_electric_inputs_frame
+
+        # Entrées pour les limites de vitesse initale
+        self.elec_v0_min_var = tk.StringVar(value="1e4") # Limite réaliste
+        self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.elec_v0_min_var).pack(fill=tk.X, pady=3)
+        self.elec_v0_max_var = tk.StringVar(value="1e5") # Limite réaliste
+        self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.elec_v0_max_var).pack(fill=tk.X, pady=3)
+
+        # Slider Vitesse initiale
+        ttk.Label(parent_dyn, text="Vitesse initiale V0 (m/s):").pack(anchor=tk.W, pady=(5, 0))
+        self.slider_frame_v0_elec = ttk.Frame(parent_dyn)
+        self.slider_frame_v0_elec.pack(fill=tk.X, pady=(0, 5))
+        self.v0_var_elec = tk.DoubleVar(value=(float(self.elec_v0_max_var.get()) - float(self.elec_v0_min_var.get())) / 2) # Init au milieu
+        # Limites initiales (seront reconfigurées)
+        self.v0_slider_elec = ttk.Scale(self.slider_frame_v0_elec, from_=self.elec_v0_min_var.get(), to=self.elec_v0_max_var.get(), orient=tk.HORIZONTAL, variable=self.v0_var_elec, command=self._on_v0_slider_change_elec)
+        self.v0_slider_elec.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.v0_label_var_elec = tk.StringVar(value=f"{self.v0_var_elec.get():.2e} (m/s)")
+        ttk.Label(self.slider_frame_v0_elec, textvariable=self.v0_label_var_elec, width=15).pack(side=tk.LEFT)
+
+
         # Entrées pour les limites du potentiel
-        self.diff_pot_min_var = tk.StringVar(value="-10000") # Limite réaliste
+        self.diff_pot_min_var = tk.StringVar(value="-5000") # Limite réaliste
         self.add_labeled_entry(parent_dyn, "Potentiel min (V):", self.diff_pot_min_var).pack(fill=tk.X, pady=3)
-        self.diff_pot_max_var = tk.StringVar(value="10000") # Limite réaliste
+        self.diff_pot_max_var = tk.StringVar(value="5000") # Limite réaliste
         self.add_labeled_entry(parent_dyn, "Potentiel max (V):", self.diff_pot_max_var).pack(fill=tk.X, pady=3)
 
         # Slider Potentiel
@@ -305,8 +324,8 @@ class ParticleApp:
         # Limites initiales (seront reconfigurées)
         self.pot_slider = ttk.Scale(self.slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL, variable=self.pot_var, command=self._on_pot_slider_change)
         self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.0f} V")
-        ttk.Label(self.slider_frame_v, textvariable=self.pot_label_var, width=10).pack(side=tk.LEFT)
+        self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.1f} V")
+        ttk.Label(self.slider_frame_v, textvariable=self.pot_label_var, width=15).pack(side=tk.LEFT)
 
         # Bouton Tracer dynamique
         trace_btn_dyn = ttk.Button(parent_dyn, text="Tracer Déviation Électrique", command=self.run_electric_simulation)
@@ -340,6 +359,21 @@ class ParticleApp:
         self._update_pot_label()
         if self.particles_data:
             self.run_electric_simulation(called_by_slider=True)
+
+
+    def _on_v0_slider_change_elec(self, event=None) :
+        """
+        Callback pour slider le v0 partie elec
+        Appelé lorsque le slider v0 est modifié afin de rendre le plot interactif.
+        
+        Parameters
+        ----------
+        event : Event ou None
+        """
+        self._update_v0_label_elec()
+        if self.particles_data:
+            self.run_electric_simulation(called_by_slider=True)
+
     def _update_pot_label(self, event=None):
         """
         Met à jour le label du slider Potentiel.
@@ -348,7 +382,17 @@ class ParticleApp:
         ----------
         event : Event ou None
         """
-        self.pot_label_var.set(f"{self.pot_var.get():.0f} V")
+        self.pot_label_var.set(f"{self.pot_var.get():.1f} V")
+
+    def _update_v0_label_elec(self, event=None):
+        """
+        Met à jour le label du slider v0 (elec).
+        
+        Parameters
+        ----------
+        event : Event ou None
+        """
+        self.v0_label_var_elec.set(f"{self.v0_var_elec.get():.2e} (m/s)")
 
     # Helper (inchangé)
     def add_labeled_entry(self, parent, label_text, string_var):
@@ -511,7 +555,6 @@ class ParticleApp:
             self.status_var.set("Erreur de simulation magnétique.")
 
 
-    # --- Simulation Électrique (CORRIGÉ) ---
     def run_electric_simulation(self, called_by_slider=False):
         """
         Simulation du champ électrique ()
@@ -528,38 +571,52 @@ class ParticleApp:
             return
 
         try:
-            v0 = float(self.v0_elec_var.get())
+        # if True : 
             angle_deg = float(self.angle_var.get())
             distance = float(self.dist_var.get())
 
             # Lire le potentiel selon le mode
             if not self.dynamic_elec_var.get(): # Mode Non-Dynamique
-                potentiel_str = self.diff_pot_var.get()
-                if not potentiel_str: raise ValueError("Diff. Potentiel ne peut être vide.")
-                potentiel = float(potentiel_str)
+                v0 = float(self.v0_elec_var.get())
+                potentiel = float(self.diff_pot_var.get())
 
             else: # Mode Dynamique
                 # Si appelé par le slider, lire directement sa valeur
                 if called_by_slider:
                     potentiel = self.pot_var.get()
+                    v0 = self.v0_var_elec.get()
                 # Si appelé par le bouton "Appliquer Limites & Tracer"
                 else:
                     pot_min = float(self.diff_pot_min_var.get())
                     pot_max = float(self.diff_pot_max_var.get())
+                    v0_min = float(self.elec_v0_min_var.get())
+                    v0_max = float(self.elec_v0_max_var.get())
 
                     # Validation des limites
-                    if pot_min > pot_max : # Permettre min=max si on veut juste fixer une valeur via le mode dyn.
-                         raise ValueError("Potentiel max >= Potentiel min requis.")
+                    if pot_min >= pot_max : # Permettre min=max si on veut juste fixer une valeur via le mode dyn.
+                         raise ValueError("Potentiel max > Potentiel min requis.")
+                    # Validation des limites
+                    if v0_min >= v0_max : # Permettre min=max si on veut juste fixer une valeur via le mode dyn.
+                        raise ValueError("Vitesse initiale max > Vitesse intiale min requis.")
+                    elif v0_min <= 0 :
+                        raise ValueError("Vitesse initiale min > 0 requis.")
 
-                    # Configurer le slider
+                    # Configurer le slider potentiel
                     self.pot_slider.config(from_=pot_min, to=pot_max)
-                    # Placer la valeur initiale au milieu
                     pot_init = (pot_max + pot_min) / 2
                     self.pot_var.set(pot_init)
                     self._update_pot_label() # Met à jour l'affichage
 
+                    # Configurer le slider v0
+                    self.v0_slider_elec.config(from_=v0_min, to=v0_max)
+                    # Placer la valeur initiale au milieu
+                    v0_init = (v0_max + v0_min) / 2
+                    self.v0_var_elec.set(v0_init)
+                    self._update_v0_label_elec() # Met à jour l'affichage
+
                     # Lire la valeur initiale du slider pour ce premier tracé
                     potentiel = pot_init
+                    v0 = v0_init
 
             if v0 <= 0 : raise ValueError("V0 > 0 requis.")
             if distance <= 0 : raise ValueError("Hauteur/Distance > 0 requis.")
