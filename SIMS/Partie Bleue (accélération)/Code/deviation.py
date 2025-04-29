@@ -146,6 +146,10 @@ class particule :
             Position en x minimale (en m)
         x_max : float
             Position en x maximale (en m)
+        color : str
+            Couleur du tracé pour les incertitudes
+        label : str
+            Label du tracé pour les incertitudes
         n_points : int
             Nombre de points où la position sera calculée entre x_min et x_max
         """
@@ -555,14 +559,14 @@ Test fonction tracer_ensemble_trajectoires
 """
 Test fonction tracer_ensemble_trajectoires_avec_incertitudes
 """
-if __name__ == '__main__' :
-    rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
-    potentiel = 5000
-    h_initiale = 0.1
-    incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+# if __name__ == '__main__' :
+#     rapports_mq, vo = [(1, 1), (3, 1)], 1e6
+#     potentiel = 5000
+#     h_initiale = 0.1
+#     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
 
 
-    tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
+#     tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
 
 
 
