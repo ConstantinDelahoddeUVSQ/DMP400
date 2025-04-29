@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import numpy as np
 import scipy.constants as constants
+import incertitude
 
 
 def calcul_champ_electrique(charge_plaque : float, surface : float) -> float :
@@ -54,13 +55,13 @@ def champ_electrique_v2(distance: float, différence_potentiel: float) -> float:
 
 
 class particule :
-    def __init__(self, masse_charge : tuple[int, int], v_initiale : float = 0, angle_initial : float = np.pi / 4, hauteur_initiale : float = 0.5) -> None :
+    def __init__(self, masse_charge : tuple, v_initiale : float = 0, angle_initial : float = np.pi / 4, hauteur_initiale : float = 0.5, is_incertitude : bool = False, incertitude_unique : bool = False, base_mq : tuple = None) -> None :
         """
         Objet particule avec vitesse initiale dévié par un champ électrique d'axe y
 
         Parameters
         ----------
-        masse_charge : tuple of int
+        masse_charge : tuple
             Masse (en u) / Charge (nombre de charge élémentaire) de la particule
         v_initiale : float
             Vitesse initiale en y de la particule (en m/s)   
@@ -68,6 +69,12 @@ class particule :
             Angle initial entre v_initiale et l'axe y en radians
         hauteur_initiale : float
             Coordonnée en y du point de départ
+        is_incertitude : bool
+            Permet de savoir si la particule est une incertitude qui sera tracée
+        incertitude_unique : bool
+            Permet de savoir si cette particule représente la première ou deuxième incertitude (pour ne pas donner le label 2 fois)
+        base_mq : tuple 
+            Si la particule est une particule incertitude permet d'avoir le couple masse charge de la vraie particule d'origine
         """
         if masse_charge[1] == 0:
             raise ValueError("La charge de la particule ne peut pas être nulle.")
@@ -77,6 +84,9 @@ class particule :
         self.height = hauteur_initiale
         self.m = masse_charge[0]
         self.c = masse_charge[1]
+        self.is_incertitude = is_incertitude
+        self.incertitude_unique = incertitude_unique
+        self.base_mq = base_mq
 
     def equation_trajectoire(self, x : float, E : float) -> float:
         """
@@ -122,7 +132,7 @@ class particule :
         x = np.linspace(x_min, x_max, n_points)
         return x, self.equation_trajectoire(x, E)
     
-    def tracer_trajectoire(self, ax, E : float, x_min : float, x_max : float, n_points : int = 10000) -> None : 
+    def tracer_trajectoire(self, ax, E : float, x_min : float, x_max : float, color = None, label=None, n_points : int = 10000) -> None : 
         """
         Trace la trajectoire entre x_min et x_max sur ax
 
@@ -140,7 +150,16 @@ class particule :
             Nombre de points où la position sera calculée entre x_min et x_max
         """
         x, y = self.trajectoire(E, x_min, x_max, n_points)
-        ax.plot(x, y, label=f"Trajectoire de {self.m}u, {self.c}e")
+        if color == None :
+            ax.plot(x, y, label=f"Trajectoire de {self.m}u, {self.c}e")
+        else :
+            if self.is_incertitude :
+                if self.incertitude_unique :
+                    ax.plot(x, y, label=label, c=color, linestyle='--')
+                else :
+                    ax.plot(x, y, c=color, linestyle='--')
+            else : 
+                ax.plot(x, y, label=f"Trajectoire de {self.m}u, {self.c}e", c=color)
     
     
     def point_contact(self, E : float) -> float :
@@ -210,6 +229,11 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
 
     """
     particules_init = masse_charge_particules
+
+    # Vérifier que toutes les particules ont le même signe :
+    for i in range(1, len(masse_charge_particules)) :
+        if masse_charge_particules[i-1][1] * masse_charge_particules[i][1] <= 0 :
+            raise ValueError("Les charges de toutes les particules doivent être du même signe et être non nulle")
     
     if create_plot or ax == None : 
         fig, ax = plt.subplots(figsize=(8, 4))
@@ -257,6 +281,163 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
     return ax
 
 
+def create_particules_incertitudes(particules : list, incertitudes : dict, E : float) :
+    """
+    Crée une liste de particules avec des particules 'incertitude' et les E_min, E_max
+
+    Parameters
+    ----------
+    particules : list
+        Liste des vraies particules (objects particules)
+    incertitudes : dict
+        Dictionnaire des incertitudes de chaque paramètre (en pourcentages)
+    E : float
+        Champ électrique (T)
+    """
+    final_particules = []
+    for p in particules :
+        final_particules.append(p)
+        if p.c * E >= 0 :
+            min_particule = particule((p.m * (1 + incertitudes['m']), p.c * (1 - incertitudes['q'])), p.vo * (1 + incertitudes['v0']), p.angle * (1 - incertitudes['theta']), p.height * (1 - incertitudes['h']), is_incertitude=True, incertitude_unique = True, base_mq=(p.m, p.c))
+            max_particule = particule((p.m * (1 - incertitudes['m']), p.c * (1 + incertitudes['q'])), p.vo * (1 - incertitudes['v0']), p.angle * (1 + incertitudes['theta']), p.height * (1 + incertitudes['h']), is_incertitude=True, base_mq=(p.m, p.c))
+            E_min = E * (1 - incertitudes['E'])
+            E_max = E * (1 + incertitudes['E'])
+        else :
+            min_particule = particule((p.m * (1 - incertitudes['m']), p.c * (1 + incertitudes['q'])), p.vo * (1 - incertitudes['v0']), p.angle * (1 - incertitudes['theta']), p.height * (1 - incertitudes['h']), is_incertitude=True, incertitude_unique = True, base_mq=(p.m, p.c))
+            max_particule = particule((p.m * (1 + incertitudes['m']), p.c * (1 - incertitudes['q'])), p.vo * (1 + incertitudes['v0']), p.angle * (1 + incertitudes['theta']), p.height * (1 + incertitudes['h']), is_incertitude=True, base_mq=(p.m, p.c))
+            E_min = E * (1 + incertitudes['E'])
+            E_max = E * (1 - incertitudes['E'])
+        final_particules += [min_particule, max_particule]
+    return final_particules, E_min, E_max
+
+
+def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : list[tuple[int, int]], vitesse_initiale : float, incertitudes : dict ,potentiel : float = 5000, angle_initial=np.pi/6, hauteur_initiale = 0.15, create_plot=True, ax=None) -> None :
+    """
+    Trace les trajectoires jusqu'au contact de différentes particules de manière statique avec le tracé des incertitudes (couloirs)
+
+    Parameters
+    ----------
+    masse_charge_particules : list of tupleof int
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
+    vitesse_initiale : float
+        Vitesse intiale en y commune à toutes les particules du faisceau
+    incertitudes : dict
+        Dictionnaire des incertitudes sur les différents paramètres (pourcentages)
+    potentiel : float
+        Différence de potentiel entre les plaques (en V)
+    angle_initial : float
+            Angle initial entre v_initiale et l'axe y en radians
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+    create_plot : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+    ax : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+
+    """
+    particules_init = masse_charge_particules
+
+    # Vérifier que toutes les particules ont le même signe :
+    for i in range(1, len(masse_charge_particules)) :
+        if masse_charge_particules[i-1][1] * masse_charge_particules[i][1] <= 0 :
+            raise ValueError("Les charges de toutes les particules doivent être du même signe et être non nulle")
+    
+    if create_plot or ax == None : 
+        fig, ax = plt.subplots(figsize=(8, 4))
+
+    E = champ_electrique_v2(hauteur_initiale, potentiel)
+
+    particules = [particule(mq, vitesse_initiale, angle_initial, hauteur_initiale) for mq in particules_init]
+    # rajouter les particules liées aux incertitudes :
+    particules, E_min, E_max = create_particules_incertitudes(particules, incertitudes, E)
+
+    all_x_max = []
+    non_contact_particules = []
+    texte_angles = "Angles incidents :\n"
+    is_contact = False
+
+    for p in particules:
+        if p.is_incertitude :
+            if p.incertitude_unique :
+                if p.point_contact(E_min) is not None:
+                    x_max = p.point_contact(E_min)
+                    all_x_max.append(x_max)
+                    label = f"Incertitude de {p.base_mq[0]}u, {p.base_mq[1]}e"
+                    for line in ax.get_lines():
+                        if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                            line_color = line.get_color()
+                            break
+                    p.tracer_trajectoire(ax, E_min, 0, x_max, color = line_color, label= label)
+                    is_contact = True
+                else :
+                    non_contact_particules.append(p)
+            else :
+                if p.point_contact(E_max) is not None:
+                    x_max = p.point_contact(E_max)
+                    all_x_max.append(x_max)
+                    label = None
+                    for line in ax.get_lines():
+                        if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                            line_color = line.get_color()
+                            break
+                    p.tracer_trajectoire(ax, E_min, 0, x_max, color = line_color, label= label)
+                    is_contact = True
+                else :
+                    non_contact_particules.append(p)
+               
+        else :
+            if p.point_contact(E) is not None:
+                x_max = p.point_contact(E)
+                all_x_max.append(x_max)
+                p.tracer_trajectoire(ax, E, 0, x_max)
+                angle_incident = p.angle_incident(E)
+                angle_deg = np.degrees(angle_incident)
+                texte_angles += f"- {p.m}u, {p.c}e : {angle_deg:.2f}°\n"
+                is_contact = True
+            else : 
+                non_contact_particules.append(p)
+    
+    if is_contact :
+        ax.set_xlim(0, max(all_x_max) * 1.2)
+    else :
+        ax.set_xlim(0, hauteur_initiale)
+
+    for p in non_contact_particules : 
+        local_x_max = ax.get_xlim()[1]
+        if not p.is_incertitude :
+            p.tracer_trajectoire(ax, E, 0, local_x_max * 1.2)
+        else :
+            if p.incertitude_unique :
+                label = f"Incertitude de {p.base_mq[0]}u, {p.base_mq[1]}e"
+                for line in ax.get_lines():
+                    if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                        line_color = line.get_color()
+                        break
+                p.tracer_trajectoire(ax, E_min, 0, local_x_max, color = line_color, label= label)
+            else :
+                label = None
+                for line in ax.get_lines():
+                    if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                        line_color = line.get_color()
+                        break
+                p.tracer_trajectoire(ax, E_min, 0,local_x_max, color = line_color, label= label)
+
+        all_x_max.append(local_x_max)
+    
+    if len(all_x_max) > 0:
+        ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
+        ax.text(0.05, 0.1, texte_angles, transform=ax.transAxes,
+            fontsize=10,bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray"))
+
+    ax.legend()
+
+    if create_plot :
+        plt.show()
+    return ax
+
+
+
+
 def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[int, int]], vitesse_initiale : float, potentiel_min : float = -5000, potentiel_max : float = 5000, angle_initial=np.pi/6, hauteur_initiale = 0.15) -> None :
     """
     Trace les trajectoires entre jusqu'au contact de différentes particules dynamiquement (sliders)
@@ -278,6 +459,11 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
 
     """
     particules_init = masse_charge_particules
+
+    # Vérifier que toutes les particules ont le même signe :
+    for i in range(1, len(masse_charge_particules)) :
+        if masse_charge_particules[i-1][1] * masse_charge_particules[i][1] <= 0 :
+            raise ValueError("Les charges de toutes les particules doivent être du même signe et être non nulle")
 
     fig, ax = plt.subplots(figsize=(10, 6))
     plt.subplots_adjust(bottom=0.25)  
@@ -359,11 +545,25 @@ Test fonction tracer_ensemble_trajectoires
 """
 # if __name__ == '__main__' :
 #     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
-#     potentiel = 0
+#     potentiel = 5000
 #     h_initiale = 0.1
 
 
 #     tracer_ensemble_trajectoires(rapports_mq, vo, potentiel=potentiel, hauteur_initiale=h_initiale)
+
+
+"""
+Test fonction tracer_ensemble_trajectoires_avec_incertitudes
+"""
+if __name__ == '__main__' :
+    rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
+    potentiel = 5000
+    h_initiale = 0.1
+    incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+
+
+    tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
+
 
 
 """
