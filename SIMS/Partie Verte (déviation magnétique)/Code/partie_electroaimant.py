@@ -44,8 +44,9 @@ class particule :
         float
             Position en y de la particule (en m)
         """             
-        prefix = self.mq / Bz
-        return self.vo * prefix * np.sin(np.arccos(1 - x / (self.vo * prefix)))
+        with np.errstate(invalid='ignore') :
+            prefix = self.mq / Bz
+            return self.vo * prefix * np.sin(np.arccos(1 - x / (self.vo * prefix)))
 
 
     # Niveau 4 : Renvoie un tuple de la trajectoire de la particule (liste des abscisses, liste des ordonnées)
@@ -76,7 +77,7 @@ class particule :
     
 
     # Niveau 3 : Trace la trajectoire de la particule dans le champ Bz avec matplotlib en 2d
-    def tracer_trajectoire(self, ax, Bz : float, x_min : float, x_max : float, n_points : int = 10000) -> None : 
+    def tracer_trajectoire(self, ax, Bz : float, x_min : float, x_max : float, n_points : int = 300000) -> None : 
         """
         Trace la trajectoire entre x_min et x_max sur ax
 
