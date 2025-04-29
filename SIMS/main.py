@@ -6,16 +6,21 @@ import scipy.constants as constants
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
+# Utilisation de __file__ pour rendre le chemin relatif robuste
 folder = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(f"{folder}/Partie Bleue (accélération)/Code")
-sys.path.append(f"{folder}//Partie Verte (déviation magnétique)/Code")
+# Ajustement des chemins pour correspondre à la structure probable
+sys.path.append(os.path.join(folder, "Partie Bleue (accélération)", "Code"))
+sys.path.append(os.path.join(folder, "Partie Verte (déviation magnétique)", "Code"))
 
 try:
     import deviation # type: ignore
     import partie_electroaimant # type: ignore
 except ImportError as e:
     print(f"Erreur d'importation: {e}")
-    print("Assurez-vous que les chemins sys.path sont corrects et que les fichiers existent.")
+    # Fournir des chemins plus explicites en cas d'erreur
+    print(f"Vérifiez l'existence des fichiers dans:")
+    print(f"  {os.path.join(folder, 'Partie Bleue (accélération)', 'Code')}")
+    print(f"  {os.path.join(folder, 'Partie Verte (déviation magnétique)', 'Code')}")
     sys.exit(1)
 
 
@@ -26,7 +31,7 @@ class ParticleApp:
 
         Parameters
         ----------
-        root : tkinter.Tk (ou tk.Frame)	
+        root : tkinter.Tk (ou tk.Frame)
             Fenêtre principale Tkinter dans laquelle l'application sera construite.
         """
         self.root = root
@@ -48,7 +53,7 @@ class ParticleApp:
         main_paned_window.pack(fill=tk.BOTH, expand=True)
 
         # Panneau de contrôle
-        control_panel = ttk.Frame(main_paned_window, width=350)
+        control_panel = ttk.Frame(main_paned_window, width=400)
         main_paned_window.add(control_panel, weight=1)
 
         # Section Particules
@@ -69,7 +74,7 @@ class ParticleApp:
         self.create_magnetic_widgets(self.mag_tab)
         self.create_electric_widgets(self.elec_tab)
 
-        # Panneau Plot 
+        # Panneau Plot
         plot_panel = ttk.Frame(main_paned_window)
         main_paned_window.add(plot_panel, weight=3) # Donne plus de place au plot
 
@@ -136,7 +141,7 @@ class ParticleApp:
         remove_btn = ttk.Button(parent, text="Supprimer sélection", command=self.remove_particle)
         remove_btn.pack(pady=5)
 
-    # Rajout éléments menu déviation magnétique
+    # Widgets magnétiques
     def create_magnetic_widgets(self, parent):
         """
         Widgets pour la déviation magnétique
@@ -149,6 +154,7 @@ class ParticleApp:
         frame = ttk.Frame(parent, padding="10")
         frame.pack(fill=tk.BOTH, expand=True)
 
+        # Frames pour afficher/cacher
         self.dynamic_inputs_frame = ttk.Frame(frame)
         self.base_inputs_frame = ttk.Frame(frame)
 
@@ -160,62 +166,55 @@ class ParticleApp:
         dynamic_check = ttk.Checkbutton(frame, text="Tracer dynamiquement", variable=self.dynamic_trace_var, command=self.toggle_dynamic_inputs)
         dynamic_check.pack(anchor=tk.W, pady=5)
 
+        # --- Widgets Non-Dynamiques ---
+        parent_base = self.base_inputs_frame
+        self.v0_mag_var = tk.StringVar(value="1e6") # Valeur réaliste
+        self.add_labeled_entry(parent_base, "Vitesse Initiale (m/s):", self.v0_mag_var).pack(fill=tk.X, pady=3)
+        self.bz_mag_var = tk.StringVar(value="0.2") # Valeur réaliste
+        self.add_labeled_entry(parent_base, "Champ magnétique (T):", self.bz_mag_var).pack(fill=tk.X, pady=3)
+        trace_btn_base = ttk.Button(parent_base, text="Tracer Déviation Magnétique", command=self.run_magnetic_simulation)
+        trace_btn_base.pack(pady=15)
 
-        # Inside base frame (frame pour l'affichage des widgets non dynamique): 
-
-        # Vitesse initiale
-        self.v0_mag_var = tk.StringVar(value="1e6")
-        self.add_labeled_entry(self.base_inputs_frame, "Vitesse Initiale (m/s) : ", self.v0_mag_var).pack(fill=tk.X, pady=3)
-
-        # Bz
-        self.bz_mag_var = tk.StringVar(value="1")
-        self.add_labeled_entry(self.base_inputs_frame, "Champ magnétique absolu (T) : ", self.bz_mag_var).pack(fill=tk.X, pady=3)
-
-        # Bouton Tracer
-        trace_btn = ttk.Button(self.base_inputs_frame, text="Tracer Déviation Magnétique", command=self.run_magnetic_simulation)
-        trace_btn.pack(pady=15)
-        
-
-        # Inside dynamic frame (affichage des widgets lorsque dynamique est coché): 
-
-        # Bz
-        self.bz_min_var = tk.StringVar(value="0.001")
-        self.add_labeled_entry(self.dynamic_inputs_frame, "Bz min (T) :", self.bz_min_var).pack(fill=tk.X, pady=3)
+        # --- Widgets Dynamiques ---
+        parent_dyn = self.dynamic_inputs_frame
+        # Entrées pour les limites
+        self.bz_min_var = tk.StringVar(value="0.01")
+        self.add_labeled_entry(parent_dyn, "Bz min (T):", self.bz_min_var).pack(fill=tk.X, pady=3)
         self.bz_max_var = tk.StringVar(value="0.5")
-        self.add_labeled_entry(self.dynamic_inputs_frame, "Bz max (T) :", self.bz_max_var).pack(fill=tk.X, pady=3)
-        
-        # V0
-        self.v0_min_var = tk.StringVar(value="1e6")
-        self.add_labeled_entry(self.dynamic_inputs_frame, "V0 min (m/s) :", self.v0_min_var).pack(fill=tk.X, pady=3)
-        self.v0_max_var = tk.StringVar(value="1e7")
-        self.add_labeled_entry(self.dynamic_inputs_frame, "V0 max (m/s) :", self.v0_max_var).pack(fill=tk.X, pady=3)
+        self.add_labeled_entry(parent_dyn, "Bz max (T):", self.bz_max_var).pack(fill=tk.X, pady=3)
+        self.v0_min_var = tk.StringVar(value="1e5")
+        self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.v0_min_var).pack(fill=tk.X, pady=3)
+        self.v0_max_var = tk.StringVar(value="1e6")
+        self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.v0_max_var).pack(fill=tk.X, pady=3)
 
-        # Champ Magnétique (Slider)
-        ttk.Label(self.dynamic_inputs_frame, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
-        self.slider_frame_bz = ttk.Frame(self.dynamic_inputs_frame)
+        # Slider Bz
+        ttk.Label(parent_dyn, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
+        self.slider_frame_bz = ttk.Frame(parent_dyn)
         self.slider_frame_bz.pack(fill=tk.X, pady=(0,5))
-        self.bz_var = tk.DoubleVar(value=1)
-        self.bz_slider = ttk.Scale(self.slider_frame_bz, from_=0.001, to=1.0, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._on_bz_slider_change)
+        self.bz_var = tk.DoubleVar(value=0.2) # Init au milieu de la plage par défaut
+        # Limites initiales du slider (seront reconfigurées)
+        self.bz_slider = ttk.Scale(self.slider_frame_bz, from_=0.01, to=0.5, orient=tk.HORIZONTAL, variable=self.bz_var, command=self._on_bz_slider_change)
         self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
-        ttk.Label(self.slider_frame_bz, textvariable=self.bz_label_var, width=15).pack(side=tk.LEFT)
+        ttk.Label(self.slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT) # Largeur réduite
 
-        # Vitesse initiale (Slider)
-        ttk.Label(self.dynamic_inputs_frame, text="Vitesse initiale (m/s):").pack(anchor=tk.W, pady=(5,0))
-        self.slider_frame_v0 = ttk.Frame(self.dynamic_inputs_frame)
+        # Slider V0
+        ttk.Label(parent_dyn, text="Vitesse initiale (m/s):").pack(anchor=tk.W, pady=(5,0))
+        self.slider_frame_v0 = ttk.Frame(parent_dyn)
         self.slider_frame_v0.pack(fill=tk.X, pady=(0,5))
-        self.v0_var = tk.DoubleVar(value=1e6)
-        self.v0_slider = ttk.Scale(self.slider_frame_v0, from_=1e6, to=1e7, orient=tk.HORIZONTAL, variable=self.v0_var, command=self._on_v0_slider_change)
+        self.v0_var = tk.DoubleVar(value=1e6) # Init au milieu
+        # Limites initiales du slider (seront reconfigurées)
+        self.v0_slider = ttk.Scale(self.slider_frame_v0, from_=1e5, to=1e7, orient=tk.HORIZONTAL, variable=self.v0_var, command=self._on_v0_slider_change)
         self.v0_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        self.v0_label_var = tk.StringVar(value=f"{self.v0_var.get():.2e} (m/s)")
-        ttk.Label(self.slider_frame_v0, textvariable=self.v0_label_var, width=15).pack(side=tk.LEFT)
+        self.v0_label_var = tk.StringVar(value=f"{self.v0_var.get():.2e} m/s") # Formatage m/s
+        ttk.Label(self.slider_frame_v0, textvariable=self.v0_label_var, width=10).pack(side=tk.LEFT)
 
-        # Bouton Tracer
-        trace_btn = ttk.Button(self.dynamic_inputs_frame, text="Tracer Déviation Magnétique", command=self.run_magnetic_simulation)
-        trace_btn.pack(pady=15)
+        # Bouton Tracer Dynamique
+        trace_btn_dyn = ttk.Button(parent_dyn, text="Tracer Déviation Électrique", command=self.run_magnetic_simulation)
+        trace_btn_dyn.pack(pady=15)
 
-        # Pack finalement la base frame 
-        self.base_inputs_frame.pack(fill=tk.X, pady=5)
+        # Affichage initial
+        self.toggle_dynamic_inputs() # Appelle pour afficher le bon frame au départ
 
 
     def toggle_dynamic_inputs(self) :
@@ -224,12 +223,12 @@ class ParticleApp:
         """
         if self.dynamic_trace_var.get():
             self.base_inputs_frame.pack_forget()
-            self.dynamic_inputs_frame.pack(fill=tk.X, pady=5)
+            self.dynamic_inputs_frame.pack(fill=tk.X, pady=5, padx=5) # Ajout padx
         else:
             self.dynamic_inputs_frame.pack_forget()
-            self.base_inputs_frame.pack(fill=tk.X, pady=5)
+            self.base_inputs_frame.pack(fill=tk.X, pady=5, padx=5) # Ajout padx
 
-
+    # Callbacks sliders magnétiques (inchangés)
     def _on_bz_slider_change(self, event=None):
         """
         Callback pour slider Bz
@@ -242,42 +241,16 @@ class ParticleApp:
         self._update_bz_label()
         if self.particles_data:
             self.run_magnetic_simulation(called_by_slider=True)
-
     def _update_bz_label(self, event=None):
-        """
-        Met à jour le label du champ Bz
-
-        Parameters
-        ----------
-        event : Event ou None
-        """
         self.bz_label_var.set(f"{self.bz_var.get():.3f} T")
-
     def _on_v0_slider_change(self, event=None):
-        """
-        Slider de v0, la vitesse initiale
-        Appelé lorsque le slider v0 est modifié afin de rendre le plot dynamique.
-
-        Parameters
-        ----------
-        event : Event ou None
-        """
-        self._update_v0_label() 
+        self._update_v0_label()
         if self.particles_data:
             self.run_magnetic_simulation(called_by_slider=True)
-
     def _update_v0_label(self, event=None):
-        """
-        Met à jour le label de v0
+        self.v0_label_var.set(f"{self.v0_var.get():.2e} m/s") # Formatage m/s
 
-        Parameters
-        ----------
-        event : Event ou None
-        """
-        self.v0_label_var.set(f"{self.v0_var.get():.2e} (m/s)")
-
-
-
+    # --- Widgets Électriques (CORRIGÉ) ---
     def create_electric_widgets(self, parent):
         """
         Widgets pour la déviation électrique
@@ -290,62 +263,71 @@ class ParticleApp:
         frame = ttk.Frame(parent, padding="10")
         frame.pack(fill=tk.BOTH, expand=True)
 
+        # Frames pour afficher/cacher
         self.dynamic_electric_inputs_frame = ttk.Frame(frame)
         self.base_electric_inputs_frame = ttk.Frame(frame)
 
-        # --- Checkbox "Tracer dynamiquement (électrique)" ---
-        self.dynamic_elec_var = tk.BooleanVar(value=False)
-        dynamic_elec_check = ttk.Checkbutton(frame, text="Tracer dynamiquement (électrique)", variable=self.dynamic_elec_var, command=self.toggle_dynamic_electric)
-        dynamic_elec_check.pack(anchor=tk.W, pady=5)
-
-        # Vitesse initiale
+        # --- Widgets Communs ---
         self.v0_elec_var = tk.StringVar(value="1e6")
         self.add_labeled_entry(frame, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
+        self.angle_var = tk.StringVar(value="30")
+        self.add_labeled_entry(frame, "Angle Initial (° vs +y):", self.angle_var).pack(fill=tk.X, pady=3) # Précisé vs +y
+        self.dist_var = tk.StringVar(value="0.1") # Distance/hauteur réaliste
+        self.add_labeled_entry(frame, "Distance/Hauteur (m):", self.dist_var).pack(fill=tk.X, pady=3) # Nom générique
 
-        # Angle initial
-        self.angle_var = tk.StringVar(value="30.0")  # En degrés pour l'utilisateur
-        self.add_labeled_entry(frame, "Angle Initial (° vs y):", self.angle_var).pack(fill=tk.X, pady=3)
+        # Checkbox commun
+        self.dynamic_elec_var = tk.BooleanVar(value=False)
+        dynamic_elec_check = ttk.Checkbutton(frame, text="Tracer dynamiquement (potentiel)", variable=self.dynamic_elec_var, command=self.toggle_dynamic_electric)
+        dynamic_elec_check.pack(anchor=tk.W, pady=5)
 
-        # Hauteur initiale
-        self.dist_var = tk.StringVar(value="0.1")
-        self.add_labeled_entry(frame, "Hauteur initiale (m):", self.dist_var).pack(fill=tk.X, pady=3)
+        # --- Widgets Non-Dynamiques (Base) ---
+        parent_base = self.base_electric_inputs_frame
+        # Potentiel statique
+        self.diff_pot_var = tk.StringVar(value="0") # Valeur réaliste
+        self.add_labeled_entry(parent_base, "Diff. Potentiel (V):", self.diff_pot_var).pack(fill=tk.X, pady=3)
+        # Bouton Tracer statique
+        trace_btn_base = ttk.Button(parent_base, text="Tracer Déviation Électrique", command=self.run_electric_simulation)
+        trace_btn_base.pack(pady=15)
 
-        # Potentiel
-        self.diff_pot_var = tk.StringVar(value=0)
-        self.add_labeled_entry(self.base_electric_inputs_frame, "Différence de potentiel (V):", self.diff_pot_var).pack(fill=tk.X, pady=3)
+        # --- Widgets Dynamiques ---
+        parent_dyn = self.dynamic_electric_inputs_frame
+        # Entrées pour les limites du potentiel
+        self.diff_pot_min_var = tk.StringVar(value="-10000") # Limite réaliste
+        self.add_labeled_entry(parent_dyn, "Potentiel min (V):", self.diff_pot_min_var).pack(fill=tk.X, pady=3)
+        self.diff_pot_max_var = tk.StringVar(value="10000") # Limite réaliste
+        self.add_labeled_entry(parent_dyn, "Potentiel max (V):", self.diff_pot_max_var).pack(fill=tk.X, pady=3)
 
-        # Potentiel (Slider)
-        ttk.Label(self.dynamic_electric_inputs_frame, text="Diff. Potentiel Plaque (V):").pack(anchor=tk.W, pady=(5, 0))
-        self.slider_frame_v = ttk.Frame(self.dynamic_electric_inputs_frame)
+        # Slider Potentiel
+        ttk.Label(parent_dyn, text="Diff. Potentiel (V):").pack(anchor=tk.W, pady=(5, 0))
+        self.slider_frame_v = ttk.Frame(parent_dyn)
         self.slider_frame_v.pack(fill=tk.X, pady=(0, 5))
-        self.pot_var = tk.DoubleVar(value=-5000)
+        self.pot_var = tk.DoubleVar(value=-5000) # Init au milieu
+        # Limites initiales (seront reconfigurées)
         self.pot_slider = ttk.Scale(self.slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL, variable=self.pot_var, command=self._on_pot_slider_change)
         self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.0f} V")
         ttk.Label(self.slider_frame_v, textvariable=self.pot_label_var, width=10).pack(side=tk.LEFT)
-        
-        # Bouton Tracer (à placer après le slider ou la case de saisie)
-        trace_btn = ttk.Button(self.base_electric_inputs_frame, text="Tracer Déviation Électrique", command=self.run_electric_simulation)
-        trace_btn.pack(pady=15)
-        trace_btn = ttk.Button(self.dynamic_electric_inputs_frame, text="Tracer Déviation Électrique", command=self.run_electric_simulation)
-        trace_btn.pack(pady=15)
-        
-        # Pack enfin la base frame 
-        self.base_electric_inputs_frame.pack(fill=tk.X, pady=5)
+
+        # Bouton Tracer dynamique
+        trace_btn_dyn = ttk.Button(parent_dyn, text="Tracer Déviation Électrique", command=self.run_electric_simulation)
+        trace_btn_dyn.pack(pady=15)
+
+        # Affichage initial
+        self.toggle_dynamic_electric() # Affiche le bon frame au départ
 
     def toggle_dynamic_electric(self):
         """ 
         Fonction pour changer l'affichage du menu lorsque la checkbox dynamique du champ électrique est activée.
         """
         if self.dynamic_elec_var.get():
-            # Afficher les éléments dynamiques (slider)
             self.base_electric_inputs_frame.pack_forget()
-            self.dynamic_electric_inputs_frame.pack(fill=tk.X, pady=5)
+            self.dynamic_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5) # Ajout padx
         else:
-            # Afficher la case pour entrer le potentiel (entrée textuelle)
             self.dynamic_electric_inputs_frame.pack_forget()
-            self.base_electric_inputs_frame.pack(fill=tk.X, pady=5)
+            self.base_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5) # Ajout padx
 
+
+    # Callbacks slider potentiel (inchangés)
     def _on_pot_slider_change(self, event=None):
         """
         Callback pour slider le potentiel
@@ -355,10 +337,9 @@ class ParticleApp:
         ----------
         event : Event ou None
         """
-        self._update_pot_label() 
+        self._update_pot_label()
         if self.particles_data:
-            self.run_electric_simulation(called_by_slider=True) 
-
+            self.run_electric_simulation(called_by_slider=True)
     def _update_pot_label(self, event=None):
         """
         Met à jour le label du slider Potentiel.
@@ -369,6 +350,7 @@ class ParticleApp:
         """
         self.pot_label_var.set(f"{self.pot_var.get():.0f} V")
 
+    # Helper (inchangé)
     def add_labeled_entry(self, parent, label_text, string_var):
         """
         Helper pour ajouter Label + Entry.
@@ -387,6 +369,7 @@ class ParticleApp:
         entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         return entry_frame
 
+    # Gestion particules (inchangé, sauf correction signe charge)
     def add_particle(self):
         """
         Fonction appelée lorsqu'une particule est rajoutée pour gérer l'affichage et modifier les variables
@@ -442,6 +425,7 @@ class ParticleApp:
         self.status_var.set(f"{len(selected_items)} particule(s) supprimée(s).")
 
 
+    # Simulation magnétique
     def run_magnetic_simulation(self, called_by_slider=False):
         """
         Simulation du champ magnétique ()
@@ -527,6 +511,7 @@ class ParticleApp:
             self.status_var.set("Erreur de simulation magnétique.")
 
 
+    # --- Simulation Électrique (CORRIGÉ) ---
     def run_electric_simulation(self, called_by_slider=False):
         """
         Simulation du champ électrique ()
@@ -536,8 +521,7 @@ class ParticleApp:
         called_by_slider : booléen
         """
         if not self.particles_data:
-            if not called_by_slider:
-                messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
+            if not called_by_slider: messagebox.showwarning("Aucune particule", "Veuillez ajouter au moins une particule.")
             self.status_var.set("Ajoutez des particules pour simuler.")
             self.ax.cla()
             self.canvas.draw()
@@ -546,22 +530,43 @@ class ParticleApp:
         try:
             v0 = float(self.v0_elec_var.get())
             angle_deg = float(self.angle_var.get())
-            distance = float(self.dist_var.get()) # Peut être lue avant
+            distance = float(self.dist_var.get())
 
-            if self.dynamic_elec_var.get():
-                potentiel = self.pot_var.get()
-            else:
+            # Lire le potentiel selon le mode
+            if not self.dynamic_elec_var.get(): # Mode Non-Dynamique
                 potentiel_str = self.diff_pot_var.get()
-                if not potentiel_str: # Gérer le cas où l'entrée est vide
-                    raise ValueError("La différence de potentiel ne peut être vide.")
+                if not potentiel_str: raise ValueError("Diff. Potentiel ne peut être vide.")
                 potentiel = float(potentiel_str)
+
+            else: # Mode Dynamique
+                # Si appelé par le slider, lire directement sa valeur
+                if called_by_slider:
+                    potentiel = self.pot_var.get()
+                # Si appelé par le bouton "Appliquer Limites & Tracer"
+                else:
+                    pot_min = float(self.diff_pot_min_var.get())
+                    pot_max = float(self.diff_pot_max_var.get())
+
+                    # Validation des limites
+                    if pot_min > pot_max : # Permettre min=max si on veut juste fixer une valeur via le mode dyn.
+                         raise ValueError("Potentiel max >= Potentiel min requis.")
+
+                    # Configurer le slider
+                    self.pot_slider.config(from_=pot_min, to=pot_max)
+                    # Placer la valeur initiale au milieu
+                    pot_init = (pot_max + pot_min) / 2
+                    self.pot_var.set(pot_init)
+                    self._update_pot_label() # Met à jour l'affichage
+
+                    # Lire la valeur initiale du slider pour ce premier tracé
+                    potentiel = pot_init
 
             if v0 <= 0 : raise ValueError("V0 > 0 requis.")
             if distance <= 0 : raise ValueError("Hauteur/Distance > 0 requis.")
             if not (0 < angle_deg < 90):
                 raise ValueError("Angle doit être entre 0° et 90°.")
 
-            angle_rad = np.radians(angle_deg)   # Convertir angle en radians
+            angle_rad = np.radians(angle_deg)
 
             self.ax.cla()
             self.status_var.set("Calcul déviation électrique en cours...")
@@ -573,12 +578,10 @@ class ParticleApp:
             self.status_var.set("Tracé déviation électrique terminé.")
 
         except ValueError as e: # Attrape aussi l'erreur de conversion float()
-            if not called_by_slider:
-                messagebox.showerror("Erreur de paramètre", f"Paramètre invalide : {e}")
+            if not called_by_slider: messagebox.showerror("Erreur de paramètre", f"Paramètre invalide (Elec): {e}")
             self.status_var.set(f"Erreur paramètre (Elec): {e}")
         except Exception as e:
-            if not called_by_slider:
-                messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue (Elec): {e}")
+            if not called_by_slider: messagebox.showerror("Erreur de Simulation", f"Une erreur est survenue (Elec): {e}")
             print(f"Erreur Simulation Électrique: {type(e).__name__}: {e}")
             self.status_var.set("Erreur de simulation électrique.")
 
