@@ -360,12 +360,18 @@ class ParticleApp:
         control_frame = ttk.Frame(self.molecule_fenetre)
         control_frame.pack(pady=10, padx=20, fill=tk.X)
 
-        ttk.Label(control_frame, text="Particule construite:", font=('Helvetica', 11, 'bold')).grid(row=0, column=0, sticky=tk.W, pady=(0,5))
+        # Configuration pour centrer les éléments sur 3 colonnes
+        control_frame.columnconfigure(0, weight=1)
+        control_frame.columnconfigure(1, weight=0)
+        control_frame.columnconfigure(2, weight=1)
+
+        # Label "Particule construite"
+        ttk.Label(control_frame, text="Particule construite:", font=('Helvetica', 14, 'bold')).grid(row=0, column=1, sticky="", pady=(0,5))
 
         # Frame pour affichage et reset
         display_reset_frame = ttk.Frame(control_frame)
-        display_reset_frame.grid(row=1, column=0, columnspan=3, sticky=tk.EW, pady=5)
-        display_reset_frame.columnconfigure(0, weight=1) # L'affichage prend l'espace
+        display_reset_frame.grid(row=1, column=1, sticky="ew", pady=5)
+        display_reset_frame.columnconfigure(0, weight=1)
 
         self.molecule_display_var = tk.StringVar(value="(vide)")
         # Label avec bordure pour mieux le voir
@@ -377,15 +383,18 @@ class ParticleApp:
         reset_btn.grid(row=0, column=1, sticky=tk.E)
 
         # Charge
-        charge_label = ttk.Label(control_frame, text="Charge (e):")
-        charge_label.grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.molecule_charge_var = tk.StringVar(value="1") # Défaut +1
-        charge_entry = ttk.Entry(control_frame, textvariable=self.molecule_charge_var, width=8)
-        charge_entry.grid(row=2, column=1, sticky=tk.W, pady=5)
+        charge_frame = ttk.Frame(control_frame)
+        charge_frame.grid(row=2, column=1, sticky="", pady=5)
+
+        charge_label = ttk.Label(charge_frame, text="Charge (e):")
+        charge_label.pack(side=tk.LEFT)
+        self.molecule_charge_var = tk.StringVar(value="1")
+        charge_entry = ttk.Entry(charge_frame, textvariable=self.molecule_charge_var, width=8)
+        charge_entry.pack(side=tk.LEFT, padx=5)
 
         # Bouton Soumettre
         submit_btn = ttk.Button(control_frame, text="Ajouter cette Particule à la liste", command=self.submit_molecule)
-        submit_btn.grid(row=3, column=0, columnspan=3, pady=10)
+        submit_btn.grid(row=3, column=1, sticky="", pady=10)
 
     def construction_de_molecule(self, symbol, mass):
         """Ajoute ou incrémente un élément dans la molécule en cours."""
