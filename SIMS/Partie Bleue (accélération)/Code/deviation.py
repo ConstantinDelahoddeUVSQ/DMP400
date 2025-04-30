@@ -240,14 +240,14 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
             raise ValueError("Les charges de toutes les particules doivent être du même signe et être non nulle")
     
     if create_plot or ax == None : 
-        fig, ax = plt.subplots(figsize=(8, 4))
+        fig, ax = plt.subplots(figsize=(10, 8))
 
     E = champ_electrique_v2(hauteur_initiale, potentiel)
 
     particules = [particule(mq, vitesse_initiale, angle_initial, hauteur_initiale) for mq in particules_init]
     all_x_max = []
     non_contact_particules = []
-    texte_angles = "Angles incidents :\n"
+    texte_angles = "Angles incidents :"
     is_contact = False
 
     for p in particules:
@@ -258,10 +258,11 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
 
             angle_incident = p.angle_incident(E)
             angle_deg = np.degrees(angle_incident)
-            texte_angles += f"- {p.m}u, {p.c}e : {angle_deg:.2f}°\n"
+            texte_angles += f"\n- {p.m}u, {p.c}e : {angle_deg:.2f}°"
             is_contact = True
         else : 
             non_contact_particules.append(p)
+            texte_angles += f"\n- {p.m}u, {p.c}e : Pas de contact"
     
     if is_contact :
         ax.set_xlim(0, max(all_x_max) * 1.2)
@@ -275,8 +276,8 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
     
     if len(all_x_max) > 0:
         ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
-        ax.text(0.8, 0.5, texte_angles, transform=ax.transAxes,
-            fontsize=10,bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray"))
+        ax.text(0.985, 0.5, texte_angles, horizontalalignment='right', transform=ax.transAxes,
+            fontsize=10,bbox=dict(boxstyle="round", facecolor="white", alpha = 0.5))
 
     ax.legend()
 
@@ -347,7 +348,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
             raise ValueError("Les charges de toutes les particules doivent être du même signe et être non nulle")
     
     if create_plot or ax == None : 
-        fig, ax = plt.subplots(figsize=(8, 4))
+        fig, ax = plt.subplots(figsize=(10, 8))
 
     E = champ_electrique_v2(hauteur_initiale, potentiel)
 
@@ -357,7 +358,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
 
     all_x_max = []
     non_contact_particules = []
-    texte_angles = "Angles incidents :\n"
+    texte_angles = "Angles incidents :"
     is_contact = False
 
     for p in particules:
@@ -396,10 +397,11 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
                 p.tracer_trajectoire(ax, E, 0, x_max)
                 angle_incident = p.angle_incident(E)
                 angle_deg = np.degrees(angle_incident)
-                texte_angles += f"- {p.m}u, {p.c}e : {angle_deg:.2f}°\n"
+                texte_angles += f"\n- {p.m}u, {p.c}e : {angle_deg:.2f}°"
                 is_contact = True
             else : 
                 non_contact_particules.append(p)
+                texte_angles += f"\n- {p.m}u, {p.c}e : Pas de contact"
     
     if is_contact :
         ax.set_xlim(0, max(all_x_max) * 1.2)
@@ -431,7 +433,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
     if len(all_x_max) > 0:
         ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
         ax.text(0.05, 0.1, texte_angles, transform=ax.transAxes,
-            fontsize=10,bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray"))
+            fontsize=10,bbox=dict(boxstyle="round", facecolor="white", alpha = 0.5))
 
     ax.legend()
 
@@ -469,7 +471,7 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
         if masse_charge_particules[i-1][1] * masse_charge_particules[i][1] <= 0 :
             raise ValueError("Les charges de toutes les particules doivent être du même signe et être non nulle")
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10, 8))
     plt.subplots_adjust(bottom=0.25)  
 
     ax_zoom = plt.axes([0.1, 0.05, 0.8, 0.03])
@@ -493,7 +495,7 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
 
         particules = [particule(mq, vitesse_initiale, angle_initial, hauteur_initiale) for mq in particules_init]
         all_x_max = []
-        texte_angles = "Angles incidents :\n"
+        texte_angles = "Angles incidents :"
         E_val = champ_electrique_v2(hauteur_initiale, pot_val)
         non_contact_particules = []
         for p in particules:
@@ -504,9 +506,10 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
 
                 angle_incident = p.angle_incident(E_val)
                 angle_deg = np.degrees(angle_incident)
-                texte_angles += f"- {p.m}u, {p.c}e : {angle_deg:.2f}°\n"
+                texte_angles += f"\n- {p.m}u, {p.c}e : {angle_deg:.2f}°"
             else : 
                 non_contact_particules.append(p)
+                texte_angles += f"\n- {p.m}u, {p.c}e : Pas de contact"
                 if len(all_x_max) != 0 :
                     local_x_max = max(all_x_max)
                 else :
@@ -522,8 +525,8 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
             ax.set_xlim(zoom_target_x - zoom_factor * zoom_factor_x * 1.05,
                         zoom_target_x + zoom_factor * zoom_factor_x * 0.3)
             ax.set_ylim(-zoom_factor * zoom_factor_y * 0.05, zoom_factor * zoom_factor_y)
-            ax.text(0.8, 0.5, texte_angles, transform=ax.transAxes,
-                fontsize=10,bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray"))
+            ax.text(0.985, 0.5, texte_angles, horizontalalignment = 'right',transform=ax.transAxes,
+                fontsize=10,bbox=dict(boxstyle="round", facecolor="white", alpha = 0.5))
 
         ax.legend()
         fig.canvas.draw_idle()
