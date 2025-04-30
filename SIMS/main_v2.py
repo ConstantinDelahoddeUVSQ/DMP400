@@ -8,7 +8,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
 # --- Configuration des chemins ---
 folder = os.path.dirname(os.path.abspath(__file__))
-# Utiliser os.path.join pour la compatibilité multi-OS
 path_partie_bleue = os.path.join(folder, "Partie Bleue (accélération)", "Code")
 path_partie_verte = os.path.join(folder, "Partie Verte (déviation magnétique)", "Code")
 sys.path.append(path_partie_bleue)
@@ -40,7 +39,6 @@ class ParticleApp:
         """
         self.root = root
         self.root.title("Simulateur SIMS - Déviations")
-        # Augmenter légèrement la largeur par défaut pour accommoder le tableau périodique
         self.root.geometry("1600x800")
 
         # Gestion propre de la fermeture
@@ -109,13 +107,11 @@ class ParticleApp:
         self.control_canvas.bind("<Enter>", lambda e: self._bind_mousewheel(True))
         self.control_canvas.bind("<Leave>", lambda e: self._bind_mousewheel(False))
 
-        # Le control_panel est maintenant le frame *scrollable*
         control_panel = self.scrollable_frame
 
         # --- Widgets dans le Panneau de Contrôle ---
         # Section Particules
         particle_frame = ttk.LabelFrame(control_panel, text="Gestion des Particules")
-        # Utiliser grid pour potentiellement mieux contrôler la largeur
         particle_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
         control_panel.columnconfigure(0, weight=1) # Permettre au frame de s'étendre en largeur
 
@@ -189,7 +185,6 @@ class ParticleApp:
         try:
             canvas_height = self.control_canvas.winfo_height()
             content_height = self.scrollable_frame.winfo_reqheight()
-            # print(f"Canvas H: {canvas_height}, Content H: {content_height}") # Debug
             if content_height <= canvas_height:
                 # Cacher la scrollbar si pas nécessaire
                 self.scrollbar.pack_forget()
@@ -246,12 +241,12 @@ class ParticleApp:
         ttk.Label(input_frame, text="Masse (u):").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
         self.mass_entry = ttk.Entry(input_frame, width=10)
         self.mass_entry.grid(row=0, column=1, padx=5, pady=2)
-        self.mass_entry.insert(0, "1.0") # Valeur par défaut
+        self.mass_entry.insert(0, "1.0") 
 
         ttk.Label(input_frame, text="Charge (e):").grid(row=0, column=2, padx=5, pady=2, sticky=tk.W)
         self.charge_entry = ttk.Entry(input_frame, width=10)
         self.charge_entry.grid(row=0, column=3, padx=5, pady=2)
-        self.charge_entry.insert(0, "1.0") # Valeur par défaut
+        self.charge_entry.insert(0, "1.0") 
 
         add_btn = ttk.Button(input_frame, text="Ajouter", command=self.add_particle)
         add_btn.grid(row=0, column=4, padx=10, pady=2)
@@ -269,7 +264,6 @@ class ParticleApp:
             btns_frame.columnconfigure(i, weight=1)
 
         # Exemples de particules communes en SIMS
-        # Utiliser des masses plus précises si possible
         btn_o2 = ttk.Button(btns_frame, text="O₂⁻", command=lambda: self.ajt_particle_connue(31.998, -1.0))
         btn_o2.grid(row=0, column=0, padx=2, sticky="ew")
 
@@ -278,7 +272,6 @@ class ParticleApp:
 
         btn_h = ttk.Button(btns_frame, text="H⁺", command=lambda: self.ajt_particle_connue(1.008, +1.0))
         btn_h.grid(row=0, column=2, padx=2, sticky="ew")
-        # --- Fin Raccourcis ---
 
         # Bouton pour ouvrir le constructeur de molécules
         create_molecule_btn = ttk.Button(parent, text="Construire une Particule...", command=self.ouvrir_fenetre_tp)
@@ -326,7 +319,6 @@ class ParticleApp:
         self.molecule_fenetre.title("Construire une Particule")
         # Ajuster la taille pour bien afficher le tableau
         self.molecule_fenetre.geometry("1100x650")
-        # Rendre modale
         self.molecule_fenetre.grab_set()
         self.molecule_fenetre.transient(self.root)
 
@@ -334,11 +326,6 @@ class ParticleApp:
         self.selected_elts = {} # Dictionnaire: {'symbole': {'mass': float, 'count': int}}
 
         # --- Tableau Périodique ---
-        # Données (masses atomiques standards de l'IUPAC, arrondies si nécessaire)
-        # REMARQUE : Pour une précision SIMS, utiliser les masses isotopiques serait mieux,
-        # mais cela complexifie grandement l'interface. L'utilisation d'une librairie
-        # comme 'mendeleev' est recommandée pour obtenir ces données facilement.
-        # Pour l'instant, on utilise les masses atomiques moyennes.
         periodic_layout = [
             [('H', 1.008), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, ('He', 4.0026)],
             [('Li', 6.94), ('Be', 9.0122), None, None, None, None, None, None, None, None, None, None, ('B', 10.81), ('C', 12.011), ('N', 14.007), ('O', 15.999), ('F', 18.998), ('Ne', 20.180)],
@@ -368,11 +355,6 @@ class ParticleApp:
                     btn = ttk.Button(table_frame, text=symbol, width=4, style=btn_style,
                                      command=lambda s=symbol, m=mass: self.construction_de_molecule(s, m))
                     btn.grid(row=row_idx, column=col_idx, padx=1, pady=pady_val, sticky="nsew")
-                else:
-                    # Ajouter un espace vide pour maintenir l'alignement si nécessaire
-                    # spacer = ttk.Frame(table_frame, width=40, height=20) # Ajuster taille
-                    # spacer.grid(row=row_idx, column=col_idx, padx=1, pady=pady_val)
-                    pass # Ou ne rien mettre si le layout grid suffit
 
         # --- Affichage Molécule en cours et Contrôles ---
         control_frame = ttk.Frame(self.molecule_fenetre)
@@ -424,7 +406,7 @@ class ParticleApp:
             self.molecule_display_var.set("(vide)")
             return
 
-        # Trier par symbole pour une formule conventionnelle (optionnel)
+        # Trier par symbole pour une formule conventionnelle 
         sorted_symbols = sorted(self.selected_elts.keys())
 
         molecule_parts = []
@@ -486,9 +468,9 @@ class ParticleApp:
             # Appeler la fonction interne d'ajout
             self._add_particle_to_list(mass_u, charge_e, "Particule manuelle")
 
-            # Optionnel: Vider les champs après ajout réussi
-            # self.mass_entry.delete(0, tk.END)
-            # self.charge_entry.delete(0, tk.END)
+            # Vider les champs après ajout réussi
+            self.mass_entry.delete(0, tk.END)
+            self.charge_entry.delete(0, tk.END)
 
         except ValueError as e:
             messagebox.showerror("Erreur d'Entrée", f"Entrée invalide : {e}")
@@ -508,14 +490,12 @@ class ParticleApp:
             if charge_e == 0:
                 raise ValueError("Charge ne peut pas être nulle pour la déviation.")
 
-            # --- Vérification de signe ---
-            # Décommentez si vous voulez forcer toutes les particules à avoir le même signe
-            # current_sign = np.sign(charge_e)
-            # if len(self.particles_data) > 0:
-            #     existing_sign = np.sign(self.particles_data[0][1])
-            #     if current_sign != existing_sign:
-            #         raise ValueError("Les particules doivent avoir des charges de même signe.")
-            # --- Fin Vérification de signe ---
+            # --- Vérification de signe (particules doivent avoir une charge de même signe) ---
+            current_sign = np.sign(charge_e)
+            if len(self.particles_data) > 0:
+                existing_sign = np.sign(self.particles_data[0][1])
+                if current_sign != existing_sign:
+                    raise ValueError("Les particules doivent avoir des charges de même signe.")
 
             # Arrondir légèrement pour la comparaison (éviter pbs de flottants)
             particle_info = (round(mass_u, 5), round(charge_e, 5))
@@ -597,12 +577,10 @@ class ParticleApp:
                 self.particle_tree.delete(item_id)
 
         self.status_var.set(f"{deleted_count} particule(s) supprimée(s).")
-        # Redessiner le graphe si des particules ont été supprimées? Optionnel.
-        # self.run_current_simulation() # Une fonction qui appelle la bonne simulation
+
 
     # --- Widgets Magnétiques ---
     def create_magnetic_widgets(self, parent):
-        # ... (Logique de base et dynamique inchangée, y compris sliders et labels) ...
         """
         Crée les widgets pour la simulation de déviation magnétique.
         """
@@ -614,7 +592,7 @@ class ParticleApp:
         self.base_inputs_frame = ttk.Frame(frame)
 
         # Entrée commune : X détecteur
-        self.x_detecteur_var = tk.StringVar(value="0.1") # Défaut réaliste
+        self.x_detecteur_var = tk.StringVar(value="0.1") 
         self.add_labeled_entry(frame, "X détecteur (m):", self.x_detecteur_var).pack(fill=tk.X, pady=3)
 
         # Checkbox pour choisir le mode
@@ -645,7 +623,7 @@ class ParticleApp:
         ttk.Label(parent_dyn, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
         self.slider_frame_bz = ttk.Frame(parent_dyn)
         self.slider_frame_bz.pack(fill=tk.X, pady=(0,5))
-        self.bz_var = tk.DoubleVar(value=0.2) # Sera ajusté si besoin
+        self.bz_var = tk.DoubleVar(value=0.2)
         self.bz_slider = ttk.Scale(self.slider_frame_bz, from_=0.01, to=0.5, orient=tk.HORIZONTAL,
                                    variable=self.bz_var, command=self._on_bz_slider_change)
         self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
@@ -662,7 +640,7 @@ class ParticleApp:
         ttk.Label(parent_dyn, text="Vitesse Initiale (m/s):").pack(anchor=tk.W, pady=(5,0))
         self.slider_frame_v0 = ttk.Frame(parent_dyn)
         self.slider_frame_v0.pack(fill=tk.X, pady=(0,5))
-        self.v0_var = tk.DoubleVar(value=5.5e5) # Sera ajusté si besoin
+        self.v0_var = tk.DoubleVar(value=5.5e5)
         self.v0_slider = ttk.Scale(self.slider_frame_v0, from_=1e5, to=1e6, orient=tk.HORIZONTAL,
                                    variable=self.v0_var, command=self._on_v0_slider_change)
         self.v0_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
@@ -678,7 +656,6 @@ class ParticleApp:
 
 
     def toggle_dynamic_inputs(self) :
-        # ... (inchangé) ...
         """Gère l'affichage des widgets magnétiques selon le mode choisi."""
         if self.dynamic_trace_var.get():
             self.base_inputs_frame.pack_forget()
@@ -689,28 +666,23 @@ class ParticleApp:
 
     # --- Callbacks Sliders Magnétiques ---
     def _on_bz_slider_change(self, event=None):
-        # ... (inchangé) ...
         self._update_bz_label()
         if self.particles_data:
             self.run_magnetic_simulation(called_by_slider=True)
 
     def _update_bz_label(self, event=None):
-        # ... (inchangé) ...
         self.bz_label_var.set(f"{self.bz_var.get():.3f} T")
 
     def _on_v0_slider_change(self, event=None):
-        # ... (inchangé) ...
         self._update_v0_label()
         if self.particles_data:
             self.run_magnetic_simulation(called_by_slider=True)
 
     def _update_v0_label(self, event=None):
-        # ... (inchangé) ...
         self.v0_label_var.set(f"{self.v0_var.get():.2e} m/s")
 
     # --- Widgets Électriques ---
     def create_electric_widgets(self, parent):
-        # ... (Logique de base et dynamique inchangée, y compris sliders et labels) ...
         """
         Crée les widgets pour la simulation de déviation électrique.
         """
@@ -724,7 +696,7 @@ class ParticleApp:
         # --- Widgets Communs ---
         self.angle_var = tk.StringVar(value="30") # En degrés
         self.add_labeled_entry(frame, "Angle Initial (° vs +y):", self.angle_var).pack(fill=tk.X, pady=3)
-        self.dist_var = tk.StringVar(value="0.05") # 5 cm par défaut
+        self.dist_var = tk.StringVar(value="0.05")
         self.add_labeled_entry(frame, "Distance/Hauteur (m):", self.dist_var).pack(fill=tk.X, pady=3)
 
         # Checkbox pour choisir le mode
@@ -748,14 +720,14 @@ class ParticleApp:
         # Limites V0
         self.elec_v0_min_var = tk.StringVar(value="1e4")
         self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.elec_v0_min_var).pack(fill=tk.X, pady=3)
-        self.elec_v0_max_var = tk.StringVar(value="2e5") # Augmenté un peu
+        self.elec_v0_max_var = tk.StringVar(value="2e5") 
         self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.elec_v0_max_var).pack(fill=tk.X, pady=3)
 
         # Slider V0
         ttk.Label(parent_dyn, text="Vitesse Initiale V0 (m/s):").pack(anchor=tk.W, pady=(5, 0))
         self.slider_frame_v0_elec = ttk.Frame(parent_dyn)
         self.slider_frame_v0_elec.pack(fill=tk.X, pady=(0, 5))
-        self.v0_var_elec = tk.DoubleVar(value=1.05e5) # Sera ajusté si besoin
+        self.v0_var_elec = tk.DoubleVar(value=1.05e5) 
         self.v0_slider_elec = ttk.Scale(self.slider_frame_v0_elec, from_=1e4, to=2e5, orient=tk.HORIZONTAL,
                                         variable=self.v0_var_elec, command=self._on_v0_slider_change_elec)
         self.v0_slider_elec.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
@@ -772,7 +744,7 @@ class ParticleApp:
         ttk.Label(parent_dyn, text="Diff. Potentiel (V):").pack(anchor=tk.W, pady=(5, 0))
         self.slider_frame_v = ttk.Frame(parent_dyn)
         self.slider_frame_v.pack(fill=tk.X, pady=(0, 5))
-        self.pot_var = tk.DoubleVar(value=0) # Sera ajusté si besoin
+        self.pot_var = tk.DoubleVar(value=0)
         self.pot_slider = ttk.Scale(self.slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL,
                                     variable=self.pot_var, command=self._on_pot_slider_change)
         self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
@@ -787,7 +759,6 @@ class ParticleApp:
         self.toggle_dynamic_electric()
 
     def toggle_dynamic_electric(self):
-        # ... (inchangé) ...
         """Gère l'affichage des widgets électriques selon le mode choisi."""
         if self.dynamic_elec_var.get():
             self.base_electric_inputs_frame.pack_forget()
@@ -798,28 +769,23 @@ class ParticleApp:
 
     # --- Callbacks Sliders Électriques ---
     def _on_pot_slider_change(self, event=None):
-        # ... (inchangé) ...
         self._update_pot_label()
         if self.particles_data:
             self.run_electric_simulation(called_by_slider=True)
 
     def _on_v0_slider_change_elec(self, event=None) :
-        # ... (inchangé) ...
         self._update_v0_label_elec()
         if self.particles_data:
             self.run_electric_simulation(called_by_slider=True)
 
     def _update_pot_label(self, event=None):
-        # ... (inchangé) ...
         self.pot_label_var.set(f"{self.pot_var.get():.1f} V")
 
     def _update_v0_label_elec(self, event=None):
-        # ... (inchangé) ...
         self.v0_label_var_elec.set(f"{self.v0_var_elec.get():.2e} m/s")
 
     # --- Helper ---
     def add_labeled_entry(self, parent, label_text, string_var):
-        # ... (inchangé) ...
         """Crée une paire Label + Entry."""
         entry_frame = ttk.Frame(parent)
         # Augmenter la largeur du label pour l'alignement
@@ -830,7 +796,6 @@ class ParticleApp:
 
     # --- Exécution des Simulations ---
     def run_magnetic_simulation(self, called_by_slider=False):
-        # ... (Logique de préservation du slider inchangée) ...
         """Lance la simulation de déviation magnétique."""
         if not self.particles_data:
             if not called_by_slider:
@@ -879,9 +844,6 @@ class ParticleApp:
 
                     # Validation des limites
                     if v0_min <= 0 : raise ValueError("V0 min doit être > 0.")
-                    # Permettre Bz de passer par 0 si les limites l'encadrent
-                    # if np.sign(bz_min) * np.sign(bz_max) < 0 and bz_min != 0 and bz_max != 0 :
-                    #     raise ValueError("Les limites Bz doivent être de même signe (ou l'une nulle).")
                     if v0_min >= v0_max : raise ValueError("V0 max doit être > V0 min.")
                     if bz_min >= bz_max : raise ValueError("Bz max doit être > Bz min.")
 
@@ -907,22 +869,20 @@ class ParticleApp:
                 # Lire la valeur actuelle des sliders
                 v0 = self.v0_var.get()
                 bz = self.bz_var.get()
-                if abs(bz) < 1e-15: # Vérifier si bz est (presque) nul
+                if abs(bz) < 1e-15: 
                      raise ValueError("Le champ magnétique (Bz) est trop proche de zéro.")
 
             # --- Exécution Tracé ---
-            self.ax.cla() # Effacer
+            self.ax.cla() 
             self.status_var.set("Calcul déviation magnétique...")
             self.root.update_idletasks()
 
-            # Appel backend (suppose qu'il prend la liste de tuples (u, e))
             partie_electroaimant.tracer_ensemble_trajectoires(
                     self.particles_data, v0, bz, x_detecteur, create_plot=False, ax=self.ax
                 )
-            # Note: Le titre et les labels sont mis par la fonction backend ici
 
             self.ax.relim()
-            self.ax.autoscale_view(True, True, True) # Recalculer les limites
+            self.ax.autoscale_view(True, True, True)
             self.canvas.draw()
             self.status_var.set("Tracé déviation magnétique terminé.")
 
@@ -936,7 +896,6 @@ class ParticleApp:
 
 
     def run_electric_simulation(self, called_by_slider=False):
-        # ... (Logique de préservation du slider inchangée) ...
         """Lance la simulation de déviation électrique."""
         if not self.particles_data:
             if not called_by_slider: messagebox.showwarning("Aucune Particule", "Veuillez ajouter au moins une particule.", parent=self.root)
@@ -987,12 +946,10 @@ class ParticleApp:
                     v0_min = float(v0_min_str)
                     v0_max = float(v0_max_str)
 
-                    # Validation
                     if v0_min <= 0 : raise ValueError("V0 min doit être > 0.")
                     if v0_min >= v0_max : raise ValueError("V0 max doit être > V0 min.")
                     if pot_min >= pot_max : raise ValueError("Potentiel max doit être > Potentiel min.")
 
-                    # Préserver valeurs sliders
                     current_pot = self.pot_var.get()
                     current_v0 = self.v0_var_elec.get()
 
@@ -1008,34 +965,16 @@ class ParticleApp:
                         self.v0_var_elec.set(v0_init)
                     self._update_v0_label_elec()
 
-                # Lire valeurs actuelles sliders
                 v0 = self.v0_var_elec.get()
                 potentiel = self.pot_var.get()
 
-            # --- Calcul E et Exécution Tracé ---
-            # Le backend calcule E = potentiel / hauteur_distance
-            # E_calc = deviation.champ_electrique_v2(hauteur_distance, potentiel)
-            # ATTENTION : Le backend a été modifié pour prendre potentiel directement.
-            # Il faut vérifier quelle version du backend est utilisée.
-            # Supposons que le backend deviation.tracer_ensemble_trajectoires attend E :
-            # try:
-            #      E_calc = deviation.champ_electrique_v2(hauteur_distance, potentiel)
-            # except ValueError as e_calc_err:
-            #      raise ValueError(f"Erreur calcul champ E: {e_calc_err}")
 
-
-            self.ax.cla() # Effacer
+            self.ax.cla() 
             self.status_var.set("Calcul déviation électrique...")
             self.root.update_idletasks()
 
-            # Appel backend
-            # deviation.tracer_ensemble_trajectoires(self.particles_data, v0, , hauteur_initiale, E_calc, ax=self.ax)
             deviation.tracer_ensemble_trajectoires(self.particles_data, v0, potentiel, angle_rad, hauteur_initiale, create_plot=False, ax=self.ax)
-            # Note: Le titre, labels sont mis par le backend ici
 
-            # Pas besoin de relim/autoscale si le backend le fait déjà bien
-            # self.ax.relim()
-            # self.ax.autoscale_view(True, True, True)
             self.canvas.draw()
             self.status_var.set("Tracé déviation électrique terminé.")
 
@@ -1048,12 +987,7 @@ class ParticleApp:
             self.status_var.set("Erreur simulation électrique.")
 
 
-# --- Point d'entrée ---
 if __name__ == "__main__":
     root = tk.Tk()
-    # Augmenter la taille de police globale (optionnel)
-    # default_font = font.nametofont("TkDefaultFont")
-    # default_font.configure(size=10)
-    # root.option_add("*Font", default_font)
     app = ParticleApp(root)
     root.mainloop()
