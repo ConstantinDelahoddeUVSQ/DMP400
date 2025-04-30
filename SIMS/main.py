@@ -136,8 +136,22 @@ class ParticleApp:
 
         add_btn = ttk.Button(input_frame, text="Ajouter", command=self.add_particle)
         add_btn.grid(row=0, column=4, padx=10)
+        
+        ttk.Label(input_frame, text="Quelques molécules caractéristiques :").grid(row=0, column=0, padx=5, sticky=tk.W)
+        btns_frame = ttk.Frame(input_frame)
+        btns_frame.pack(side=tk.LEFT, padx=10)
 
-        # Treeview pour afficher les particules
+        btn_o2 = ttk.Button(btns_frame, text="O₂", command=lambda: self.ajt_particle_connue(32.0, -2.0))
+        btn_o2.pack(side=tk.LEFT, padx=5)
+
+        btn_si = ttk.Button(btns_frame, text="Si", command=lambda: self.ajt_particle_connue(28.0, +1.0))
+        btn_si.pack(side=tk.LEFT, padx=5)
+
+        create_molecule_btn = ttk.Button(parent, text="Créer ma particule chargée", command=self.ouvrir_fenetre_tp)
+        create_molecule_btn.pack(pady=5)
+
+
+        # Bloc pour afficher les particules
         tree_frame = ttk.Frame(parent)
         tree_frame.pack(pady=5, padx=5, fill=tk.BOTH, expand=True)
 
@@ -147,7 +161,7 @@ class ParticleApp:
         self.particle_tree.column('Mass (u)', width=80, anchor=tk.CENTER)
         self.particle_tree.column('Charge (e)', width=80, anchor=tk.CENTER)
 
-        # Scrollbar pour Treeview
+        # Scrollbar pour le bloc
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.particle_tree.yview)
         self.particle_tree.configure(yscrollcommand=scrollbar.set)
 
@@ -156,6 +170,139 @@ class ParticleApp:
 
         remove_btn = ttk.Button(parent, text="Supprimer sélection", command=self.remove_particle)
         remove_btn.pack(pady=5)
+
+    def ouvrir_fenetre_tp(self):
+            """
+            Ouvre une nouvelle fenêtre pour créer une molécule à partir du tableau périodique.
+            """
+            self.molecule_fenetre = tk.Toplevel(self.root)
+            self.molecule_fenetre.title("Construire une molécule")
+            self.molecule_fenetre.geometry("1000x600")
+
+
+            self.selected_elts = {}  
+
+            periodic_layout = [
+    [('H', 1.008)] + [None]*16 + [('He', 4.0026)],
+    [('Li', 6.94), ('Be', 9.0122)] + [None]*10 + [('B', 10.81), ('C', 12.011), ('N', 14.007), ('O', 15.999), ('F', 18.998), ('Ne', 20.180)],
+    [('Na', 22.990), ('Mg', 24.305)] + [None]*10 + [('Al', 26.982), ('Si', 28.085), ('P', 30.974), ('S', 32.06), ('Cl', 35.45), ('Ar', 39.948)],
+    [('K', 39.098), ('Ca', 40.078), ('Sc', 44.956), ('Ti', 47.867), ('V', 50.942), ('Cr', 51.996),
+     ('Mn', 54.938), ('Fe', 55.845), ('Co', 58.933), ('Ni', 58.693), ('Cu', 63.546), ('Zn', 65.38),
+     ('Ga', 69.723), ('Ge', 72.630), ('As', 74.922), ('Se', 78.971), ('Br', 79.904), ('Kr', 83.798)],
+    [('Rb', 85.468), ('Sr', 87.62), ('Y', 88.906), ('Zr', 91.224), ('Nb', 92.906), ('Mo', 95.95),
+     ('Tc', 98.0), ('Ru', 101.07), ('Rh', 102.91), ('Pd', 106.42), ('Ag', 107.87), ('Cd', 112.41),
+     ('In', 114.82), ('Sn', 118.71), ('Sb', 121.76), ('Te', 127.60), ('I', 126.90), ('Xe', 131.29)],
+    [('Cs', 132.91), ('Ba', 137.33)] + [None]*2 + 
+    [('Hf', 178.49), ('Ta', 180.95), ('W', 183.84), ('Re', 186.21), ('Os', 190.23), ('Ir', 192.22),
+     ('Pt', 195.08), ('Au', 196.97), ('Hg', 200.59), ('Tl', 204.38), ('Pb', 207.2), ('Bi', 208.98),
+     ('Po', 209.0), ('At', 210.0), ('Rn', 222.0)],
+    [('Fr', 223.0), ('Ra', 226.0)] + [None]*2 +
+    [('Rf', 267.0), ('Db', 270.0), ('Sg', 271.0), ('Bh', 270.0), ('Hs', 277.0), ('Mt', 278.0),
+     ('Ds', 281.0), ('Rg', 282.0), ('Cn', 285.0), ('Nh', 286.0), ('Fl', 289.0), ('Mc', 290.0),
+     ('Lv', 293.0), ('Ts', 294.0), ('Og', 294.0)],
+    [None]*2 + [('La', 138.91), ('Ce', 140.12), ('Pr', 140.91), ('Nd', 144.24), ('Pm', 145.0),
+     ('Sm', 150.36), ('Eu', 151.96), ('Gd', 157.25), ('Tb', 158.93), ('Dy', 162.50), ('Ho', 164.93),
+     ('Er', 167.26), ('Tm', 168.93), ('Yb', 173.05), ('Lu', 174.97)],
+    [None]*2 + [('Ac', 227.0), ('Th', 232.04), ('Pa', 231.04), ('U', 238.03), ('Np', 237.0),
+     ('Pu', 244.0), ('Am', 243.0), ('Cm', 247.0), ('Bk', 247.0), ('Cf', 251.0), ('Es', 252.0),
+     ('Fm', 257.0), ('Md', 258.0), ('No', 259.0), ('Lr', 262.0)],
+]
+
+            
+
+            table_frame = ttk.Frame(self.molecule_fenetre)
+            table_frame.pack(pady=10, padx=10)
+
+            for row_idx, row in enumerate(periodic_layout):
+                for col_idx, element in enumerate(row):
+                    if element:
+                        symbol, mass = element
+                        btn = ttk.Button(table_frame, text=symbol, width=4,
+                                        command=lambda s=symbol, m=mass: self.construction_de_molecule(s, m))
+                        btn.grid(row=row_idx, column=col_idx, padx=2, pady=2)
+
+
+            self.molecule_display_var = tk.StringVar(value="Molécule : (vide)")
+            ttk.Label(self.molecule_fenetre, textvariable=self.molecule_display_var).pack(pady=10)
+
+            charge_frame = ttk.Frame(self.molecule_fenetre)
+            charge_frame.pack(pady=5)
+
+            ttk.Label(charge_frame, text="Charge (e) :").pack(side=tk.LEFT)
+            self.molecule_charge_var = tk.StringVar(value="1.0")
+            charge_entry = ttk.Entry(charge_frame, textvariable=self.molecule_charge_var, width=10)
+            charge_entry.pack(side=tk.LEFT, padx=5)
+
+            submit_btn = ttk.Button(self.molecule_fenetre, text="Soumettre molécule", command=self.submit_molecule)
+            submit_btn.pack(pady=10)
+
+
+    def construction_de_molecule(self, symbol, mass):
+            """
+            Ajoute un élément à la molécule en cours.
+            """
+            if symbol in self.selected_elts:
+                self.selected_elts[symbol]['count'] += 1
+            else:
+                self.selected_elts[symbol] = {'mass': mass, 'count': 1}
+
+            molecule_text = " + ".join(f"{v['count']}{k}" for k, v in self.selected_elts.items())
+            self.molecule_display_var.set(f"Molécule : {molecule_text}")
+
+    def ajt_particle_connue(self, mass_u, charge_e):
+            """
+            Ajoute une particule prédéfinie (ex: O₂, Si) directement dans la liste.
+
+            Parameters
+            ----------
+            mass_u : float
+                Masse en unité atomique
+            charge_e : float
+                Charge en multiple de e
+            """
+            try:
+                if mass_u <= 0:
+                    raise ValueError("Masse doit être > 0.")
+                if len(self.particles_data) > 0:
+                    if charge_e * self.particles_data[0][1] <= 0:
+                        raise ValueError("Veuillez rentrer des particules de charge identique")
+
+                particle_info = (mass_u, charge_e)
+                if particle_info not in self.particles_data:
+                    self.particles_data.append(particle_info)
+                    self.particle_tree.insert('', tk.END, values=(f"{mass_u:.3f}", f"{charge_e:+.2f}"))
+                    self.status_var.set(f"Particule ajoutée: {mass_u:.3f} u, {charge_e:+.2f} e")
+                
+            except ValueError as e:
+                messagebox.showerror("Erreur d'entrée", f"Entrée invalide : {e}")
+                self.status_var.set("Erreur d'ajout de particule.")
+
+    def submit_molecule(self):
+        """
+        Calcule la masse totale et ajoute la molécule comme particule avec la charge entrée.
+        """
+        try:
+            total_mass = sum(v['mass'] * v['count'] for v in self.selected_elts.values())
+
+            charge = float(self.molecule_charge_var.get())
+
+            if total_mass <= 0:
+                raise ValueError("La masse totale est invalide.")
+            if len(self.particles_data) > 0:
+                if charge * self.particles_data[0][1] <= 0:
+                    raise ValueError("Veuillez rentrer des particules de charge identique.")
+
+            particle_info = (total_mass, charge)
+            if particle_info not in self.particles_data:
+                self.particles_data.append(particle_info)
+                self.particle_tree.insert('', tk.END, values=(f"{total_mass:.3f}", f"{charge:+.2f}"))
+                self.status_var.set(f"Molécule ajoutée : {total_mass:.3f} u, {charge:+.2f} e")
+
+            self.molecule_fenetre.destroy()
+
+        except ValueError as e:
+            messagebox.showerror("Erreur de saisie", f"Erreur de soumission : {e}")
+            self.status_var.set("Erreur lors de la soumission de molécule.")
 
     # Widgets magnétiques
     def create_magnetic_widgets(self, parent):
