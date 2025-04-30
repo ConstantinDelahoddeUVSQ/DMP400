@@ -121,25 +121,26 @@ class ParticleApp:
         parent : tkinter.frame
             Le conteneur (Frame) dans lequel placer les widgets.
         """
+    def create_particle_widgets(self, parent):
+
         input_frame = ttk.Frame(parent)
         input_frame.pack(pady=5, padx=5, fill=tk.X)
 
-        ttk.Label(input_frame, text="Masse (u):").grid(row=0, column=0, padx=5, sticky=tk.W)
+        ttk.Label(input_frame, text="Masse (u):").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
         self.mass_entry = ttk.Entry(input_frame, width=10)
-        self.mass_entry.grid(row=0, column=1, padx=5)
-        self.mass_entry.insert(0, "1.0")
+        self.mass_entry.grid(row=0, column=1, padx=5, pady=2)
 
-        ttk.Label(input_frame, text="Charge (e):").grid(row=0, column=2, padx=5, sticky=tk.W)
+        ttk.Label(input_frame, text="Charge (e):").grid(row=0, column=2, padx=5, pady=2, sticky=tk.W)
         self.charge_entry = ttk.Entry(input_frame, width=10)
-        self.charge_entry.grid(row=0, column=3, padx=5)
-        self.charge_entry.insert(0, "1.0")
+        self.charge_entry.grid(row=0, column=3, padx=5, pady=2)
 
         add_btn = ttk.Button(input_frame, text="Ajouter", command=self.add_particle)
-        add_btn.grid(row=0, column=4, padx=10)
-        
-        ttk.Label(input_frame, text="Quelques molécules caractéristiques :").grid(row=0, column=0, padx=5, sticky=tk.W)
+        add_btn.grid(row=0, column=4, padx=10, pady=2)
+
+        ttk.Label(input_frame, text="Quelques molécules caractéristiques :").grid(row=1, column=0, columnspan=5, sticky=tk.W, pady=(10, 0))
+
         btns_frame = ttk.Frame(input_frame)
-        btns_frame.pack(side=tk.LEFT, padx=10)
+        btns_frame.grid(row=2, column=0, columnspan=5, pady=5, sticky=tk.W)
 
         btn_o2 = ttk.Button(btns_frame, text="O₂", command=lambda: self.ajt_particle_connue(32.0, -2.0))
         btn_o2.pack(side=tk.LEFT, padx=5)
@@ -149,7 +150,6 @@ class ParticleApp:
 
         create_molecule_btn = ttk.Button(parent, text="Créer ma particule chargée", command=self.ouvrir_fenetre_tp)
         create_molecule_btn.pack(pady=5)
-
 
         # Bloc pour afficher les particules
         tree_frame = ttk.Frame(parent)
