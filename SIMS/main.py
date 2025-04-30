@@ -52,8 +52,43 @@ class ParticleApp:
         main_paned_window.pack(fill=tk.BOTH, expand=True)
 
         # Panneau de contrôle
-        control_panel = ttk.Frame(main_paned_window, width=400)
-        main_paned_window.add(control_panel, weight=1)
+       # --- Scrollable Control Panel avec redimensionnement correct ---
+        container_frame = ttk.Frame(main_paned_window)
+        main_paned_window.add(container_frame, weight=1)
+
+        control_canvas = tk.Canvas(container_frame)
+        scrollbar = ttk.Scrollbar(container_frame, orient="vertical", command=control_canvas.yview)
+        scrollable_frame = ttk.Frame(control_canvas)
+
+        
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: control_canvas.configure(
+                scrollregion=control_canvas.bbox("all")
+            )
+        )
+
+        window_id = control_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+        control_canvas.configure(yscrollcommand=scrollbar.set)
+
+        control_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Suivre la largeur automatiquement
+        def resize_canvas(event):
+            control_canvas.itemconfig(window_id, width=event.width)
+
+        control_canvas.bind("<Configure>", resize_canvas)
+
+        # Activer le scroll avec la molette
+        def _on_mousewheel(event):
+            control_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        control_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        control_panel = scrollable_frame
 
         # Section Particules
         particle_frame = ttk.LabelFrame(control_panel, text="Gestion des Particules")
