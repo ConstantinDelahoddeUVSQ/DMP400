@@ -1,0 +1,1112 @@
+import sys, os
+import tkinter as tk
+from tkinter import ttk, messagebox, font
+import numpy as np
+import scipy.constants as constants
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from mendeleev import element as get_element_data
+
+# --- Configuration des chemins ---
+folder = os.path.dirname(os.path.abspath(__file__))
+# Utiliser os.path.join pour la compatibilité multi-OS
+path_partie_bleue = os.path.join(folder, "Partie Bleue (accélération)", "Code")
+path_partie_verte = os.path.join(folder, "Partie Verte (déviation magnétique)", "Code")
+sys.path.append(path_partie_bleue)
+sys.path.append(path_partie_verte)
+
+# --- Importations des modules de simulation ---
+try:
+    import deviation # type: ignore
+    import partie_electroaimant # type: ignore
+except ImportError as e:
+    print(f"Erreur d'importation: {e}")
+    print("Impossible d'importer les modules de simulation.")
+    print(f"Vérifiez l'existence des fichiers .py dans:")
+    print(f"  '{path_partie_bleue}'")
+    print(f"  '{path_partie_verte}'")
+    print("Assurez-vous que ces dossiers sont corrects et contiennent les fichiers __init__.py si nécessaire.")
+    sys.exit(1)
+
+# --- Classe principale de l'application ---
+class ParticleApp:
+    def __init__(self, root):
+        """
+        Initialise l'application de simulation SIMS.
+
+        Parameters
+        ----------
+        root : tk.Tk
+            La fenêtre racine de l'application Tkinter.
+        """
+        self.root = root
+        self.root.title("Simulateur SIMS - Déviations")
+        # Augmenter légèrement la largeur par défaut pour accommoder le tableau périodique
+        self.root.geometry("1600x800")
+
+        # Gestion propre de la fermeture
+        self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+        # --- Style ---
+        style = ttk.Style()
+        # Essayer d'utiliser un thème natif si possible, sinon 'clam'
+        try:
+            style.theme_use('vista') # Windows
+        except tk.TclError:
+            try:
+                style.theme_use('aqua') # macOS
+            except tk.TclError:
+                style.theme_use('clam') # Fallback
+        style.configure("TButton", padding=6, relief="flat")
+        # Augmenter la taille de la police pour les titres de section
+        style.configure("TLabelframe.Label", font=('Helvetica', 13, 'bold'))
+        style.configure("TLabel", padding=2)
+        style.configure("Treeview.Heading", font=('Helvetica', 10, 'bold'))
+        # Style pour boutons du tableau périodique (optionnel)
+        style.configure("Element.TButton", padding=2, font=('Segoe UI', 9))
+        style.configure("LanAct.TButton", padding=2, font=('Segoe UI', 9), background="#e8f4ea") # Vert pâle
+
+        # --- Données ---
+        self.particles_data = [] # Liste de tuples (masse_u: float, charge_e: float)
+
+        # --- Structure Principale (PanedWindow) ---
+        main_paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
+        main_paned_window.pack(fill=tk.BOTH, expand=True)
+
+        # --- Panneau de Contrôle Scrollable (Gauche) ---
+        # Conteneur pour le Canvas et la Scrollbar
+        container_frame = ttk.Frame(main_paned_window, width=450) # Donner une largeur initiale
+        container_frame.pack_propagate(False) # Empêcher le frame de rétrécir
+        main_paned_window.add(container_frame, weight=0) # Poids 0 pour largeur fixe initiale
+
+        # Canvas pour le contenu scrollable
+        self.control_canvas = tk.Canvas(container_frame)
+        # Scrollbar liée au Canvas
+        self.scrollbar = ttk.Scrollbar(container_frame, orient="vertical", command=self.control_canvas.yview)
+        # Frame interne qui contiendra tous les widgets de contrôle
+        self.scrollable_frame = ttk.Frame(self.control_canvas)
+
+        # Configurer la scrollregion quand le contenu change de taille
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self._update_scroll_region_and_bar(e)
+        )
+
+        # Placer le frame interne dans le Canvas
+        self.window_id = self.control_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        # Lier la scrollbar au Canvas
+        self.control_canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        # Placement du Canvas et de la Scrollbar dans leur conteneur
+        self.control_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Ajuster la largeur du contenu interne quand le Canvas est redimensionné
+        # Et mettre à jour l'état de la scrollbar
+        self.control_canvas.bind("<Configure>", self._resize_canvas_content_and_update_bar)
+
+        # --- Liaisons Molette Souris pour le défilement ---
+        self.control_canvas.bind("<Enter>", lambda e: self._bind_mousewheel(True))
+        self.control_canvas.bind("<Leave>", lambda e: self._bind_mousewheel(False))
+
+        # Le control_panel est maintenant le frame *scrollable*
+        control_panel = self.scrollable_frame
+
+        # --- Widgets dans le Panneau de Contrôle ---
+        # Section Particules
+        particle_frame = ttk.LabelFrame(control_panel, text="Gestion des Particules")
+        # Utiliser grid pour potentiellement mieux contrôler la largeur
+        particle_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
+        control_panel.columnconfigure(0, weight=1) # Permettre au frame de s'étendre en largeur
+
+        self.create_particle_widgets(particle_frame)
+
+        # Section Onglets Simulations
+        self.notebook = ttk.Notebook(control_panel)
+        self.notebook.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        control_panel.rowconfigure(1, weight=1) # Permettre au notebook de s'étendre
+
+        self.mag_tab = ttk.Frame(self.notebook)
+        self.elec_tab = ttk.Frame(self.notebook)
+
+        self.notebook.add(self.mag_tab, text='Déviation Magnétique')
+        self.notebook.add(self.elec_tab, text='Déviation Électrique')
+
+        self.create_magnetic_widgets(self.mag_tab)
+        self.create_electric_widgets(self.elec_tab)
+
+        # --- Panneau Plot (Droite) ---
+        plot_panel = ttk.Frame(main_paned_window)
+        main_paned_window.add(plot_panel, weight=1) # Poids > 0 pour qu'il prenne le reste
+
+        # Zone Matplotlib
+        self.fig, self.ax = plt.subplots()
+        self.fig.tight_layout(pad=3.0) # Ajouter un peu d'espace
+        self.canvas = FigureCanvasTkAgg(self.fig, master=plot_panel)
+        self.canvas_widget = self.canvas.get_tk_widget()
+        self.canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+        # Barre d'outils Matplotlib
+        toolbar = NavigationToolbar2Tk(self.canvas, plot_panel)
+        toolbar.update()
+        toolbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # --- Barre de Statut ---
+        self.status_var = tk.StringVar()
+        self.status_var.set("Prêt.")
+        status_bar = ttk.Label(root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
+        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+    # --- Fonctions de Gestion Scrollbar ---
+    def _bind_mousewheel(self, enter):
+        """Lie ou délie les événements de molette pour le canvas."""
+        if enter:
+            self.control_canvas.bind_all("<MouseWheel>", self._on_mousewheel) # Windows/Mac
+            self.control_canvas.bind_all("<Button-4>", self._on_mousewheel) # Linux Scroll Up
+            self.control_canvas.bind_all("<Button-5>", self._on_mousewheel) # Linux Scroll Down
+        else:
+            self.control_canvas.unbind_all("<MouseWheel>")
+            self.control_canvas.unbind_all("<Button-4>")
+            self.control_canvas.unbind_all("<Button-5>")
+
+    def _update_scroll_region_and_bar(self, event=None):
+        """Met à jour la scrollregion ET l'état de la scrollbar."""
+        self.control_canvas.configure(scrollregion=self.control_canvas.bbox("all"))
+        self._update_scrollbar_state()
+
+    def _resize_canvas_content_and_update_bar(self, event=None):
+        """Redimensionne le contenu interne et met à jour l'état de la scrollbar."""
+        canvas_width = event.width
+        self.control_canvas.itemconfig(self.window_id, width=canvas_width)
+        self._update_scrollbar_state()
+
+    def _update_scrollbar_state(self):
+        """Active ou désactive la scrollbar si le contenu dépasse."""
+        self.root.after(10, self._check_and_set_scrollbar_state)
+
+    def _check_and_set_scrollbar_state(self):
+        """Vérifie et active/désactive la scrollbar."""
+        try:
+            canvas_height = self.control_canvas.winfo_height()
+            content_height = self.scrollable_frame.winfo_reqheight()
+            # print(f"Canvas H: {canvas_height}, Content H: {content_height}") # Debug
+            if content_height <= canvas_height:
+                # Cacher la scrollbar si pas nécessaire
+                self.scrollbar.pack_forget()
+            else:
+                # Afficher la scrollbar si nécessaire
+                self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        except tk.TclError:
+            pass # Fenêtre en cours de fermeture
+
+    def _on_mousewheel(self, event):
+        """Gère le défilement par molette si scroll nécessaire."""
+        try:
+            canvas_height = self.control_canvas.winfo_height()
+            content_height = self.scrollable_frame.winfo_reqheight()
+            if content_height <= canvas_height:
+                return # Ne rien faire si le contenu ne dépasse pas
+        except tk.TclError:
+             return
+
+        # Défiler
+        if event.num == 5 or event.delta < 0:
+            self.control_canvas.yview_scroll(1, "units")
+        elif event.num == 4 or event.delta > 0:
+            self.control_canvas.yview_scroll(-1, "units")
+        return "break" # Empêcher la propagation si on a scrollé ici
+
+
+    # --- Fermeture Propre ---
+    def _on_closing(self):
+        """Gère la fermeture de la fenêtre."""
+        if messagebox.askokcancel("Quitter", "Voulez-vous vraiment quitter le simulateur ?"):
+            try:
+                plt.close(self.fig)
+            except Exception as e:
+                print(f"Erreur lors de la fermeture de la figure Matplotlib: {e}")
+            try:
+                self.root.destroy()
+            except Exception as e:
+                print(f"Erreur lors de la destruction de la fenêtre Tkinter: {e}")
+
+    # --- Widgets Section Particules ---
+    def create_particle_widgets(self, parent):
+        """
+        Crée les widgets pour ajouter, lister et supprimer des particules.
+
+        Parameters
+        ----------
+        parent : ttk.LabelFrame
+            Le conteneur (Frame) dans lequel placer les widgets.
+        """
+        input_frame = ttk.Frame(parent)
+        input_frame.pack(pady=5, padx=5, fill=tk.X)
+
+        ttk.Label(input_frame, text="Masse (u):").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
+        self.mass_entry = ttk.Entry(input_frame, width=10)
+        self.mass_entry.grid(row=0, column=1, padx=5, pady=2)
+        self.mass_entry.insert(0, "1.0") # Valeur par défaut
+
+        ttk.Label(input_frame, text="Charge (e):").grid(row=0, column=2, padx=5, pady=2, sticky=tk.W)
+        self.charge_entry = ttk.Entry(input_frame, width=10)
+        self.charge_entry.grid(row=0, column=3, padx=5, pady=2)
+        self.charge_entry.insert(0, "1.0") # Valeur par défaut
+
+        add_btn = ttk.Button(input_frame, text="Ajouter", command=self.add_particle)
+        add_btn.grid(row=0, column=4, padx=10, pady=2)
+
+        # --- Section Raccourcis ---
+        ttk.Label(input_frame, text="Raccourcis :").grid(row=1, column=0, columnspan=5, sticky=tk.W, pady=(10, 0))
+
+        btns_frame = ttk.Frame(input_frame)
+        # Utiliser grid pour que ça prenne la largeur
+        btns_frame.grid(row=2, column=0, columnspan=5, pady=5, sticky="ew")
+
+        # Configurer les colonnes pour un espacement égal
+        num_btns = 3
+        for i in range(num_btns):
+            btns_frame.columnconfigure(i, weight=1)
+
+        # Exemples de particules communes en SIMS
+        # Utiliser des masses plus précises si possible
+        btn_o2 = ttk.Button(btns_frame, text="O₂⁻", command=lambda: self.ajt_particle_connue(31.998, -1.0))
+        btn_o2.grid(row=0, column=0, padx=2, sticky="ew")
+
+        btn_si = ttk.Button(btns_frame, text="Si⁺", command=lambda: self.ajt_particle_connue(28.085, +1.0))
+        btn_si.grid(row=0, column=1, padx=2, sticky="ew")
+
+        btn_h = ttk.Button(btns_frame, text="H⁺", command=lambda: self.ajt_particle_connue(1.008, +1.0))
+        btn_h.grid(row=0, column=2, padx=2, sticky="ew")
+        # --- Fin Raccourcis ---
+
+        # Bouton pour ouvrir le constructeur de molécules
+        create_molecule_btn = ttk.Button(parent, text="Construire une Particule...", command=self.ouvrir_fenetre_tp)
+        create_molecule_btn.pack(pady=(5, 10), padx=10, fill=tk.X)
+
+        # --- Liste des Particules (Treeview) ---
+        tree_frame = ttk.Frame(parent)
+        # Augmenter la hauteur visible par défaut
+        tree_frame.pack(pady=5, padx=10, fill=tk.BOTH, expand=True, ipady=10)
+
+        self.particle_tree = ttk.Treeview(tree_frame, columns=('Mass (u)', 'Charge (e)'), show='headings', height=6) # Hauteur augmentée
+        self.particle_tree.heading('Mass (u)', text='Masse (u)')
+        self.particle_tree.heading('Charge (e)', text='Charge (e)')
+        self.particle_tree.column('Mass (u)', width=100, anchor=tk.CENTER) # Plus large
+        self.particle_tree.column('Charge (e)', width=100, anchor=tk.CENTER) # Plus large
+
+        # Scrollbar pour le Treeview
+        scrollbar_tree = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.particle_tree.yview)
+        self.particle_tree.configure(yscrollcommand=scrollbar_tree.set)
+
+        # Important: Lier la molette aussi au Treeview s'il a le focus
+        self.particle_tree.bind("<MouseWheel>", lambda e: self._on_mousewheel(e))
+        self.particle_tree.bind("<Button-4>", lambda e: self._on_mousewheel(e))
+        self.particle_tree.bind("<Button-5>", lambda e: self._on_mousewheel(e))
+
+        self.particle_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_tree.pack(side=tk.RIGHT, fill=tk.Y)
+        # --- Fin Liste Particules ---
+
+        # Bouton Supprimer
+        remove_btn = ttk.Button(parent, text="Supprimer Sélection", command=self.remove_particle)
+        remove_btn.pack(pady=5, padx=10, fill=tk.X)
+
+    # --- Fenêtre Tableau Périodique ---
+    def ouvrir_fenetre_tp(self):
+        if hasattr(self, 'molecule_fenetre') and self.molecule_fenetre.winfo_exists():
+            self.molecule_fenetre.lift()
+            return
+
+        self.molecule_fenetre = tk.Toplevel(self.root)
+        self.molecule_fenetre.title("Construire une Particule")
+        self.molecule_fenetre.geometry("1100x650")
+        self.molecule_fenetre.grab_set()
+        self.molecule_fenetre.transient(self.root)
+
+        # Affichage rapide + Chargement
+        loading_label = ttk.Label(self.molecule_fenetre, text="Chargement du tableau périodique...",
+                                  font=('Helvetica', 14, 'italic'), padding=20)
+        loading_label.pack(expand=True)
+        self.molecule_fenetre.update_idletasks()
+
+        def populate_window():
+            import time
+            start_time = time.time() # Début temps total populate
+
+            loading_label.pack_forget()
+            self.selected_elts = {}
+
+            periodic_layout = [ # Layout structurel (symboles uniquement)
+                ['H', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, 'He'],
+                ['Li', 'Be', None, None, None, None, None, None, None, None, None, None, 'B', 'C', 'N', 'O', 'F', 'Ne'],
+                ['Na', 'Mg', None, None, None, None, None, None, None, None, None, None, 'Al', 'Si', 'P', 'S', 'Cl', 'Ar'],
+                ['K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr'],
+                ['Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe'],
+                ['Cs', 'Ba', 'La', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn'],
+                ['Fr', 'Ra', 'Ac', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og'],
+                [], # Ligne vide
+                [None, None, None, 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', None],
+                [None, None, None, 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', None]
+            ]
+
+            # --- OPTIMISATION : Pré-chargement Mendeleev ---
+            print("Pré-chargement Mendeleev...")
+            start_preload = time.time()
+            element_mass_map = {}
+            all_symbols_in_layout = {s for row in periodic_layout for s in row if s is not None}
+            symbols_not_found = []
+            for symbol in all_symbols_in_layout:
+                try:
+                    el = get_element_data(symbol)
+                    # Utiliser el.mass si disponible, sinon 0.0
+                    element_mass_map[symbol] = float(el.mass) if el.mass is not None else 0.0
+                    if element_mass_map[symbol] == 0.0:
+                         print(f"  Avertissement: Masse nulle pour {symbol} depuis mendeleev.")
+                except Exception as e:
+                    print(f"  Erreur pré-chargement {symbol}: {e}")
+                    element_mass_map[symbol] = 0.0 # Mettre une masse nulle si erreur
+                    symbols_not_found.append(symbol)
+            if symbols_not_found:
+                 messagebox.showwarning("Données manquantes",
+                                         f"Impossible de charger les données pour : {', '.join(symbols_not_found)}.\n"
+                                         "Ces éléments auront une masse de 0.", parent=self.molecule_fenetre)
+
+            end_preload = time.time()
+            print(f"Fin pré-chargement Mendeleev. Durée: {end_preload - start_preload:.4f} s")
+            # --- FIN OPTIMISATION ---
+
+            # --- Mesure - Début Création Tableau ---
+            start_table_creation = time.time()
+            print("Début création tableau (widgets)...")
+            # ---
+
+            table_frame = ttk.Frame(self.molecule_fenetre)
+            table_frame.pack(pady=10, padx=10)
+
+            for row_idx, row in enumerate(periodic_layout):
+                pady_val = 5 if row_idx == 8 else 2
+                for col_idx, symbol in enumerate(row):
+                    if symbol:
+                        try:
+                            # Accéder directement à la masse pré-chargée
+                            mass = element_mass_map.get(symbol, 0.0) # Utiliser .get avec défaut
+
+                            is_lan_act_row = row_idx >= 8
+                            btn_style = "LanAct.TButton" if is_lan_act_row else "Element.TButton"
+
+                            # Créer le bouton en utilisant la masse pré-chargée
+                            btn = ttk.Button(table_frame, text=symbol, width=4, style=btn_style,
+                                             command=lambda s=symbol, m=mass: self.construction_de_molecule(s, m))
+                            btn.grid(row=row_idx, column=col_idx, padx=1, pady=pady_val, sticky="nsew")
+
+                            # Désactiver le bouton si la masse est nulle (optionnel mais utile)
+                            if mass <= 0.0:
+                                btn.configure(state=tk.DISABLED)
+
+                        except Exception as e: # Erreur Tkinter (peu probable ici)
+                            print(f"Erreur Tkinter pour {symbol}: {e}")
+                            lbl = ttk.Label(table_frame, text=symbol + "?", width=4, relief=tk.FLAT, anchor="center")
+                            lbl.grid(row=row_idx, column=col_idx, padx=1, pady=pady_val, sticky="nsew")
+
+            # --- Mesure - Fin Création Tableau ---
+            end_table_creation = time.time()
+            print(f"Fin création tableau (widgets). Durée: {end_table_creation - start_table_creation:.4f} s")
+            # ---
+
+            # --- Création des autres widgets (rapide) ---
+            start_controls_creation = time.time()
+            #print("Début création contrôles...")
+            control_frame = ttk.Frame(self.molecule_fenetre)
+            control_frame.pack(pady=10, padx=20, fill=tk.X)
+            control_frame.columnconfigure(0, weight=1); control_frame.columnconfigure(1, weight=0); control_frame.columnconfigure(2, weight=1)
+            title_label = ttk.Label(control_frame, text="Particule construite:", style="MoleculeTitle.TLabel")
+            title_label.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0,5))
+            display_reset_frame = ttk.Frame(control_frame)
+            display_reset_frame.grid(row=1, column=1, sticky="", pady=5)
+            self.molecule_display_var = tk.StringVar(value="(vide)")
+            display_label = ttk.Label(display_reset_frame, textvariable=self.molecule_display_var,
+                                       relief=tk.SUNKEN, padding=5, anchor=tk.CENTER, font=('Consolas', 11))
+            display_label.pack(side=tk.LEFT, padx=(0, 10))
+            reset_btn = ttk.Button(display_reset_frame, text="Effacer", command=self.reset_molecule)
+            reset_btn.pack(side=tk.LEFT)
+            charge_frame = ttk.Frame(control_frame)
+            charge_frame.grid(row=2, column=1, sticky="", pady=5)
+            charge_label = ttk.Label(charge_frame, text="Charge (e):")
+            charge_label.pack(side=tk.LEFT)
+            self.molecule_charge_var = tk.StringVar(value="1")
+            charge_entry = ttk.Entry(charge_frame, textvariable=self.molecule_charge_var, width=8)
+            charge_entry.pack(side=tk.LEFT, padx=5)
+            submit_btn = ttk.Button(control_frame, text="Ajouter cette Particule à la liste", command=self.submit_molecule)
+            submit_btn.grid(row=3, column=1, pady=10)
+            #end_controls_creation = time.time()
+            #print(f"Fin création contrôles. Durée: {end_controls_creation - start_controls_creation:.4f} s")
+            # --- Fin Création Contrôles ---
+
+            end_time = time.time()
+            print(f"Temps total pour populate_window (avec pré-chargement): {end_time - start_time:.4f} s")
+            # --- Fin Mesure ---
+
+        self.molecule_fenetre.after(20, populate_window)
+
+    # --- Logique de construction (inchangée sauf _update_molecule_display) ---
+    def construction_de_molecule(self, symbol, mass):
+        # ... (inchangé) ...
+        """Ajoute ou incrémente un élément dans la molécule en cours."""
+        if symbol in self.selected_elts:
+            self.selected_elts[symbol]['count'] += 1
+        else:
+            # S'assurer que la masse est un float valide
+            try:
+                mass_float = float(mass)
+            except (TypeError, ValueError):
+                messagebox.showerror("Erreur Masse", f"Masse invalide ({mass}) reçue pour {symbol}.", parent=self.molecule_fenetre)
+                return
+            self.selected_elts[symbol] = {'mass': mass_float, 'count': 1}
+        self._update_molecule_display()
+
+    def reset_molecule(self):
+        """Réinitialise la molécule en cours de construction."""
+        self.selected_elts = {}
+        self._update_molecule_display()
+
+    def _update_molecule_display(self):
+        """Met à jour l'affichage de la formule moléculaire."""
+        if not self.selected_elts:
+            self.molecule_display_var.set("(vide)")
+            return
+
+        # Trier par symbole pour une formule conventionnelle (optionnel)
+        sorted_symbols = sorted(self.selected_elts.keys())
+
+        molecule_parts = []
+        for symbol in sorted_symbols:
+            data = self.selected_elts[symbol]
+            count = data['count']
+            part = symbol
+            if count > 1:
+                # Utilisation d'indices Unicode pour une jolie formule
+                subscript_map = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+                part += str(count).translate(subscript_map)
+            molecule_parts.append(part)
+
+        self.molecule_display_var.set("".join(molecule_parts)) # Joindre sans espace
+
+    def ajt_particle_connue(self, mass_u, charge_e):
+        """Ajoute une particule prédéfinie (O₂, Si, H...) directement."""
+        self._add_particle_to_list(mass_u, charge_e, f"Raccourci {mass_u:.3f} u")
+
+    def submit_molecule(self):
+        """Calcule la masse, lit la charge, et ajoute la particule construite."""
+        if not self.selected_elts:
+            messagebox.showwarning("Aucun Élément", "Veuillez cliquer sur les éléments du tableau pour construire votre particule.", parent=self.molecule_fenetre)
+            return
+
+        try:
+            total_mass = sum(v['mass'] * v['count'] for v in self.selected_elts.values())
+            charge_str = self.molecule_charge_var.get().strip().replace(',', '.') # Nettoyer entrée
+            if not charge_str: raise ValueError("La charge ne peut pas être vide.")
+            charge = float(charge_str) # Peut lever ValueError
+
+            formula = self.molecule_display_var.get() # Récupérer la formule affichée
+
+            # Appeler la fonction interne d'ajout
+            added = self._add_particle_to_list(total_mass, charge, f"Particule {formula}")
+
+            # Fermer la fenêtre seulement si l'ajout a réussi
+            if added:
+                self.molecule_fenetre.destroy()
+
+        except ValueError as e:
+            messagebox.showerror("Erreur de Saisie", f"Erreur de soumission : {e}", parent=self.molecule_fenetre)
+            self.status_var.set("Erreur lors de la soumission de molécule.")
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Une erreur inattendue est survenue: {e}", parent=self.molecule_fenetre)
+            self.status_var.set("Erreur lors de la soumission de molécule.")
+
+    # --- Logique d'ajout et de suppression ---
+    def add_particle(self):
+        """Ajoute une particule depuis les champs d'entrée manuels."""
+        try:
+            mass_u_str = self.mass_entry.get().strip().replace(',', '.')
+            charge_e_str = self.charge_entry.get().strip().replace(',', '.')
+            if not mass_u_str or not charge_e_str:
+                 raise ValueError("Masse et Charge ne peuvent être vides.")
+            mass_u = float(mass_u_str)
+            charge_e = float(charge_e_str)
+
+            # Appeler la fonction interne d'ajout
+            self._add_particle_to_list(mass_u, charge_e, "Particule manuelle")
+
+            # Optionnel: Vider les champs après ajout réussi
+            # self.mass_entry.delete(0, tk.END)
+            # self.charge_entry.delete(0, tk.END)
+
+        except ValueError as e:
+            messagebox.showerror("Erreur d'Entrée", f"Entrée invalide : {e}")
+            self.status_var.set("Erreur d'ajout de particule.")
+        except Exception as e:
+             messagebox.showerror("Erreur", f"Une erreur inattendue est survenue: {e}")
+             self.status_var.set("Erreur d'ajout de particule.")
+
+    def _add_particle_to_list(self, mass_u, charge_e, source_info=""):
+        """
+        Fonction interne pour valider et ajouter une particule à la liste et au Treeview.
+        Retourne True si ajoutée, False sinon.
+        """
+        try:
+            if mass_u <= 0:
+                raise ValueError("Masse doit être > 0.")
+            if charge_e == 0:
+                raise ValueError("Charge ne peut pas être nulle pour la déviation.")
+
+            # --- Vérification de signe ---
+            # Décommentez si vous voulez forcer toutes les particules à avoir le même signe
+            # current_sign = np.sign(charge_e)
+            # if len(self.particles_data) > 0:
+            #     existing_sign = np.sign(self.particles_data[0][1])
+            #     if current_sign != existing_sign:
+            #         raise ValueError("Les particules doivent avoir des charges de même signe.")
+            # --- Fin Vérification de signe ---
+
+            # Arrondir légèrement pour la comparaison (éviter pbs de flottants)
+            particle_info = (round(mass_u, 5), round(charge_e, 5))
+            # Vérifier si la particule (arrondie) existe déjà
+            existing_particles = [(round(p[0], 5), round(p[1], 5)) for p in self.particles_data]
+
+            if particle_info not in existing_particles:
+                # Ajouter les valeurs originales (non arrondies)
+                self.particles_data.append((mass_u, charge_e))
+                # Afficher avec formatage dans le Treeview
+                self.particle_tree.insert('', tk.END, values=(f"{mass_u:.3f}", f"{charge_e:+.2f}"))
+                self.status_var.set(f"{source_info} ajoutée: {mass_u:.3f} u, {charge_e:+.2f} e")
+                return True # Ajout réussi
+            else:
+                # Gérer le cas du doublon (message différent selon la source?)
+                if "Raccourci" in source_info:
+                    self.status_var.set(f"{source_info} ({mass_u:.3f}u, {charge_e:+.2f}e) déjà présente.")
+                else:
+                    messagebox.showwarning("Doublon", f"La particule {mass_u:.3f} u / {charge_e:+.2f} e est déjà dans la liste.", parent=getattr(self, 'molecule_fenetre', self.root)) # Parent correct pour msgbox
+                self.status_var.set("Ajout annulé (doublon).")
+                return False # Ajout échoué (doublon)
+
+        except ValueError as e:
+            # Afficher l'erreur dans la bonne fenêtre si possible
+            parent_window = getattr(self, 'molecule_fenetre', self.root)
+            if parent_window.winfo_exists(): # Vérifier si la fenêtre existe encore
+                 messagebox.showerror("Erreur de Validation", f"{e}", parent=parent_window)
+            else:
+                 messagebox.showerror("Erreur de Validation", f"{e}")
+            self.status_var.set(f"Erreur validation: {e}")
+            return False # Ajout échoué (validation)
+        except Exception as e:
+             parent_window = getattr(self, 'molecule_fenetre', self.root)
+             if parent_window.winfo_exists():
+                 messagebox.showerror("Erreur Inattendue", f"{e}", parent=parent_window)
+             else:
+                  messagebox.showerror("Erreur Inattendue", f"{e}")
+             self.status_var.set("Erreur interne lors de l'ajout.")
+             return False # Ajout échoué (autre erreur)
+
+
+    def remove_particle(self):
+        """Supprime la ou les particules sélectionnées dans le Treeview."""
+        selected_items = self.particle_tree.selection()
+        if not selected_items:
+            messagebox.showwarning("Aucune Sélection", "Veuillez sélectionner une ou plusieurs particules à supprimer dans la liste.")
+            return
+
+        # Confirmation pour suppression multiple
+        if len(selected_items) > 1:
+            if not messagebox.askyesno("Confirmation", f"Supprimer les {len(selected_items)} particules sélectionnées ?"):
+                return
+
+        indices_to_remove = []
+        items_to_remove_tree = []
+
+        for item_id in selected_items:
+            try:
+                index = self.particle_tree.index(item_id)
+                indices_to_remove.append(index)
+                items_to_remove_tree.append(item_id)
+            except tk.TclError:
+                print(f"Avertissement: Impossible de trouver l'index pour l'item {item_id} (peut-être déjà supprimé)")
+
+        # Supprimer de la liste de données (en partant de la fin)
+        indices_to_remove.sort(reverse=True)
+        deleted_count = 0
+        for index in indices_to_remove:
+            try:
+                del self.particles_data[index]
+                deleted_count += 1
+            except IndexError:
+                 print(f"Avertissement: Index {index} hors limites pour self.particles_data.")
+
+
+        # Supprimer du Treeview
+        for item_id in items_to_remove_tree:
+            if self.particle_tree.exists(item_id):
+                self.particle_tree.delete(item_id)
+
+        self.status_var.set(f"{deleted_count} particule(s) supprimée(s).")
+        # Redessiner le graphe si des particules ont été supprimées? Optionnel.
+        # self.run_current_simulation() # Une fonction qui appelle la bonne simulation
+
+    # --- Widgets Magnétiques ---
+    def create_magnetic_widgets(self, parent):
+        # ... (Logique de base et dynamique inchangée, y compris sliders et labels) ...
+        """
+        Crée les widgets pour la simulation de déviation magnétique.
+        """
+        frame = ttk.Frame(parent, padding="10")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # Frames pour afficher/cacher selon le mode dynamique
+        self.dynamic_inputs_frame = ttk.Frame(frame)
+        self.base_inputs_frame = ttk.Frame(frame)
+
+        # Entrée commune : X détecteur
+        self.x_detecteur_var = tk.StringVar(value="0.1") # Défaut réaliste
+        self.add_labeled_entry(frame, "X détecteur (m):", self.x_detecteur_var).pack(fill=tk.X, pady=3)
+
+        # Checkbox pour choisir le mode
+        self.dynamic_trace_var = tk.BooleanVar(value=False)
+        dynamic_check = ttk.Checkbutton(frame, text="Mode Dynamique (Sliders)",
+                                        variable=self.dynamic_trace_var, command=self.toggle_dynamic_inputs)
+        dynamic_check.pack(anchor=tk.W, pady=5)
+
+        # --- Widgets Mode Non-Dynamique (Statique) ---
+        parent_base = self.base_inputs_frame
+        self.v0_mag_var = tk.StringVar(value="1e6")
+        self.add_labeled_entry(parent_base, "Vitesse Initiale (m/s):", self.v0_mag_var).pack(fill=tk.X, pady=3)
+        self.bz_mag_var = tk.StringVar(value="0.2")
+        self.add_labeled_entry(parent_base, "Champ Magnétique (T):", self.bz_mag_var).pack(fill=tk.X, pady=3)
+        # Bouton pour lancer la simulation statique
+        trace_btn_base = ttk.Button(parent_base, text="Tracer Simulation", command=self.run_magnetic_simulation)
+        trace_btn_base.pack(pady=15)
+
+        # --- Widgets Mode Dynamique ---
+        parent_dyn = self.dynamic_inputs_frame
+        # Limites pour Bz
+        self.bz_min_var = tk.StringVar(value="0.01")
+        self.add_labeled_entry(parent_dyn, "Bz min (T):", self.bz_min_var).pack(fill=tk.X, pady=3)
+        self.bz_max_var = tk.StringVar(value="0.5")
+        self.add_labeled_entry(parent_dyn, "Bz max (T):", self.bz_max_var).pack(fill=tk.X, pady=3)
+
+        # Slider Bz
+        ttk.Label(parent_dyn, text="Champ Magnétique Bz (T):").pack(anchor=tk.W, pady=(5,0))
+        self.slider_frame_bz = ttk.Frame(parent_dyn)
+        self.slider_frame_bz.pack(fill=tk.X, pady=(0,5))
+        self.bz_var = tk.DoubleVar(value=0.2) # Sera ajusté si besoin
+        self.bz_slider = ttk.Scale(self.slider_frame_bz, from_=0.01, to=0.5, orient=tk.HORIZONTAL,
+                                   variable=self.bz_var, command=self._on_bz_slider_change)
+        self.bz_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.bz_label_var = tk.StringVar(value=f"{self.bz_var.get():.3f} T")
+        ttk.Label(self.slider_frame_bz, textvariable=self.bz_label_var, width=10).pack(side=tk.LEFT)
+
+        # Limites pour V0
+        self.v0_min_var = tk.StringVar(value="1e5")
+        self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.v0_min_var).pack(fill=tk.X, pady=3)
+        self.v0_max_var = tk.StringVar(value="1e6")
+        self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.v0_max_var).pack(fill=tk.X, pady=3)
+
+        # Slider V0
+        ttk.Label(parent_dyn, text="Vitesse Initiale (m/s):").pack(anchor=tk.W, pady=(5,0))
+        self.slider_frame_v0 = ttk.Frame(parent_dyn)
+        self.slider_frame_v0.pack(fill=tk.X, pady=(0,5))
+        self.v0_var = tk.DoubleVar(value=5.5e5) # Sera ajusté si besoin
+        self.v0_slider = ttk.Scale(self.slider_frame_v0, from_=1e5, to=1e6, orient=tk.HORIZONTAL,
+                                   variable=self.v0_var, command=self._on_v0_slider_change)
+        self.v0_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.v0_label_var = tk.StringVar(value=f"{self.v0_var.get():.2e} m/s")
+        ttk.Label(self.slider_frame_v0, textvariable=self.v0_label_var, width=12).pack(side=tk.LEFT)
+
+        # Bouton pour appliquer les limites et tracer initialement en mode dynamique
+        apply_limits_btn_dyn = ttk.Button(parent_dyn, text="Appliquer Limites & Tracer", command=self.run_magnetic_simulation)
+        apply_limits_btn_dyn.pack(pady=15)
+
+        # Afficher le bon groupe de widgets au départ
+        self.toggle_dynamic_inputs()
+
+
+    def toggle_dynamic_inputs(self) :
+        # ... (inchangé) ...
+        """Gère l'affichage des widgets magnétiques selon le mode choisi."""
+        if self.dynamic_trace_var.get():
+            self.base_inputs_frame.pack_forget()
+            self.dynamic_inputs_frame.pack(fill=tk.X, pady=5, padx=5)
+        else:
+            self.dynamic_inputs_frame.pack_forget()
+            self.base_inputs_frame.pack(fill=tk.X, pady=5, padx=5)
+
+    # --- Callbacks Sliders Magnétiques ---
+    def _on_bz_slider_change(self, event=None):
+        # ... (inchangé) ...
+        self._update_bz_label()
+        if self.particles_data:
+            self.run_magnetic_simulation(called_by_slider=True)
+
+    def _update_bz_label(self, event=None):
+        # ... (inchangé) ...
+        self.bz_label_var.set(f"{self.bz_var.get():.3f} T")
+
+    def _on_v0_slider_change(self, event=None):
+        # ... (inchangé) ...
+        self._update_v0_label()
+        if self.particles_data:
+            self.run_magnetic_simulation(called_by_slider=True)
+
+    def _update_v0_label(self, event=None):
+        # ... (inchangé) ...
+        self.v0_label_var.set(f"{self.v0_var.get():.2e} m/s")
+
+    # --- Widgets Électriques ---
+    def create_electric_widgets(self, parent):
+        # ... (Logique de base et dynamique inchangée, y compris sliders et labels) ...
+        """
+        Crée les widgets pour la simulation de déviation électrique.
+        """
+        frame = ttk.Frame(parent, padding="10")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # Frames pour afficher/cacher
+        self.dynamic_electric_inputs_frame = ttk.Frame(frame)
+        self.base_electric_inputs_frame = ttk.Frame(frame)
+
+        # --- Widgets Communs ---
+        self.angle_var = tk.StringVar(value="30") # En degrés
+        self.add_labeled_entry(frame, "Angle Initial (° vs +y):", self.angle_var).pack(fill=tk.X, pady=3)
+        self.dist_var = tk.StringVar(value="0.05") # 5 cm par défaut
+        self.add_labeled_entry(frame, "Distance/Hauteur (m):", self.dist_var).pack(fill=tk.X, pady=3)
+
+        # Checkbox pour choisir le mode
+        self.dynamic_elec_var = tk.BooleanVar(value=False)
+        dynamic_elec_check = ttk.Checkbutton(frame, text="Mode Dynamique (Sliders)",
+                                             variable=self.dynamic_elec_var, command=self.toggle_dynamic_electric)
+        dynamic_elec_check.pack(anchor=tk.W, pady=5)
+
+        # --- Widgets Mode Non-Dynamique (Statique) ---
+        parent_base = self.base_electric_inputs_frame
+        self.v0_elec_var = tk.StringVar(value="1e5") # m/s
+        self.add_labeled_entry(parent_base, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
+        self.diff_pot_var = tk.StringVar(value="-5000") # Volts
+        self.add_labeled_entry(parent_base, "Diff. Potentiel (V):", self.diff_pot_var).pack(fill=tk.X, pady=3)
+        # Bouton pour lancer la simulation statique
+        trace_btn_base = ttk.Button(parent_base, text="Tracer Simulation", command=self.run_electric_simulation)
+        trace_btn_base.pack(pady=15)
+
+        # --- Widgets Mode Dynamique ---
+        parent_dyn = self.dynamic_electric_inputs_frame
+        # Limites V0
+        self.elec_v0_min_var = tk.StringVar(value="1e4")
+        self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.elec_v0_min_var).pack(fill=tk.X, pady=3)
+        self.elec_v0_max_var = tk.StringVar(value="2e5") # Augmenté un peu
+        self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.elec_v0_max_var).pack(fill=tk.X, pady=3)
+
+        # Slider V0
+        ttk.Label(parent_dyn, text="Vitesse Initiale V0 (m/s):").pack(anchor=tk.W, pady=(5, 0))
+        self.slider_frame_v0_elec = ttk.Frame(parent_dyn)
+        self.slider_frame_v0_elec.pack(fill=tk.X, pady=(0, 5))
+        self.v0_var_elec = tk.DoubleVar(value=1.05e5) # Sera ajusté si besoin
+        self.v0_slider_elec = ttk.Scale(self.slider_frame_v0_elec, from_=1e4, to=2e5, orient=tk.HORIZONTAL,
+                                        variable=self.v0_var_elec, command=self._on_v0_slider_change_elec)
+        self.v0_slider_elec.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.v0_label_var_elec = tk.StringVar(value=f"{self.v0_var_elec.get():.2e} m/s")
+        ttk.Label(self.slider_frame_v0_elec, textvariable=self.v0_label_var_elec, width=12).pack(side=tk.LEFT)
+
+        # Limites Potentiel
+        self.diff_pot_min_var = tk.StringVar(value="-10000")
+        self.add_labeled_entry(parent_dyn, "Potentiel min (V):", self.diff_pot_min_var).pack(fill=tk.X, pady=3)
+        self.diff_pot_max_var = tk.StringVar(value="10000")
+        self.add_labeled_entry(parent_dyn, "Potentiel max (V):", self.diff_pot_max_var).pack(fill=tk.X, pady=3)
+
+        # Slider Potentiel
+        ttk.Label(parent_dyn, text="Diff. Potentiel (V):").pack(anchor=tk.W, pady=(5, 0))
+        self.slider_frame_v = ttk.Frame(parent_dyn)
+        self.slider_frame_v.pack(fill=tk.X, pady=(0, 5))
+        self.pot_var = tk.DoubleVar(value=0) # Sera ajusté si besoin
+        self.pot_slider = ttk.Scale(self.slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL,
+                                    variable=self.pot_var, command=self._on_pot_slider_change)
+        self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.1f} V")
+        ttk.Label(self.slider_frame_v, textvariable=self.pot_label_var, width=12).pack(side=tk.LEFT)
+
+        # Bouton pour appliquer les limites et tracer initialement
+        apply_limits_btn_dyn = ttk.Button(parent_dyn, text="Appliquer Limites & Tracer", command=self.run_electric_simulation)
+        apply_limits_btn_dyn.pack(pady=15)
+
+        # Afficher le bon groupe de widgets au départ
+        self.toggle_dynamic_electric()
+
+    def toggle_dynamic_electric(self):
+        # ... (inchangé) ...
+        """Gère l'affichage des widgets électriques selon le mode choisi."""
+        if self.dynamic_elec_var.get():
+            self.base_electric_inputs_frame.pack_forget()
+            self.dynamic_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5)
+        else:
+            self.dynamic_electric_inputs_frame.pack_forget()
+            self.base_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5)
+
+    # --- Callbacks Sliders Électriques ---
+    def _on_pot_slider_change(self, event=None):
+        # ... (inchangé) ...
+        self._update_pot_label()
+        if self.particles_data:
+            self.run_electric_simulation(called_by_slider=True)
+
+    def _on_v0_slider_change_elec(self, event=None) :
+        # ... (inchangé) ...
+        self._update_v0_label_elec()
+        if self.particles_data:
+            self.run_electric_simulation(called_by_slider=True)
+
+    def _update_pot_label(self, event=None):
+        # ... (inchangé) ...
+        self.pot_label_var.set(f"{self.pot_var.get():.1f} V")
+
+    def _update_v0_label_elec(self, event=None):
+        # ... (inchangé) ...
+        self.v0_label_var_elec.set(f"{self.v0_var_elec.get():.2e} m/s")
+
+    # --- Helper ---
+    def add_labeled_entry(self, parent, label_text, string_var):
+        # ... (inchangé) ...
+        """Crée une paire Label + Entry."""
+        entry_frame = ttk.Frame(parent)
+        # Augmenter la largeur du label pour l'alignement
+        ttk.Label(entry_frame, text=label_text, width=22, anchor="w").pack(side=tk.LEFT, padx=(0, 5))
+        entry = ttk.Entry(entry_frame, textvariable=string_var)
+        entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        return entry_frame
+
+    # --- Exécution des Simulations ---
+    def run_magnetic_simulation(self, called_by_slider=False):
+        # ... (Logique de préservation du slider inchangée) ...
+        """Lance la simulation de déviation magnétique."""
+        if not self.particles_data:
+            if not called_by_slider:
+                messagebox.showwarning("Aucune Particule", "Veuillez ajouter au moins une particule.", parent=self.root)
+            self.status_var.set("Ajoutez des particules pour simuler.")
+            self.ax.cla()
+            self.ax.set_title("Déviation Magnétique")
+            self.ax.set_xlabel("Position x (m)")
+            self.ax.set_ylabel("Position y (m)")
+            self.canvas.draw()
+            return
+
+        try:
+            # Lire X détecteur (commun)
+            x_detecteur_str = self.x_detecteur_var.get().strip().replace(',', '.')
+            if not x_detecteur_str: raise ValueError("X détecteur ne peut être vide.")
+            x_detecteur = float(x_detecteur_str)
+            if x_detecteur <= 0: raise ValueError("X détecteur doit être positif.")
+
+            # Lire V0 et Bz selon le mode
+            if not self.dynamic_trace_var.get():
+                # Mode Statique
+                v0_str = self.v0_mag_var.get().strip().replace(',', '.')
+                bz_str = self.bz_mag_var.get().strip().replace(',', '.')
+                if not v0_str or not bz_str: raise ValueError("V0 et Bz ne peuvent être vides.")
+                v0 = float(v0_str)
+                bz = float(bz_str)
+                if v0 <= 0: raise ValueError("Vitesse initiale doit être > 0.")
+                if bz == 0: raise ValueError("Champ magnétique ne peut être nul.")
+
+            else:
+                # Mode Dynamique
+                # Si appelé par bouton, mettre à jour les limites/valeurs
+                if not called_by_slider:
+                    bz_min_str = self.bz_min_var.get().strip().replace(',', '.')
+                    bz_max_str = self.bz_max_var.get().strip().replace(',', '.')
+                    v0_min_str = self.v0_min_var.get().strip().replace(',', '.')
+                    v0_max_str = self.v0_max_var.get().strip().replace(',', '.')
+                    if not all([bz_min_str, bz_max_str, v0_min_str, v0_max_str]):
+                         raise ValueError("Les limites min/max ne peuvent être vides.")
+
+                    bz_min = float(bz_min_str)
+                    bz_max = float(bz_max_str)
+                    v0_min = float(v0_min_str)
+                    v0_max = float(v0_max_str)
+
+                    # Validation des limites
+                    if v0_min <= 0 : raise ValueError("V0 min doit être > 0.")
+                    # Permettre Bz de passer par 0 si les limites l'encadrent
+                    # if np.sign(bz_min) * np.sign(bz_max) < 0 and bz_min != 0 and bz_max != 0 :
+                    #     raise ValueError("Les limites Bz doivent être de même signe (ou l'une nulle).")
+                    if v0_min >= v0_max : raise ValueError("V0 max doit être > V0 min.")
+                    if bz_min >= bz_max : raise ValueError("Bz max doit être > Bz min.")
+
+                    # Préserver la valeur des sliders si possible
+                    current_bz = self.bz_var.get()
+                    current_v0 = self.v0_var.get()
+
+                    self.bz_slider.config(from_=bz_min, to=bz_max)
+                    if not (bz_min <= current_bz <= bz_max):
+                        bz_init = (bz_max + bz_min) / 2
+                        # Éviter de mettre 0 si ce n'est pas explicitement la limite min/max
+                        if abs(bz_init) < 1e-9 and (bz_min != 0 or bz_max != 0):
+                            bz_init = bz_min if abs(bz_min) > 1e-9 else bz_max # Choisir une limite non nulle
+                        self.bz_var.set(bz_init)
+                    self._update_bz_label()
+
+                    self.v0_slider.config(from_=v0_min, to=v0_max)
+                    if not (v0_min <= current_v0 <= v0_max):
+                        v0_init = (v0_max + v0_min) / 2
+                        self.v0_var.set(v0_init)
+                    self._update_v0_label()
+
+                # Lire la valeur actuelle des sliders
+                v0 = self.v0_var.get()
+                bz = self.bz_var.get()
+                if abs(bz) < 1e-15: # Vérifier si bz est (presque) nul
+                     raise ValueError("Le champ magnétique (Bz) est trop proche de zéro.")
+
+            # --- Exécution Tracé ---
+            self.ax.cla() # Effacer
+            self.status_var.set("Calcul déviation magnétique...")
+            self.root.update_idletasks()
+
+            # Appel backend (suppose qu'il prend la liste de tuples (u, e))
+            partie_electroaimant.tracer_ensemble_trajectoires(
+                    self.particles_data, v0, bz, x_detecteur, create_plot=False, ax=self.ax
+                )
+            # Note: Le titre et les labels sont mis par la fonction backend ici
+
+            self.ax.relim()
+            self.ax.autoscale_view(True, True, True) # Recalculer les limites
+            self.canvas.draw()
+            self.status_var.set("Tracé déviation magnétique terminé.")
+
+        except ValueError as e:
+            if not called_by_slider: messagebox.showerror("Erreur Paramètre", f"Paramètre invalide (Magnétique):\n{e}", parent=self.root)
+            self.status_var.set(f"Erreur paramètre (Mag): {e}")
+        except Exception as e:
+            if not called_by_slider: messagebox.showerror("Erreur Simulation", f"Une erreur est survenue (Magnétique):\n{e}", parent=self.root)
+            print(f"Erreur Simulation Magnétique: {type(e).__name__}: {e}")
+            self.status_var.set("Erreur simulation magnétique.")
+
+
+    def run_electric_simulation(self, called_by_slider=False):
+        # ... (Logique de préservation du slider inchangée) ...
+        """Lance la simulation de déviation électrique."""
+        if not self.particles_data:
+            if not called_by_slider: messagebox.showwarning("Aucune Particule", "Veuillez ajouter au moins une particule.", parent=self.root)
+            self.status_var.set("Ajoutez des particules pour simuler.")
+            self.ax.cla()
+            self.ax.set_title("Déviation Électrique")
+            self.ax.set_xlabel("Position x (m)")
+            self.ax.set_ylabel("Position y (m)")
+            self.canvas.draw()
+            return
+
+        try:
+            # Paramètres communs
+            angle_deg_str = self.angle_var.get().strip().replace(',', '.')
+            dist_str = self.dist_var.get().strip().replace(',', '.')
+            if not angle_deg_str or not dist_str: raise ValueError("Angle et Distance/Hauteur requis.")
+            angle_deg = float(angle_deg_str)
+            hauteur_distance = float(dist_str)
+
+            if hauteur_distance <= 0 : raise ValueError("Hauteur/Distance doit être > 0.")
+            if not (0 < angle_deg < 90): raise ValueError("Angle doit être > 0° et < 90°.")
+            angle_rad = np.radians(angle_deg)
+            hauteur_initiale = hauteur_distance
+
+            # Lire V0 et Potentiel selon le mode
+            if not self.dynamic_elec_var.get():
+                # Mode Statique
+                v0_str = self.v0_elec_var.get().strip().replace(',', '.')
+                pot_str = self.diff_pot_var.get().strip().replace(',', '.')
+                if not v0_str or not pot_str: raise ValueError("V0 et Potentiel requis.")
+                v0 = float(v0_str)
+                potentiel = float(pot_str)
+                if v0 <= 0 : raise ValueError("Vitesse initiale doit être > 0.")
+
+            else:
+                # Mode Dynamique
+                if not called_by_slider :
+                    # Mise à jour limites/valeurs
+                    pot_min_str = self.diff_pot_min_var.get().strip().replace(',', '.')
+                    pot_max_str = self.diff_pot_max_var.get().strip().replace(',', '.')
+                    v0_min_str = self.elec_v0_min_var.get().strip().replace(',', '.')
+                    v0_max_str = self.elec_v0_max_var.get().strip().replace(',', '.')
+                    if not all([pot_min_str, pot_max_str, v0_min_str, v0_max_str]):
+                         raise ValueError("Les limites min/max ne peuvent être vides.")
+
+                    pot_min = float(pot_min_str)
+                    pot_max = float(pot_max_str)
+                    v0_min = float(v0_min_str)
+                    v0_max = float(v0_max_str)
+
+                    # Validation
+                    if v0_min <= 0 : raise ValueError("V0 min doit être > 0.")
+                    if v0_min >= v0_max : raise ValueError("V0 max doit être > V0 min.")
+                    if pot_min >= pot_max : raise ValueError("Potentiel max doit être > Potentiel min.")
+
+                    # Préserver valeurs sliders
+                    current_pot = self.pot_var.get()
+                    current_v0 = self.v0_var_elec.get()
+
+                    self.pot_slider.config(from_=pot_min, to=pot_max)
+                    if not (pot_min <= current_pot <= pot_max):
+                        pot_init = (pot_max + pot_min) / 2
+                        self.pot_var.set(pot_init)
+                    self._update_pot_label()
+
+                    self.v0_slider_elec.config(from_=v0_min, to=v0_max)
+                    if not (v0_min <= current_v0 <= v0_max):
+                        v0_init = (v0_max + v0_min) / 2
+                        self.v0_var_elec.set(v0_init)
+                    self._update_v0_label_elec()
+
+                # Lire valeurs actuelles sliders
+                v0 = self.v0_var_elec.get()
+                potentiel = self.pot_var.get()
+
+            # --- Calcul E et Exécution Tracé ---
+            # Le backend calcule E = potentiel / hauteur_distance
+            # E_calc = deviation.champ_electrique_v2(hauteur_distance, potentiel)
+            # ATTENTION : Le backend a été modifié pour prendre potentiel directement.
+            # Il faut vérifier quelle version du backend est utilisée.
+            # Supposons que le backend deviation.tracer_ensemble_trajectoires attend E :
+            # try:
+            #      E_calc = deviation.champ_electrique_v2(hauteur_distance, potentiel)
+            # except ValueError as e_calc_err:
+            #      raise ValueError(f"Erreur calcul champ E: {e_calc_err}")
+
+
+            self.ax.cla() # Effacer
+            self.status_var.set("Calcul déviation électrique...")
+            self.root.update_idletasks()
+
+            # Appel backend
+            # deviation.tracer_ensemble_trajectoires(self.particles_data, v0, , hauteur_initiale, E_calc, ax=self.ax)
+            deviation.tracer_ensemble_trajectoires(self.particles_data, v0, potentiel, angle_rad, hauteur_initiale, create_plot=False, ax=self.ax)
+            # Note: Le titre, labels sont mis par le backend ici
+
+            # Pas besoin de relim/autoscale si le backend le fait déjà bien
+            # self.ax.relim()
+            # self.ax.autoscale_view(True, True, True)
+            self.canvas.draw()
+            self.status_var.set("Tracé déviation électrique terminé.")
+
+        except ValueError as e:
+            if not called_by_slider: messagebox.showerror("Erreur Paramètre", f"Paramètre invalide (Électrique):\n{e}", parent=self.root)
+            self.status_var.set(f"Erreur paramètre (Elec): {e}")
+        except Exception as e:
+            if not called_by_slider: messagebox.showerror("Erreur Simulation", f"Une erreur est survenue (Électrique):\n{e}", parent=self.root)
+            print(f"Erreur Simulation Électrique: {type(e).__name__}: {e}")
+            self.status_var.set("Erreur simulation électrique.")
+
+
+# --- Point d'entrée ---
+if __name__ == "__main__":
+    root = tk.Tk()
+    # Augmenter la taille de police globale (optionnel)
+    # default_font = font.nametofont("TkDefaultFont")
+    # default_font.configure(size=10)
+    # root.option_add("*Font", default_font)
+    app = ParticleApp(root)
+    root.mainloop()
