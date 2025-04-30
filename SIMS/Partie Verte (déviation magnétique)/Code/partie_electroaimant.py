@@ -156,7 +156,7 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple], vitess
         particule_locale.tracer_trajectoire(ax, Bz, 0, x_detecteur, add_label=label)
     
     if np.all(np.isnan(all_y_contact)):
-        all_y_contact = [0.01]
+        all_y_contact = [0.07 * x_detecteur]
     ax.plot([x_detecteur, x_detecteur], [min(all_y_contact) * 0.8, max(all_y_contact) * 1.1], c='black', linewidth=5, label='Détecteur')
     ax.set_xlabel('Position x (en m)')
     ax.set_ylabel('Position y (en m)')
