@@ -736,7 +736,7 @@ class ParticleApp:
         ttk.Label(parent_dyn, text="Vitesse Initiale V0 (m/s):").pack(anchor=tk.W, pady=(5, 0))
         self.slider_frame_v0_elec = ttk.Frame(parent_dyn)
         self.slider_frame_v0_elec.pack(fill=tk.X, pady=(0, 5))
-        self.v0_var_elec = tk.DoubleVar(value=1.05e5) 
+        self.v0_var_elec = tk.DoubleVar(value=1e5) 
         self.v0_slider_elec = ttk.Scale(self.slider_frame_v0_elec, from_=1e4, to=2e5, orient=tk.HORIZONTAL,
                                         variable=self.v0_var_elec, command=self._on_v0_slider_change_elec)
         self.v0_slider_elec.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
@@ -753,7 +753,7 @@ class ParticleApp:
         ttk.Label(parent_dyn, text="Diff. Potentiel (V):").pack(anchor=tk.W, pady=(5, 0))
         self.slider_frame_v = ttk.Frame(parent_dyn)
         self.slider_frame_v.pack(fill=tk.X, pady=(0, 5))
-        self.pot_var = tk.DoubleVar(value=0)
+        self.pot_var = tk.DoubleVar(value=-5000)
         self.pot_slider = ttk.Scale(self.slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL,
                                     variable=self.pot_var, command=self._on_pot_slider_change)
         self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))

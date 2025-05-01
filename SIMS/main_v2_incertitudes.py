@@ -9,8 +9,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
 # --- Configuration des chemins ---
 folder = os.path.dirname(os.path.abspath(__file__))
-path_partie_bleue = os.path.join(folder, "SIMS","Partie Bleue (accélération)", "Code")
-path_partie_verte = os.path.join(folder, "SIMS","Partie Verte (déviation magnétique)", "Code")
+path_partie_bleue = os.path.join(folder, "Partie Bleue (accélération)", "Code")
+path_partie_verte = os.path.join(folder, "Partie Verte (déviation magnétique)", "Code")
 sys.path.append(path_partie_bleue)
 sys.path.append(path_partie_verte)
 
@@ -159,12 +159,8 @@ class ParticleApp:
         """Lie ou délie les événements de molette pour le canvas."""
         if enter:
             self.control_canvas.bind_all("<MouseWheel>", self._on_mousewheel) # Windows/Mac
-            self.control_canvas.bind_all("<Button-4>", self._on_mousewheel) # Linux Scroll Up
-            self.control_canvas.bind_all("<Button-5>", self._on_mousewheel) # Linux Scroll Down
         else:
             self.control_canvas.unbind_all("<MouseWheel>")
-            self.control_canvas.unbind_all("<Button-4>")
-            self.control_canvas.unbind_all("<Button-5>")
 
     def _update_scroll_region_and_bar(self, event=None):
         """Met à jour la scrollregion ET l'état de la scrollbar."""
@@ -697,24 +693,48 @@ class ParticleApp:
         frame = ttk.Frame(parent, padding="10")
         frame.pack(fill=tk.BOTH, expand=True)
 
-
-        # Frames pour afficher/cacher
-        self.dynamic_electric_inputs_frame = ttk.Frame(frame)
-        self.base_electric_inputs_frame = ttk.Frame(frame)
-
-        # Widgets Communs
+        # --- 1. Paramètres Communs ---
         self.angle_var = tk.StringVar(value="30")
         self.add_labeled_entry(frame, "Angle Initial (° vs +y):", self.angle_var).pack(fill=tk.X, pady=3)
         self.dist_var = tk.StringVar(value="0.05")
         self.add_labeled_entry(frame, "Distance/Hauteur (m):", self.dist_var).pack(fill=tk.X, pady=3)
-        
-        # Checkbox pour choisir le mode
-        self.dynamic_elec_var = tk.BooleanVar(value=False)
-        dynamic_elec_check = ttk.Checkbutton(frame, text="Mode Dynamique (Sliders)",
-                                             variable=self.dynamic_elec_var, command=self.toggle_dynamic_electric)
-        dynamic_elec_check.pack(anchor=tk.W, pady=5)
 
-        # --- Widgets Mode Non-Dynamique (Statique) ---
+        # --- 2. Checkbox Incertitudes ---
+        self.show_uncertainty_var = tk.BooleanVar(value=False)
+        # Stocker une référence au checkbox lui-même pour le positionnement
+        self.uncertainty_check = ttk.Checkbutton(frame, text="Afficher Incertitudes", variable=self.show_uncertainty_var, command=self.toggle_uncertainty_inputs)
+        self.uncertainty_check.pack(anchor=tk.W, padx=5, pady=(5, 0))
+
+        # --- 3. Frame Incertitudes (créé mais packé par toggle) ---
+        self.uncertainty_inputs_frame = ttk.LabelFrame(frame, text="Paramètres d'incertitude (%)")
+        # Remplir le frame maintenant
+        self.delta_v0_percent_var = tk.StringVar(value="1.0")
+        self.add_labeled_entry(self.uncertainty_inputs_frame, "ΔV0 (%):", self.delta_v0_percent_var).pack(fill=tk.X, pady=2, padx=5)
+        self.delta_theta_percent_var = tk.StringVar(value="1.0")
+        self.add_labeled_entry(self.uncertainty_inputs_frame, "Δθ (% de l'angle):", self.delta_theta_percent_var).pack(fill=tk.X, pady=2, padx=5)
+        self.delta_h_percent_var = tk.StringVar(value="1.0")
+        self.add_labeled_entry(self.uncertainty_inputs_frame, "ΔHauteur (%):", self.delta_h_percent_var).pack(fill=tk.X, pady=2, padx=5)
+        self.delta_E_percent_var = tk.StringVar(value="1.0")
+        self.add_labeled_entry(self.uncertainty_inputs_frame, "ΔChamp E (%):", self.delta_E_percent_var).pack(fill=tk.X, pady=2, padx=5)
+        ttk.Label(self.uncertainty_inputs_frame, text="Note: Δm/m et Δq/q utiliseront des valeurs fixes (ex: 0.1%)", font=('Segoe UI', 8)).pack(pady=(5,0))
+        # Ne pas packer self.uncertainty_inputs_frame ici
+
+        # --- 4. Séparateur (Stocker une référence) ---
+        self.elec_separator = ttk.Separator(frame, orient=tk.HORIZONTAL)
+        self.elec_separator.pack(fill=tk.X, pady=10, padx=5)
+
+        # --- 5. Frame Contrôle Mode ---
+        # Checkbox pour choisir le mode (Statique/Dynamique) (Stocker une référence)
+        self.dynamic_elec_var = tk.BooleanVar(value=False)
+        self.dynamic_elec_check = ttk.Checkbutton(frame, text="Mode Dynamique (Sliders)",
+                                             variable=self.dynamic_elec_var, command=self.toggle_dynamic_electric)
+        self.dynamic_elec_check.pack(anchor=tk.W, padx=5, pady=(5, 0)) # Placé après le séparateur
+
+        # Frames pour widgets statiques et dynamiques (créés mais packés par toggle)
+        self.dynamic_electric_inputs_frame = ttk.Frame(frame)
+        self.base_electric_inputs_frame = ttk.Frame(frame)
+
+        # --- Widgets Non-Dynamiques (Base) ---
         parent_base = self.base_electric_inputs_frame
         self.v0_elec_var = tk.StringVar(value="1e5") # m/s
         self.add_labeled_entry(parent_base, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
@@ -729,14 +749,14 @@ class ParticleApp:
         # Limites V0
         self.elec_v0_min_var = tk.StringVar(value="1e4")
         self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.elec_v0_min_var).pack(fill=tk.X, pady=3)
-        self.elec_v0_max_var = tk.StringVar(value="2e5") 
+        self.elec_v0_max_var = tk.StringVar(value="2e5")
         self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.elec_v0_max_var).pack(fill=tk.X, pady=3)
-        
+
         # Slider V0
         ttk.Label(parent_dyn, text="Vitesse Initiale V0 (m/s):").pack(anchor=tk.W, pady=(5, 0))
         self.slider_frame_v0_elec = ttk.Frame(parent_dyn)
         self.slider_frame_v0_elec.pack(fill=tk.X, pady=(0, 5))
-        self.v0_var_elec = tk.DoubleVar(value=1.05e5) 
+        self.v0_var_elec = tk.DoubleVar(value=1e5)
         self.v0_slider_elec = ttk.Scale(self.slider_frame_v0_elec, from_=1e4, to=2e5, orient=tk.HORIZONTAL,
                                         variable=self.v0_var_elec, command=self._on_v0_slider_change_elec)
         self.v0_slider_elec.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
@@ -753,62 +773,43 @@ class ParticleApp:
         ttk.Label(parent_dyn, text="Diff. Potentiel (V):").pack(anchor=tk.W, pady=(5, 0))
         self.slider_frame_v = ttk.Frame(parent_dyn)
         self.slider_frame_v.pack(fill=tk.X, pady=(0, 5))
-        self.pot_var = tk.DoubleVar(value=0)
+        self.pot_var = tk.DoubleVar(value=-5000)
         self.pot_slider = ttk.Scale(self.slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL,
                                     variable=self.pot_var, command=self._on_pot_slider_change)
         self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.1f} V")
         ttk.Label(self.slider_frame_v, textvariable=self.pot_label_var, width=12).pack(side=tk.LEFT)
-        
-        # --- Section Incertitude ---
-        ttk.Separator(frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10, padx=5)
-        self.show_uncertainty_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(frame, text="Afficher Incertitudes (selon deviation.py)", variable=self.show_uncertainty_var, command=self.toggle_uncertainty_inputs).pack(anchor=tk.W, padx=5, pady=(0, 5))
-        self.uncertainty_inputs_frame = ttk.LabelFrame(frame, text="Paramètres d'incertitude (%)")
-        self.delta_v0_percent_var = tk.StringVar(value="1.0")
-        self.add_labeled_entry(self.uncertainty_inputs_frame, "ΔV0 (%):", self.delta_v0_percent_var).pack(fill=tk.X, pady=2, padx=5)
-        self.delta_theta_percent_var = tk.StringVar(value="1.0")
-        self.add_labeled_entry(self.uncertainty_inputs_frame, "Δθ (% de l'angle):", self.delta_theta_percent_var).pack(fill=tk.X, pady=2, padx=5) # Note: % angle
-        self.delta_h_percent_var = tk.StringVar(value="1.0")
-        self.add_labeled_entry(self.uncertainty_inputs_frame, "ΔHauteur (%):", self.delta_h_percent_var).pack(fill=tk.X, pady=2, padx=5) # Renommé 'h' pour correspondre au dict
-        self.delta_E_percent_var = tk.StringVar(value="1.0")
-        self.add_labeled_entry(self.uncertainty_inputs_frame, "ΔChamp E (%):", self.delta_E_percent_var).pack(fill=tk.X, pady=2, padx=5) # % E directement
-        ttk.Label(self.uncertainty_inputs_frame, text="Note: Δm/m et Δq/q utiliseront des valeurs fixes (ex: 0.1%)", font=('Segoe UI', 8)).pack(pady=(5,0))
-        
+
         # Bouton pour appliquer les limites et tracer initialement
         apply_limits_btn_dyn = ttk.Button(parent_dyn, text="Appliquer Limites & Tracer", command=self.run_electric_simulation)
         apply_limits_btn_dyn.pack(pady=15)
 
-        # Afficher/Cacher initialement
-        self.toggle_dynamic_electric()
-        self.toggle_uncertainty_inputs()
+        # --- Afficher/Cacher initialement ---
+        # IMPORTANT: Appeler les toggles APRÈS que les widgets de référence (separator, checkbutton) soient packés
+        self.toggle_uncertainty_inputs() # Appel initial pour cacher/montrer le frame incertitude
+        self.toggle_dynamic_electric() # Appel initial pour packer le bon frame (statique/dynamique)
 
     def toggle_dynamic_electric(self):
         """Gère l'affichage des widgets électriques dynamique/statique."""
-        is_dynamic = self.dynamic_elec_var.get()
-        before_widget = self.uncertainty_inputs_frame if self.show_uncertainty_var.get() and self.uncertainty_inputs_frame.winfo_ismapped() else None
-        if is_dynamic:
-            self.base_electric_inputs_frame.pack_forget(); self.dynamic_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5, before=before_widget)
-        else:
-            self.dynamic_electric_inputs_frame.pack_forget(); self.base_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5, before=before_widget)
-        self.root.after(50, self._update_scroll_region_and_bar)
-
-    def toggle_dynamic_electric(self):
-        """Gère l'affichage des widgets électriques selon le mode choisi."""
         if self.dynamic_elec_var.get():
             self.base_electric_inputs_frame.pack_forget()
-            self.dynamic_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5)
+            # Pack le frame dynamique APRÈS le checkbox correspondant
+            self.dynamic_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5, after=self.dynamic_elec_check)
         else:
             self.dynamic_electric_inputs_frame.pack_forget()
-            self.base_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5)
+            # Pack le frame statique APRÈS le checkbox correspondant
+            self.base_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5, after=self.dynamic_elec_check)
+        # Mettre à jour la scrollregion car la hauteur change
+        self.root.after(50, self._update_scroll_region_and_bar)
 
     def toggle_uncertainty_inputs(self):
-        """Affiche ou cache le frame des entrées d'incertitude et ajuste le layout."""
-        show = self.show_uncertainty_var.get()
-        is_dynamic = self.dynamic_elec_var.get()
-        before_widget = self.dynamic_electric_inputs_frame if is_dynamic else self.base_electric_inputs_frame
-        if show: self.uncertainty_inputs_frame.pack(fill=tk.X, pady=5, padx=5, before=before_widget)
-        else: self.uncertainty_inputs_frame.pack_forget()
+        """Affiche ou cache le frame des entrées d'incertitude."""
+        if self.show_uncertainty_var.get():
+            # Pack le frame incertitude AVANT le séparateur
+            self.uncertainty_inputs_frame.pack(fill=tk.X, pady=(5,0), padx=5, before=self.elec_separator)
+        else:
+            self.uncertainty_inputs_frame.pack_forget()
+        # Mettre à jour la scrollregion car la hauteur change
         self.root.after(50, self._update_scroll_region_and_bar)
     
     # --- Callbacks Sliders Électriques ---

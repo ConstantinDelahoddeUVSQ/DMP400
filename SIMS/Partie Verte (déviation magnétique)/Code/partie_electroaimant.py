@@ -157,7 +157,7 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple], vitess
     
     if np.all(np.isnan(all_y_contact)):
         all_y_contact = [0.07 * x_detecteur]
-    ax.plot([x_detecteur, x_detecteur], [min(all_y_contact) * 0.8, max(all_y_contact) * 1.1], c='black', linewidth=5, label='Détecteur')
+    ax.plot([x_detecteur, x_detecteur], [ax.get_ybound()[0], ax.get_ybound()[1]], c='black', linewidth=5, label='Détecteur')
     ax.set_xlabel('Position x (en m)')
     ax.set_ylabel('Position y (en m)')
     ax.legend()
@@ -200,7 +200,7 @@ def tracer_trajectoires_dynamiquement(masses_charges_particules : list[tuple], v
         all_lines.append(particule_locale.tracer_trajectoire(ax, Bz0, 0, x_detecteur, add_label=label))
         
 
-    detecteur = ax.plot([x_detecteur, x_detecteur], [min(all_y_contact) * 0.8, max(all_y_contact) * 1.1], c='black', linewidth=5, label='Détecteur')
+    detecteur = ax.plot([x_detecteur, x_detecteur], [ax.get_ybound()[0], ax.get_ybound()[1]], c='black', linewidth=5, label='Détecteur')
 
     ax.legend()
 
