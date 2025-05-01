@@ -282,7 +282,9 @@ class ParticleApp:
         # Augmenter la hauteur visible par défaut
         tree_frame.pack(pady=5, padx=10, fill=tk.BOTH, expand=True, ipady=10)
 
-        self.particle_tree = ttk.Treeview(tree_frame, columns=('Mass (u)', 'Charge (e)'), show='headings', height=6) # Hauteur augmentée
+        self.particle_tree = ttk.Treeview(tree_frame, columns=('Name', 'Mass (u)', 'Charge (e)'), show='headings', height=6)# Hauteur augmentée
+        self.particle_tree.heading('Name', text='Nom')
+        self.particle_tree.column('Name', width=120, anchor=tk.CENTER)
         self.particle_tree.heading('Mass (u)', text='Masse (u)')
         self.particle_tree.heading('Charge (e)', text='Charge (e)')
         self.particle_tree.column('Mass (u)', width=100, anchor=tk.CENTER) # Plus large
@@ -450,7 +452,9 @@ class ParticleApp:
             formula = self.molecule_display_var.get() # Récupérer la formule affichée
 
             # Appeler la fonction interne d'ajout
-            added = self._add_particle_to_list(total_mass, charge, f"Particule {formula}")
+            charge_str = f"({abs(int(charge))}{'+' if charge > 0 else '-'})"
+            nom = f"{formula}{charge_str}"
+            added = self._add_particle_to_list(total_mass, charge, nom)
 
             # Fermer la fenêtre seulement si l'ajout a réussi
             if added:
@@ -515,7 +519,7 @@ class ParticleApp:
                 # Ajouter les valeurs originales (non arrondies)
                 self.particles_data.append((mass_u, charge_e))
                 # Afficher avec formatage dans le Treeview
-                self.particle_tree.insert('', tk.END, values=(f"{mass_u:.3f}", f"{charge_e:+.2f}"))
+                self.particle_tree.insert('', tk.END, values=(source_info, f"{mass_u:.3f}", f"{charge_e:+.2f}"))
                 self.status_var.set(f"{source_info} ajoutée: {mass_u:.3f} u, {charge_e:+.2f} e")
                 return True # Ajout réussi
             else:
