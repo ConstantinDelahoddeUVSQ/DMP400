@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*- # Pour assurer la compatibilité des caractères spéciaux (ex: accents)
 import sys, os
 import tkinter as tk
 from tkinter import ttk, messagebox, font
@@ -26,8 +25,6 @@ except ImportError as e:
     print(f"  '{path_partie_verte}'")
     print("Assurez-vous que ces dossiers sont corrects et contiennent les fichiers __init__.py si nécessaire.")
     sys.exit(1)
-
-
 
 # --- Classe principale de l'application ---
 class ParticleApp:
@@ -237,12 +234,12 @@ class ParticleApp:
         ttk.Label(input_frame, text="Masse (u):").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
         self.mass_entry = ttk.Entry(input_frame, width=10)
         self.mass_entry.grid(row=0, column=1, padx=5, pady=2)
-        self.mass_entry.insert(0, "1.0")
+        self.mass_entry.insert(0, "1.0") 
 
         ttk.Label(input_frame, text="Charge (e):").grid(row=0, column=2, padx=5, pady=2, sticky=tk.W)
         self.charge_entry = ttk.Entry(input_frame, width=10)
         self.charge_entry.grid(row=0, column=3, padx=5, pady=2)
-        self.charge_entry.insert(0, "1.0")
+        self.charge_entry.insert(0, "1.0") 
 
         add_btn = ttk.Button(input_frame, text="Ajouter", command=self.add_particle)
         add_btn.grid(row=0, column=4, padx=10, pady=2)
@@ -278,7 +275,9 @@ class ParticleApp:
         # Augmenter la hauteur visible par défaut
         tree_frame.pack(pady=5, padx=10, fill=tk.BOTH, expand=True, ipady=10)
 
-        self.particle_tree = ttk.Treeview(tree_frame, columns=('Mass (u)', 'Charge (e)'), show='headings', height=6) # Hauteur augmentée
+        self.particle_tree = ttk.Treeview(tree_frame, columns=('Name', 'Mass (u)', 'Charge (e)'), show='headings', height=6)# Hauteur augmentée
+        self.particle_tree.heading('Name', text='Nom')
+        self.particle_tree.column('Name', width=120, anchor=tk.CENTER)
         self.particle_tree.heading('Mass (u)', text='Masse (u)')
         self.particle_tree.heading('Charge (e)', text='Charge (e)')
         self.particle_tree.column('Mass (u)', width=100, anchor=tk.CENTER) # Plus large
@@ -428,8 +427,23 @@ class ParticleApp:
         self.molecule_display_var.set("".join(molecule_parts)) # Joindre sans espace
 
     def ajt_particle_connue(self, mass_u, charge_e):
-        """Ajoute une particule prédéfinie (O₂, Si, H...) directement."""
-        self._add_particle_to_list(mass_u, charge_e, f"Raccourci {mass_u:.3f} u")
+        """Ajoute une particule prédéfinie (O₂⁻, Si⁺, H⁺) avec un nom explicite."""
+        # Trouve le symbole basé sur la masse prédéfinie
+        symbole = ""
+        if mass_u == 31.998:
+            symbole = "O₂"
+        elif mass_u == 28.085:
+            symbole = "Si"
+        elif mass_u == 1.008:
+            symbole = "H"
+        else:
+            symbole = f"{mass_u:.3f}u"
+
+        charge_str = f"({abs(int(charge_e))}{'+' if charge_e > 0 else '-'})"
+        nom = f"{symbole}{charge_str}"
+
+        self._add_particle_to_list(mass_u, charge_e, nom)
+
 
     def submit_molecule(self):
         """Calcule la masse, lit la charge, et ajoute la particule construite."""
@@ -446,7 +460,9 @@ class ParticleApp:
             formula = self.molecule_display_var.get() # Récupérer la formule affichée
 
             # Appeler la fonction interne d'ajout
-            added = self._add_particle_to_list(total_mass, charge, f"Particule {formula}")
+            charge_str = f"({abs(int(charge))}{'+' if charge > 0 else '-'})"
+            nom = f"{formula}{charge_str}"
+            added = self._add_particle_to_list(total_mass, charge, nom)
 
             # Fermer la fenêtre seulement si l'ajout a réussi
             if added:
@@ -511,7 +527,7 @@ class ParticleApp:
                 # Ajouter les valeurs originales (non arrondies)
                 self.particles_data.append((mass_u, charge_e))
                 # Afficher avec formatage dans le Treeview
-                self.particle_tree.insert('', tk.END, values=(f"{mass_u:.3f}", f"{charge_e:+.2f}"))
+                self.particle_tree.insert('', tk.END, values=(source_info, f"{mass_u:.3f}", f"{charge_e:+.2f}"))
                 self.status_var.set(f"{source_info} ajoutée: {mass_u:.3f} u, {charge_e:+.2f} e")
                 return True # Ajout réussi
             else:
