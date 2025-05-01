@@ -434,8 +434,23 @@ class ParticleApp:
         self.molecule_display_var.set("".join(molecule_parts)) # Joindre sans espace
 
     def ajt_particle_connue(self, mass_u, charge_e):
-        """Ajoute une particule prédéfinie (O₂, Si, H...) directement."""
-        self._add_particle_to_list(mass_u, charge_e, f"Raccourci {mass_u:.3f} u")
+        """Ajoute une particule prédéfinie (O₂⁻, Si⁺, H⁺) avec un nom explicite."""
+        # Trouve le symbole basé sur la masse prédéfinie
+        symbole = ""
+        if mass_u == 31.998:
+            symbole = "O₂"
+        elif mass_u == 28.085:
+            symbole = "Si"
+        elif mass_u == 1.008:
+            symbole = "H"
+        else:
+            symbole = f"{mass_u:.3f}u"
+
+        charge_str = f"({abs(int(charge_e))}{'+' if charge_e > 0 else '-'})"
+        nom = f"{symbole}{charge_str}"
+
+        self._add_particle_to_list(mass_u, charge_e, nom)
+
 
     def submit_molecule(self):
         """Calcule la masse, lit la charge, et ajoute la particule construite."""
