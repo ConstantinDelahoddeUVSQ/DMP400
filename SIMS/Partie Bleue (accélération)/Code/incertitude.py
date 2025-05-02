@@ -183,10 +183,10 @@ def champ_electrique_v2(distance: float, différence_potentiel: float) -> float:
 
 if __name__ == "__main__":
     # Paramètres communs pour le tracé
-    v0        = 1e8       # m/s
+    v0        = 2e5       # m/s
     theta     = np.pi/6
-    y0        = 0.15      # m
-    distance  = 0.15      # m
+    y0        = 0.05      # m
+    distance  = 0.05      # m
     delta_V   = -5000     # V
 
     # Générer 1 000 masses de 1 à 10 u

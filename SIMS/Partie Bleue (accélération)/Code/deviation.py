@@ -216,7 +216,7 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
 
     Parameters
     ----------
-    masse_charge_particules : list of tupleof int
+    masse_charge_particules : list of tuple of float
         Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
     vitesse_initiale : float
         Vitesse intiale en y commune à toutes les particules du faisceau
