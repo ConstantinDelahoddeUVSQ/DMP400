@@ -385,7 +385,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
                         if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
                             line_color = line.get_color()
                             break
-                    p.tracer_trajectoire(ax, E_min, 0, x_max, color = line_color, label= label)
+                    p.tracer_trajectoire(ax, E_max, 0, x_max, color = line_color, label= label)
                     is_contact = True
                 else :
                     non_contact_particules.append(p)
