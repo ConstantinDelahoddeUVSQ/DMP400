@@ -1001,12 +1001,33 @@ class ParticleApp:
 
     # --- Helper ---
     def add_labeled_entry(self, parent, label_text, string_var):
-        """Crée une paire Label + Entry."""
+        """
+        Crée une paire Label + Entry alignée à l'aide de grid.
+
+        Parameters
+        ----------
+        parent : tk.Widget
+            Le conteneur parent.
+        label_text : str
+            Le texte du label.
+        string_var : tk.StringVar
+            La variable associée à l'Entry.
+
+        Returns
+        -------
+        ttk.Frame
+            Le frame contenant le Label et l'Entry.
+        """
         entry_frame = ttk.Frame(parent)
-        # Augmenter la largeur du label pour l'alignement
-        ttk.Label(entry_frame, text=label_text, width=22, anchor="w").pack(side=tk.LEFT, padx=(0, 5))
+
+        entry_frame.columnconfigure(0, weight=0) # Colonne du Label, ne s'étire pas
+        entry_frame.columnconfigure(1, weight=1) # Colonne de l'Entry, s'étire
+
+        label = ttk.Label(entry_frame, text=label_text, anchor="w")
+        label.grid(row=0, column=0, sticky="w", padx=(0, 5), pady=2)
         entry = ttk.Entry(entry_frame, textvariable=string_var)
-        entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        entry.grid(row=0, column=1, sticky="ew", pady=2) 
+
         return entry_frame
 
     # --- Exécution des Simulations ---

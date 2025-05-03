@@ -163,7 +163,10 @@ class particule :
                 else :
                     ax.plot(x, y, c=color, linestyle='--')
             else : 
-                ax.plot(x, y, label=f"Trajectoire de {self.m}u, {self.c}e", c=color)
+                if label == None :
+                    ax.plot(x, y, label=f"Trajectoire de {self.m}u, {self.c}e", c=color)
+                else :
+                    ax.plot(x, y, label=label, c=color)
     
     
     def point_contact(self, E : float) -> float :
