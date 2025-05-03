@@ -38,7 +38,7 @@ class ParticleApp:
             La fenêtre racine de l'application Tkinter.
         """
         self.root = root
-        self.root.title("Simulateur SIMS - Déviations (v2)") # Titre mis à jour
+        self.root.title("Simulateur SIMS - Déviations") # Titre mis à jour
         self.root.geometry("1600x800")
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
 
@@ -82,10 +82,7 @@ class ParticleApp:
         self.scrollable_frame = ttk.Frame(self.control_canvas)
 
         # Configurer la scrollregion quand le contenu change de taille
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self._update_scroll_region_and_bar(e)
-        )
+        self.scrollable_frame.bind("<Configure>", lambda e: self._update_scroll_region_and_bar(e))
 
         # Placer le frame interne dans le Canvas
         self.window_id = self.control_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
@@ -234,14 +231,17 @@ class ParticleApp:
         input_frame = ttk.Frame(parent)
         input_frame.pack(pady=5, padx=5, fill=tk.X)
 
+        input_frame.columnconfigure(1, weight=1) # Colonne de l'Entry "Masse"
+        input_frame.columnconfigure(3, weight=1) # Colonne de l'Entry "Charge"
+
         ttk.Label(input_frame, text="Masse (u):").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
         self.mass_entry = ttk.Entry(input_frame, width=10)
-        self.mass_entry.grid(row=0, column=1, padx=5, pady=2)
-        self.mass_entry.insert(0, "1.0") 
+        self.mass_entry.grid(row=0, column=1, padx=5, pady=2, sticky="ew")
+        self.mass_entry.insert(0, "1.0")
 
         ttk.Label(input_frame, text="Charge (e):").grid(row=0, column=2, padx=5, pady=2, sticky=tk.W)
         self.charge_entry = ttk.Entry(input_frame, width=10)
-        self.charge_entry.grid(row=0, column=3, padx=5, pady=2)
+        self.charge_entry.grid(row=0, column=3, padx=5, pady=2, sticky="ew")
         self.charge_entry.insert(0, "1.0") 
 
         add_btn = ttk.Button(input_frame, text="Ajouter", command=self.add_particle)
@@ -251,7 +251,6 @@ class ParticleApp:
         ttk.Label(input_frame, text="Raccourcis :").grid(row=1, column=0, columnspan=5, sticky=tk.W, pady=(10, 0))
 
         btns_frame = ttk.Frame(input_frame)
-        # Utiliser grid pour que ça prenne la largeur
         btns_frame.grid(row=2, column=0, columnspan=5, pady=5, sticky="ew")
 
         # Configurer les colonnes pour un espacement égal
@@ -259,7 +258,6 @@ class ParticleApp:
         for i in range(num_btns):
             btns_frame.columnconfigure(i, weight=1)
 
-        # Exemples de particules communes en SIMS
         btn_o2 = ttk.Button(btns_frame, text="O₂⁻", command=lambda: self.ajt_particle_connue(31.998, -1.0))
         btn_o2.grid(row=0, column=0, padx=2, sticky="ew")
 
@@ -275,16 +273,15 @@ class ParticleApp:
 
         # --- Liste des Particules (Treeview) ---
         tree_frame = ttk.Frame(parent)
-        # Augmenter la hauteur visible par défaut
         tree_frame.pack(pady=5, padx=10, fill=tk.BOTH, expand=True, ipady=10)
 
-        self.particle_tree = ttk.Treeview(tree_frame, columns=('Name', 'Mass (u)', 'Charge (e)'), show='headings', height=6)# Hauteur augmentée
+        self.particle_tree = ttk.Treeview(tree_frame, columns=('Name', 'Mass (u)', 'Charge (e)'), show='headings', height=6)
         self.particle_tree.heading('Name', text='Nom')
-        self.particle_tree.column('Name', width=120, anchor=tk.CENTER)
+        self.particle_tree.column('Name', width=120, anchor=tk.W) # Alignement à gauche pour nom
         self.particle_tree.heading('Mass (u)', text='Masse (u)')
+        self.particle_tree.column('Mass (u)', width=100, anchor=tk.CENTER)
         self.particle_tree.heading('Charge (e)', text='Charge (e)')
-        self.particle_tree.column('Mass (u)', width=100, anchor=tk.CENTER) # Plus large
-        self.particle_tree.column('Charge (e)', width=100, anchor=tk.CENTER) # Plus large
+        self.particle_tree.column('Charge (e)', width=100, anchor=tk.CENTER)
 
         # Scrollbar pour le Treeview
         scrollbar_tree = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.particle_tree.yview)
@@ -292,8 +289,6 @@ class ParticleApp:
 
         # Important: Lier la molette aussi au Treeview s'il a le focus
         self.particle_tree.bind("<MouseWheel>", lambda e: self._on_mousewheel(e))
-        self.particle_tree.bind("<Button-4>", lambda e: self._on_mousewheel(e))
-        self.particle_tree.bind("<Button-5>", lambda e: self._on_mousewheel(e))
 
         self.particle_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar_tree.pack(side=tk.RIGHT, fill=tk.Y)
