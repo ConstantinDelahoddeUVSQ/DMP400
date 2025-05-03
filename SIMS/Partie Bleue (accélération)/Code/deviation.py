@@ -561,9 +561,9 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_parti
                     if p.point_contact(E_min) is not None:
                         x_max = p.point_contact(E_min)
                         all_x_max.append(x_max)
-                        label = f"Incertitude de {p.base_mq[0]}u, {p.base_mq[1]}e"
+                        label = f"Incertitude de {p.base_mq[0]} u, {p.base_mq[1]} e"
                         for line in ax.get_lines():
-                            if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                            if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
                                 line_color = line.get_color()
                                 break
                         p.tracer_trajectoire(ax, E_min, 0, x_max, color = line_color, label= label)
@@ -576,7 +576,7 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_parti
                         all_x_max.append(x_max)
                         label = None
                         for line in ax.get_lines():
-                            if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                            if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
                                 line_color = line.get_color()
                                 break
                         p.tracer_trajectoire(ax, E_max, 0, x_max, color = line_color, label= label)
@@ -591,11 +591,11 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_parti
                     p.tracer_trajectoire(ax, E, 0, x_max)
                     angle_incident = p.angle_incident(E)
                     angle_deg = np.degrees(angle_incident)
-                    texte_angles += f"\n- {p.m}u, {p.c}e : {angle_deg:.2f}°"
+                    texte_angles += f"\n- {p.m} u, {p.c} e : {angle_deg:.2f}°"
                     is_contact = True
                 else : 
                     non_contact_particules.append(p)
-                    texte_angles += f"\n- {p.m}u, {p.c}e : Pas de contact"
+                    texte_angles += f"\n- {p.m} u, {p.c} e : Pas de contact"
     
     if is_contact :
         ax.set_xlim(0, max(all_x_max) * 1.2)
@@ -608,16 +608,16 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_parti
             p.tracer_trajectoire(ax, E, 0, local_x_max * 1.2)
         else :
             if p.incertitude_unique :
-                label = f"Incertitude de {p.base_mq[0]}u, {p.base_mq[1]}e"
+                label = f"Incertitude de {p.base_mq[0]}u, {p.base_mq[1]} e"
                 for line in ax.get_lines():
-                    if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                    if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
                         line_color = line.get_color()
                         break
                 p.tracer_trajectoire(ax, E_min, 0, local_x_max, color = line_color, label= label)
             else :
                 label = None
                 for line in ax.get_lines():
-                    if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                    if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
                         line_color = line.get_color()
                         break
                 p.tracer_trajectoire(ax, E_min, 0,local_x_max, color = line_color, label= label)
@@ -700,10 +700,10 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
 
                 angle_incident = p.angle_incident(E_val)
                 angle_deg = np.degrees(angle_incident)
-                texte_angles += f"\n- {p.m}u, {p.c}e : {angle_deg:.2f}°"
+                texte_angles += f"\n- {p.m} u, {p.c} e : {angle_deg:.2f}°"
             else : 
                 non_contact_particules.append(p)
-                texte_angles += f"\n- {p.m}u, {p.c}e : Pas de contact"
+                texte_angles += f"\n- {p.m} u, {p.c} e : Pas de contact"
                 if len(all_x_max) != 0 :
                     local_x_max = max(all_x_max)
                 else :
