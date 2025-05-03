@@ -651,6 +651,7 @@ def tracer_trajectoires_potentiels_avec_incertitudes(
         fig, ax = plt.subplots(figsize=(10, 8))
 
     all_x_max = []
+    non_contact_particules = []
     texte_angles = f"Particule : {masse_charge[0]}u, {masse_charge[1]}e"
 
     for U in potentiels:
@@ -660,28 +661,31 @@ def tracer_trajectoires_potentiels_avec_incertitudes(
         # Créer particules d'incertitude
         particules, E_min, E_max = create_particules_incertitudes([p], incertitudes, E)
 
-        for part in particules:
-            if part.is_incertitude:
-                champ = E_min if part.incertitude_unique else E_max
-                contact = part.point_contact(champ)
-                if contact is not None:
-                    x_max = contact
-                    all_x_max.append(x_max)
-                    color = None
-                    label = None
-                    for line in ax.get_lines():
-                        if line.get_label() == f"Trajectoire pour {U} V":
-                            color = line.get_color()
-                            break
-                    part.tracer_trajectoire(ax, champ, 0, x_max, color=color, label=label)
+        for p in particules:
+            if p.is_incertitude:
+                if p.incertitude_unique :
+                    contact = p.point_contact(E_min)
+                    if contact is not None:
+                        x_max = contact
+                        all_x_max.append(x_max)
+                        color = None
+                        label = None
+                        for line in ax.get_lines():
+                            if line.get_label() == f"Trajectoire pour {U} V":
+                                color = line.get_color()
+                                break
+                        p.tracer_trajectoire(ax, E_min, 0, x_max, color=color, label=label)
+                else :
+                    non_contact_particules.append(p)
+                
             else:
-                contact = part.point_contact(E)
+                contact = p.point_contact(E)
                 if contact is not None:
                     x_max = contact
                     all_x_max.append(x_max)
                     label = f"Trajectoire pour {U} V"
-                    part.tracer_trajectoire(ax, E, 0, x_max, label=label)
-                    angle_inc = part.angle_incident(E)
+                    p.tracer_trajectoire(ax, E, 0, x_max, label=label)
+                    angle_inc = p.angle_incident(E)
                     texte_angles += f"\nU={U} V → angle = {np.degrees(angle_inc):.2f}°"
                 else:
                     texte_angles += f"\nU={U} V → pas de contact"
@@ -712,7 +716,7 @@ if __name__ == "__main__":
     y0 = 0.15
 
     # Liste de potentiels à tester
-    potentiels = [3000, 4000, 5000, 6000]
+    potentiels = [0, 4000, 3000, 2000]
 
     # Incertitudes sur les paramètres (en %)
     incertitudes = {
@@ -735,27 +739,27 @@ if __name__ == "__main__":
     )
 
 
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    import numpy as np
+# if __name__ == "__main__":
+#     import matplotlib.pyplot as plt
+#     import numpy as np
 
-    # Exemple de masse (en u) et charge (en e)
-    masse_charge_particules = (1, 1)  # Proton typique
+#     # Exemple de masse (en u) et charge (en e)
+#     masse_charge_particules = (1, 1)  # Proton typique
 
-    # Vitesse initiale en m/s
-    vitesse_initiale = 1e5
+#     # Vitesse initiale en m/s
+#     vitesse_initiale = 1e5
 
-    # Liste de potentiels à tester
-    potentiels = [0, 1000, 3000, 5000, 7000]
+#     # Liste de potentiels à tester
+#     potentiels = [0, 1000, 3000, 5000, 7000]
 
-    # Appel à la fonction
-    tracer_trajectoires_potentiels(
-        masse_charge_particules=masse_charge_particules,
-        vitesse_initiale=1e6,
-        potentiels=potentiels,
-        angle_initial=np.pi / 6,
-        hauteur_initiale=0.1
-    )
+#     # Appel à la fonction
+#     tracer_trajectoires_potentiels(
+#         masse_charge_particules=masse_charge_particules,
+#         vitesse_initiale=1e6,
+#         potentiels=potentiels,
+#         angle_initial=np.pi / 6,
+#         hauteur_initiale=0.1
+#     )
 
 """
 Test fonction tracer_ensemble_trajectoires
@@ -772,14 +776,14 @@ Test fonction tracer_ensemble_trajectoires
 """
 Test fonction tracer_ensemble_trajectoires_avec_incertitudes
 """
-# if __name__ == '__main__' :
-#     rapports_mq, vo = [(1, 1), (3, 1)], 1e6
-#     potentiel = 5000
-#     h_initiale = 0.1
-#     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+if __name__ == '__main__' :
+    rapports_mq, vo = [(1, 1), (3, 1)], 1e6
+    potentiel = 5000
+    h_initiale = 0.1
+    incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
 
 
-#     tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
+    tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
 
 
 
