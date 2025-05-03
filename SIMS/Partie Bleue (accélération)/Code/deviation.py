@@ -155,7 +155,10 @@ class particule :
         """
         x, y = self.trajectoire(E, x_min, x_max, n_points)
         if color == None :
-            ax.plot(x, y, label=f"Trajectoire de {self.m}u, {self.c}e")
+            if label == None :
+                ax.plot(x, y, label=f"Trajectoire de {self.m} u, {self.c} e")
+            else : 
+                ax.plot(x, y, label=label)
         else :
             if self.is_incertitude :
                 if self.incertitude_unique :
@@ -164,7 +167,7 @@ class particule :
                     ax.plot(x, y, c=color, linestyle='--')
             else : 
                 if label == None :
-                    ax.plot(x, y, label=f"Trajectoire de {self.m}u, {self.c}e", c=color)
+                    ax.plot(x, y, label=f"Trajectoire de {self.m} u, {self.c} e", c=color)
                 else :
                     ax.plot(x, y, label=label, c=color)
     
@@ -370,9 +373,9 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
                 if p.point_contact(E_min) is not None:
                     x_max = p.point_contact(E_min)
                     all_x_max.append(x_max)
-                    label = f"Incertitude de {p.base_mq[0]}u, {p.base_mq[1]}e"
+                    label = f"Incertitude de {p.base_mq[0]} u, {p.base_mq[1]} e"
                     for line in ax.get_lines():
-                        if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                        if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
                             line_color = line.get_color()
                             break
                     p.tracer_trajectoire(ax, E_min, 0, x_max, color = line_color, label= label)
@@ -385,7 +388,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
                     all_x_max.append(x_max)
                     label = None
                     for line in ax.get_lines():
-                        if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                        if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
                             line_color = line.get_color()
                             break
                     p.tracer_trajectoire(ax, E_max, 0, x_max, color = line_color, label= label)
@@ -400,11 +403,11 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
                 p.tracer_trajectoire(ax, E, 0, x_max)
                 angle_incident = p.angle_incident(E)
                 angle_deg = np.degrees(angle_incident)
-                texte_angles += f"\n- {p.m}u, {p.c}e : {angle_deg:.2f}°"
+                texte_angles += f"\n- {p.m} u, {p.c} e : {angle_deg:.2f}°"
                 is_contact = True
             else : 
                 non_contact_particules.append(p)
-                texte_angles += f"\n- {p.m}u, {p.c}e : Pas de contact"
+                texte_angles += f"\n- {p.m} u, {p.c} e : Pas de contact"
     
     if is_contact :
         ax.set_xlim(0, max(all_x_max) * 1.2)
@@ -417,21 +420,213 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
             p.tracer_trajectoire(ax, E, 0, local_x_max * 1.2)
         else :
             if p.incertitude_unique :
-                label = f"Incertitude de {p.base_mq[0]}u, {p.base_mq[1]}e"
+                label = f"Incertitude de {p.base_mq[0]} u, {p.base_mq[1]} e"
                 for line in ax.get_lines():
-                    if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                    if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
                         line_color = line.get_color()
                         break
                 p.tracer_trajectoire(ax, E_min, 0, local_x_max, color = line_color, label= label)
             else :
                 label = None
                 for line in ax.get_lines():
-                    if line.get_label() == f"Trajectoire de {p.base_mq[0]}u, {p.base_mq[1]}e":
+                    if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
                         line_color = line.get_color()
                         break
                 p.tracer_trajectoire(ax, E_min, 0,local_x_max, color = line_color, label= label)
 
         all_x_max.append(local_x_max)
+    
+    if len(all_x_max) > 0:
+        ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
+        ax.text(0.05, 0.1, texte_angles, transform=ax.transAxes,
+            fontsize=10,bbox=dict(boxstyle="round", facecolor="white", alpha = 0.5))
+
+    ax.legend()
+
+    if create_plot :
+        plt.show()
+    return ax
+
+
+
+def tracer_ensemble_potentiels(masse_charge_particule : tuple[int, int], vitesse_initiale : float, potentiels : list, angle_initial=np.pi/6, hauteur_initiale = 0.15, create_plot=True, ax=None) -> None :
+    """
+    Trace les trajectoires jusqu'au contact de différentes particules de manière statique
+
+    Parameters
+    ----------
+    masse_charge_particule : tuple of float
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour la particule
+    vitesse_initiale : float
+        Vitesse intiale en y commune à toutes les particules du faisceau
+    potentiels : list of float
+        Différence de potentiel entre les plaques (en V)
+    angle_initial : float
+            Angle initial entre v_initiale et l'axe y en radians
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+    create_plot : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+    ax : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+
+    """
+    particules_init = masse_charge_particule
+    if create_plot or ax == None : 
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+    p = particule(masse_charge_particule, vitesse_initiale, angle_initial, hauteur_initiale)
+    all_x_max = []
+    non_contact_particules = []
+    texte_angles = "Angles incidents :"
+    is_contact = False
+
+    for V in potentiels :
+        E = champ_electrique_v2(hauteur_initiale, V)
+        if p.point_contact(E) is not None:
+            x_max = p.point_contact(E)
+            all_x_max.append(x_max)
+            p.tracer_trajectoire(ax, E, 0, x_max, label=f"Trajectoire à {V} V")
+
+            angle_incident = p.angle_incident(E)
+            angle_deg = np.degrees(angle_incident)
+            texte_angles += f"\n- {V} V : {angle_deg:.2f}°"
+            is_contact = True
+        else : 
+            non_contact_particules.append(p)
+            texte_angles += f"\n- {V} V : Pas de contact"
+    
+    if is_contact :
+        ax.set_xlim(0, max(all_x_max) * 1.2)
+    else :
+        ax.set_xlim(0, hauteur_initiale)
+
+    for p in non_contact_particules : 
+        local_x_max = ax.get_xlim()[1]
+        p.tracer_trajectoire(ax, E, 0, local_x_max * 1.2)
+        all_x_max.append(local_x_max)
+    
+    if len(all_x_max) > 0:
+        ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
+        ax.text(0.985, 0.5, texte_angles, horizontalalignment='right', transform=ax.transAxes,
+            fontsize=10,bbox=dict(boxstyle="round", facecolor="white", alpha = 0.5))
+
+    ax.legend()
+
+    if create_plot :
+        plt.show()
+    return ax
+
+
+
+def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_particule : tuple, vitesse_initiale : float, incertitudes : dict ,potentiels : list, angle_initial=np.pi/6, hauteur_initiale = 0.15, create_plot=True, ax=None) -> None :
+    """
+    Trace les trajectoires jusqu'au contact de différentes particules de manière statique avec le tracé des incertitudes (couloirs)
+
+    Parameters
+    ----------
+    masse_charge_particules : tuple of float
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
+    vitesse_initiale : float
+        Vitesse intiale en y commune à toutes les particules du faisceau
+    incertitudes : dict
+        Dictionnaire des incertitudes sur les différents paramètres (pourcentages)
+    potentiels : float
+        Différence de potentiel entre les plaques (en V)
+    angle_initial : float
+            Angle initial entre v_initiale et l'axe y en radians
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+    create_plot : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+    ax : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+
+    """
+    particules_init = masse_charge_particule
+    if create_plot or ax == None : 
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+    parti = [particule(masse_charge_particule, vitesse_initiale, angle_initial, hauteur_initiale)]
+    
+
+    all_x_max = []
+    non_contact_particules = []
+    texte_angles = "Angles incidents :"
+    is_contact = False
+
+    for V in potentiels :
+        E = champ_electrique_v2(hauteur_initiale, V)
+        particules, E_min, E_max = create_particules_incertitudes(parti, incertitudes, E)
+        for p in particules :
+            if p.is_incertitude :
+                if p.incertitude_unique :
+                    if p.point_contact(E_min) is not None:
+                        x_max = p.point_contact(E_min)
+                        all_x_max.append(x_max)
+                        label = f"Incertitude de {V} V"
+                        for line in ax.get_lines():
+                            print(line.get_label())
+                            if line.get_label() == f"Trajectoire de {V} V":
+                                line_color = line.get_color()
+                                break
+                        p.tracer_trajectoire(ax, E_min, 0, x_max, color = line_color, label= label)
+                        is_contact = True
+                    else :
+                        non_contact_particules.append(p)
+                else :
+                    if p.point_contact(E_max) is not None:
+                        x_max = p.point_contact(E_max)
+                        all_x_max.append(x_max)
+                        label = None
+                        for line in ax.get_lines():
+                            if line.get_label() == f"Trajectoire de {V} V":
+                                line_color = line.get_color()
+                                break
+                        p.tracer_trajectoire(ax, E_max, 0, x_max, color = line_color, label= label)
+                        is_contact = True
+                    else :
+                        non_contact_particules.append(p)
+                
+            else :
+                if p.point_contact(E) is not None:
+                    x_max = p.point_contact(E)
+                    all_x_max.append(x_max)
+                    p.tracer_trajectoire(ax, E, 0, x_max, label=f"Trajectoire de {V} V")   
+                    angle_incident = p.angle_incident(E)
+                    angle_deg = np.degrees(angle_incident)
+                    texte_angles += f"\n- {V} V : {angle_deg:.2f}°"
+                    is_contact = True
+                else : 
+                    non_contact_particules.append(p)
+                    texte_angles += f"\n- {V} V : Pas de contact"
+    
+        if is_contact :
+            ax.set_xlim(0, max(all_x_max) * 1.2)
+        else :
+            ax.set_xlim(0, hauteur_initiale)
+
+        for p in non_contact_particules : 
+            local_x_max = ax.get_xlim()[1]
+            if not p.is_incertitude :
+                p.tracer_trajectoire(ax, E, 0, local_x_max * 1.2, label=f"Trajectoire de {V} V")
+            else :
+                if p.incertitude_unique :
+                    label = f"Incertitude de {V} V"
+                    for line in ax.get_lines():
+                        if line.get_label() == f"Trajectoire de {V} V":
+                            line_color = line.get_color()
+                            break
+                    p.tracer_trajectoire(ax, E_min, 0, local_x_max, color = line_color, label= label)
+                else :
+                    label = None
+                    for line in ax.get_lines():
+                        if line.get_label() == f"Trajectoire de {V} V":
+                            line_color = line.get_color()
+                            break
+                    p.tracer_trajectoire(ax, E_min, 0,local_x_max, color = line_color, label= label)
+
+            all_x_max.append(local_x_max)
     
     if len(all_x_max) > 0:
         ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
@@ -509,10 +704,10 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
 
                 angle_incident = p.angle_incident(E_val)
                 angle_deg = np.degrees(angle_incident)
-                texte_angles += f"\n- {p.m}u, {p.c}e : {angle_deg:.2f}°"
+                texte_angles += f"\n- {p.m} u, {p.c} e : {angle_deg:.2f}°"
             else : 
                 non_contact_particules.append(p)
-                texte_angles += f"\n- {p.m}u, {p.c}e : Pas de contact"
+                texte_angles += f"\n- {p.m} u, {p.c} e : Pas de contact"
                 if len(all_x_max) != 0 :
                     local_x_max = max(all_x_max)
                 else :
@@ -574,6 +769,18 @@ Test fonction tracer_ensemble_trajectoires_avec_incertitudes
 
 #     tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
 
+
+"""
+Test fonction tracer_ensemble_trajectoires_potentiels_avec_incertitudes
+"""
+# if __name__ == '__main__' :
+#     rapports_mq, vo = (1, 1), 1e5
+#     potentiels = [0, 50]
+#     h_initiale = 0.1
+#     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+
+
+#     tracer_ensemble_trajectoires_potentiels_avec_incertitudes(rapports_mq, vo, incertitudes, potentiels=potentiels, hauteur_initiale=h_initiale)
 
 
 """
