@@ -615,128 +615,232 @@ def tracer_trajectoires_potentiels(
 
     return ax
 
-def tracer_trajectoires_potentiels_avec_incertitudes(
-    masse_charge: tuple[int, int],
-    vitesse_initiale: float,
-    incertitudes: dict,
-    potentiels: list[float],
-    angle_initial=np.pi / 6,
-    hauteur_initiale=0.15,
-    create_plot=True,
-    ax=None
-) -> None:
+def create_incertitude_params(p : particule, incertitudes : dict, E : float) -> tuple:
     """
-    Trace les trajectoires d'une particule pour différents potentiels, avec incertitudes.
+    Crée les particules min/max et E_min/E_max pour une particule donnée.
+    Retourne (min_particule, max_particule, E_min, E_max)
+    """
+    # Déterminer si les bornes min/max pour les paramètres correspondent à la
+    # trajectoire min/max en y (ou x_contact min/max).
+    # Une analyse de sensibilité ou la propagation d'incertitude serait plus rigoureuse.
+    # L'approche actuelle (min params -> min traj, max params -> max traj) est une approximation.
+    # Le signe de q*E détermine la direction de la force et influence quelle combinaison donne min/max.
+
+    qE_sign = np.sign(p.c * constants.e * E) # Ou np.sign(E / p.mq)
+
+    if qE_sign >= 0: # Force vers +y (loin de la plaque y=0) ou E=0
+        # Pour minimiser l'effet déviateur (aller le plus loin en x) :
+        # - m grande (+incertitude)
+        # - |q| petite (-incertitude sur |q|) -> si c>0, q=c*(1-incert); si c<0, q=c*(1+incert) ? Non, q = (c*(1-incertitudes['q']))*e
+        # - v0 grande (+incertitude)
+        # - angle plus horizontal (theta plus grand? si angle est /+y -> angle plus petit) -> angle * (1-incert)
+        # - hauteur initiale plus grande (+incertitude) -> h * (1+incert)
+        # - |E| plus petit (-incertitude) -> E_min = E * (1 - incertitudes['E'])
+        min_m = p.m * (1 + incertitudes['m'])
+        min_c = p.c * (1 - incertitudes['q']) # Attention si incertitude > 1
+        min_v0 = p.vo * (1 + incertitudes['v0'])
+        min_angle = p.angle * (1 - incertitudes['theta'])
+        min_h = p.height * (1 + incertitudes['h'])
+        min_particule = particule((min_m, min_c), min_v0, min_angle, min_h, is_incertitude=True, incertitude_unique = True, base_mq=(p.m, p.c))
+        E_min_bound = E * (1 - incertitudes['E']) # Champ pour la particule min
+
+        # Pour maximiser l'effet déviateur (aller le moins loin en x) :
+        max_m = p.m * (1 - incertitudes['m'])
+        max_c = p.c * (1 + incertitudes['q'])
+        max_v0 = p.vo * (1 - incertitudes['v0'])
+        max_angle = p.angle * (1 + incertitudes['theta'])
+        max_h = p.height * (1 - incertitudes['h'])
+        max_particule = particule((max_m, max_c), max_v0, max_angle, max_h, is_incertitude=True, base_mq=(p.m, p.c))
+        E_max_bound = E * (1 + incertitudes['E']) # Champ pour la particule max
+
+    else: # Force vers -y (vers la plaque y=0)
+        # Pour minimiser l'effet déviateur (aller le moins loin en x, contact rapide):
+        # - m petite (-incertitude)
+        # - |q| grande (+incertitude)
+        # - v0 petite (-incertitude)
+        # - angle plus vertical (theta plus grand? si angle est /+y -> angle plus grand) -> angle * (1+incert)
+        # - hauteur initiale plus petite (-incertitude) -> h * (1-incert)
+        # - |E| plus grand (+incertitude) -> E_min_bound = E * (1 + incertitudes['E']) car E est négatif
+        min_m = p.m * (1 - incertitudes['m'])
+        min_c = p.c * (1 + incertitudes['q'])
+        min_v0 = p.vo * (1 - incertitudes['v0'])
+        min_angle = p.angle * (1 + incertitudes['theta'])
+        min_h = p.height * (1 - incertitudes['h'])
+        min_particule = particule((min_m, min_c), min_v0, min_angle, min_h, is_incertitude=True, incertitude_unique = True, base_mq=(p.m, p.c))
+        # E est < 0. On veut |E| max. E*(1+incert) est plus négatif si incert > 0.
+        E_min_bound = E * (1 + incertitudes['E']) # Champ pour la particule min
+
+        # Pour maximiser l'effet déviateur (aller le plus loin en x, contact tardif):
+        max_m = p.m * (1 + incertitudes['m'])
+        max_c = p.c * (1 - incertitudes['q'])
+        max_v0 = p.vo * (1 + incertitudes['v0'])
+        max_angle = p.angle * (1 - incertitudes['theta'])
+        max_h = p.height * (1 + incertitudes['h'])
+        max_particule = particule((max_m, max_c), max_v0, max_angle, max_h, is_incertitude=True, base_mq=(p.m, p.c))
+         # E est < 0. On veut |E| min. E*(1-incert) est moins négatif.
+        E_max_bound = E * (1 - incertitudes['E']) # Champ pour la particule max
+
+    # S'assurer que les charges/masses restent valides (positives)
+    if min_particule.m <= 0 or max_particule.m <= 0:
+        raise ValueError("Incertitude sur la masse trop grande, masse négative ou nulle.")
+    # Pas besoin de vérifier la charge car l'incertitude est sur c, pas sur le signe.
+
+    return min_particule, max_particule, E_min_bound, E_max_bound
+
+def tracer_trajectoire_multi_potentiel_avec_incertitudes(
+    masse_charge_particule : tuple[int, int],
+    potentiels: list[float],
+    vitesse_initiale : float,
+    incertitudes : dict,
+    angle_initial=np.pi/6,
+    hauteur_initiale = 0.15,
+    create_plot=True,
+    ax=None) -> plt.Axes :
+    """
+    Trace la trajectoire d'UNE particule pour DIFFERENTS potentiels,
+    avec les couloirs d'incertitude pour chaque potentiel.
 
     Parameters
     ----------
-    masse_charge : tuple of int
-        Masse (en unités atomiques), Charge (en nombre de charges élémentaires)
-    vitesse_initiale : float
-        Vitesse initiale en y (m/s)
-    incertitudes : dict
-        Dictionnaire d'incertitudes (en %)
+    masse_charge_particule : tuple (int, int)
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire) de la particule.
     potentiels : list of float
-        Liste de différences de potentiel à tester (en V)
+        Liste des différences de potentiel à tester (en V).
+    vitesse_initiale : float
+        Vitesse initiale commune (en m/s).
+    incertitudes : dict
+        Dictionnaire des incertitudes relatives sur les paramètres
+        (ex: {'m': 0.01, 'q': 0.005, 'v0': 0.02, 'theta': 0.01, 'h': 0.03, 'E': 0.05}).
+        Les valeurs sont les incertitudes relatives (ex: 0.01 pour 1%).
     angle_initial : float
-        Angle initial (rad)
+        Angle initial entre v_initiale et l'axe +y en radians.
     hauteur_initiale : float
-        Coordonnée y de départ
+        Coordonnée en y du point de départ (en m).
     create_plot : bool
-        Si True, crée une figure
-    ax : matplotlib.axes.Axes or None
-        Axe matplotlib existant
+        Si True, crée une nouvelle figure matplotlib. Sinon, utilise l'axe fourni.
+    ax : matplotlib.axes.Axes, optional
+        L'axe matplotlib sur lequel tracer. Si None et create_plot=False, une erreur surviendra.
+        Si None et create_plot=True, un nouvel axe est créé.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        L'axe matplotlib contenant les tracés.
+
+    Raises
+    ------
+    ValueError
+        Si la charge de la particule est nulle ou si la liste des potentiels est vide.
     """
+    if masse_charge_particule[1] == 0:
+        raise ValueError("La charge de la particule ne peut pas être nulle.")
+    if not potentiels:
+        raise ValueError("La liste des potentiels ne peut pas être vide.")
+
     if create_plot or ax is None:
-        fig, ax = plt.subplots(figsize=(10, 8))
+        fig, ax = plt.subplots(figsize=(12, 8))
+    cmap = plt.colormaps['viridis'].resampled(len(potentiels)) 
 
-    all_x_max = []
-    non_contact_particules = []
-    texte_angles = f"Particule : {masse_charge[0]}u, {masse_charge[1]}e"
+    p_main = particule(masse_charge_particule, vitesse_initiale, angle_initial, hauteur_initiale)
 
-    for U in potentiels:
-        E = champ_electrique_v2(hauteur_initiale, U)
-        p = particule(masse_charge, vitesse_initiale, angle_initial, hauteur_initiale)
+    all_x_max_global = [] 
+    any_contact = False
 
-        # Créer particules d'incertitude
-        particules, E_min, E_max = create_particules_incertitudes([p], incertitudes, E)
+    for i, pot in enumerate(potentiels):
+        color = cmap(i / len(potentiels) if len(potentiels) > 1 else 0.5) 
+        E = champ_electrique_v2(hauteur_initiale, pot)
 
-        for p in particules:
-            if p.is_incertitude:
-                if p.incertitude_unique :
-                    contact = p.point_contact(E_min)
-                    if contact is not None:
-                        x_max = contact
-                        all_x_max.append(x_max)
-                        color = None
-                        label = None
-                        for line in ax.get_lines():
-                            if line.get_label() == f"Trajectoire pour {U} V":
-                                color = line.get_color()
-                                break
-                        p.tracer_trajectoire(ax, E_min, 0, x_max, color=color, label=label)
-                else :
-                    non_contact_particules.append(p)
-                
-            else:
-                contact = p.point_contact(E)
-                if contact is not None:
-                    x_max = contact
-                    all_x_max.append(x_max)
-                    label = f"Trajectoire pour {U} V"
-                    p.tracer_trajectoire(ax, E, 0, x_max, label=label)
-                    angle_inc = p.angle_incident(E)
-                    texte_angles += f"\nU={U} V → angle = {np.degrees(angle_inc):.2f}°"
-                else:
-                    texte_angles += f"\nU={U} V → pas de contact"
+        try:
+            p_min, p_max, E_min, E_max = create_incertitude_params(p_main, incertitudes, E)
+        except ValueError as e:
+            print(f"Erreur lors de la création des particules d'incertitude pour V={pot}V: {e}")
+            continue 
 
-    if all_x_max:
-        ax.set_xlim(0, max(all_x_max) * 1.2)
+        current_x_max_list = [] 
+
+
+        x_contact_main = p_main.point_contact(E)
+        label_main = f"V = {pot:.1f} V"
+        angle_deg_str = "Pas de contact"
+
+        if x_contact_main is not None:
+            current_x_max_list.append(x_contact_main)
+            p_main.tracer_trajectoire(ax, E, 0, x_contact_main, color=color, label=label_main)
+            angle_incident_main = p_main.angle_incident(E)
+            if angle_incident_main is not None:
+                angle_deg = np.degrees(angle_incident_main)
+                angle_deg_str = f"{angle_deg:.2f}°"
+            any_contact = True
+
+        x_contact_min = p_min.point_contact(E_min)
+        label_incert = f"Incert. V = {pot:.1f} V"
+        if x_contact_min is not None:
+            current_x_max_list.append(x_contact_min)
+            p_min.tracer_trajectoire(ax, E_min, 0, x_contact_min, color=color, label=label_incert)
+            any_contact = True
+
+
+        x_contact_max = p_max.point_contact(E_max)
+        if x_contact_max is not None:
+            current_x_max_list.append(x_contact_max)
+            p_max.tracer_trajectoire(ax, E_max, 0, x_contact_max, color=color, label=None)
+            any_contact = True
+
+        all_x_max_global.extend(current_x_max_list)
+
+
+    if all_x_max_global:
+        global_max_x = max(all_x_max_global)
     else:
-        ax.set_xlim(0, hauteur_initiale)
+        t_reach_y0_noE = -1
+        if p_main.vo * np.cos(p_main.angle) > 1e-9: 
+            t_reach_y0_noE = p_main.height / (p_main.vo * np.cos(p_main.angle))
+        if t_reach_y0_noE > 0:
+             global_max_x = p_main.vo * np.sin(p_main.angle) * t_reach_y0_noE * 1.5 
+             global_max_x = max(hauteur_initiale * 2, 0.1) 
 
-    ax.plot([0, ax.get_xlim()[1]], [0, 0], 'k', lw=5, label="Échantillon")
-    ax.text(0.05, 0.05, texte_angles, transform=ax.transAxes,
-            fontsize=10, bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
+    ax.set_xlabel("Position x (m)")
+    ax.set_ylabel("Position y (m)")
+    ax.set_title(f"Trajectoires pour {p_main.m}u, {p_main.c}e pour différents potentiels")
+    ax.legend(fontsize='small')
+    ax.grid(True, linestyle=':', alpha=0.6)
+
+    if len(all_x_max_global) > 0:
+        ax.plot([0, max(all_x_max_global) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
+
     ax.legend()
+
     if create_plot:
         plt.show()
+
     return ax
 
-if __name__ == "__main__":
-    import numpy as np
-    import matplotlib.pyplot as plt
+# --- Exemple d'utilisation ---
+if __name__ == '__main__':
+    # Définir la particule unique
+    particule_unique = (1, 1) # Exemple: proton (1u, +1e)
 
-    # Une seule particule : proton par exemple
-    particule_test = (1, 1)
+    # Définir la liste des potentiels à tester
+    liste_potentiels = [-1000, -2000, -3000, -4000, -5000] # Potentiels négatifs pour attirer un proton vers y=0
 
-    # Vitesse et angle
-    v0 = 1e5  # m/s
-    theta = np.pi / 6
-    y0 = 0.15
+    # Paramètres communs
+    v0 = 1e5 # m/s
+    h0 = 0.1 # m
+    angle0 = np.pi / 4 # 45 degrés par rapport à +y
 
-    # Liste de potentiels à tester
-    potentiels = [0, 4000, 3000, 2000]
+    # Incertitudes relatives (exemple)
+    incertitudes = {'m': 0.001, 'q': 0.001, 'v0': 0.01, 'theta': 0.01, 'h': 0.02, 'E': 0.03}
 
-    # Incertitudes sur les paramètres (en %)
-    incertitudes = {
-        "m": 5,
-        "q": 0,
-        "v0": 3,
-        "theta": 0,
-        "h": 0.01,
-        "E": 0.2
-    }
-
-    # Appel de la fonction
-    tracer_trajectoires_potentiels_avec_incertitudes(
-        masse_charge=particule_test,
+    # Tracer les trajectoires
+    tracer_trajectoire_multi_potentiel_avec_incertitudes(
+        masse_charge_particule=particule_unique,
+        potentiels=liste_potentiels,
         vitesse_initiale=v0,
         incertitudes=incertitudes,
-        potentiels=potentiels,
-        angle_initial=theta,
-        hauteur_initiale=y0
+        angle_initial=angle0,
+        hauteur_initiale=h0
     )
+
 
 
 # if __name__ == "__main__":
@@ -776,14 +880,14 @@ Test fonction tracer_ensemble_trajectoires
 """
 Test fonction tracer_ensemble_trajectoires_avec_incertitudes
 """
-if __name__ == '__main__' :
-    rapports_mq, vo = [(1, 1), (3, 1)], 1e6
-    potentiel = 5000
-    h_initiale = 0.1
-    incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+# if __name__ == '__main__' :
+#     rapports_mq, vo = [(1, 1), (3, 1)], 1e6
+#     potentiel = 5000
+#     h_initiale = 0.1
+#     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
 
 
-    tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
+#     tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
 
 
 
