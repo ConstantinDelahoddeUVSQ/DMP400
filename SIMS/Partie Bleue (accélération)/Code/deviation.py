@@ -155,7 +155,10 @@ class particule :
         """
         x, y = self.trajectoire(E, x_min, x_max, n_points)
         if color == None :
-            ax.plot(x, y, label=f"Trajectoire de {self.m} u, {self.c} e")
+            if label == None :
+                ax.plot(x, y, label=f"Trajectoire de {self.m} u, {self.c} e")
+            else : 
+                ax.plot(x, y, label=label)
         else :
             if self.is_incertitude :
                 if self.incertitude_unique :
@@ -561,9 +564,10 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_parti
                     if p.point_contact(E_min) is not None:
                         x_max = p.point_contact(E_min)
                         all_x_max.append(x_max)
-                        label = f"Incertitude de {p.base_mq[0]} u, {p.base_mq[1]} e"
+                        label = f"Incertitude de {V} V"
                         for line in ax.get_lines():
-                            if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
+                            print(line.get_label())
+                            if line.get_label() == f"Trajectoire de {V} V":
                                 line_color = line.get_color()
                                 break
                         p.tracer_trajectoire(ax, E_min, 0, x_max, color = line_color, label= label)
@@ -576,7 +580,7 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_parti
                         all_x_max.append(x_max)
                         label = None
                         for line in ax.get_lines():
-                            if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
+                            if line.get_label() == f"Trajectoire de {V} V":
                                 line_color = line.get_color()
                                 break
                         p.tracer_trajectoire(ax, E_max, 0, x_max, color = line_color, label= label)
@@ -588,41 +592,41 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_parti
                 if p.point_contact(E) is not None:
                     x_max = p.point_contact(E)
                     all_x_max.append(x_max)
-                    p.tracer_trajectoire(ax, E, 0, x_max)
+                    p.tracer_trajectoire(ax, E, 0, x_max, label=f"Trajectoire de {V} V")   
                     angle_incident = p.angle_incident(E)
                     angle_deg = np.degrees(angle_incident)
-                    texte_angles += f"\n- {p.m} u, {p.c} e : {angle_deg:.2f}°"
+                    texte_angles += f"\n- {V} V : {angle_deg:.2f}°"
                     is_contact = True
                 else : 
                     non_contact_particules.append(p)
-                    texte_angles += f"\n- {p.m} u, {p.c} e : Pas de contact"
+                    texte_angles += f"\n- {V} V : Pas de contact"
     
-    if is_contact :
-        ax.set_xlim(0, max(all_x_max) * 1.2)
-    else :
-        ax.set_xlim(0, hauteur_initiale)
-
-    for p in non_contact_particules : 
-        local_x_max = ax.get_xlim()[1]
-        if not p.is_incertitude :
-            p.tracer_trajectoire(ax, E, 0, local_x_max * 1.2)
+        if is_contact :
+            ax.set_xlim(0, max(all_x_max) * 1.2)
         else :
-            if p.incertitude_unique :
-                label = f"Incertitude de {p.base_mq[0]}u, {p.base_mq[1]} e"
-                for line in ax.get_lines():
-                    if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
-                        line_color = line.get_color()
-                        break
-                p.tracer_trajectoire(ax, E_min, 0, local_x_max, color = line_color, label= label)
-            else :
-                label = None
-                for line in ax.get_lines():
-                    if line.get_label() == f"Trajectoire de {p.base_mq[0]} u, {p.base_mq[1]} e":
-                        line_color = line.get_color()
-                        break
-                p.tracer_trajectoire(ax, E_min, 0,local_x_max, color = line_color, label= label)
+            ax.set_xlim(0, hauteur_initiale)
 
-        all_x_max.append(local_x_max)
+        for p in non_contact_particules : 
+            local_x_max = ax.get_xlim()[1]
+            if not p.is_incertitude :
+                p.tracer_trajectoire(ax, E, 0, local_x_max * 1.2, label=f"Trajectoire de {V} V")
+            else :
+                if p.incertitude_unique :
+                    label = f"Incertitude de {V} V"
+                    for line in ax.get_lines():
+                        if line.get_label() == f"Trajectoire de {V} V":
+                            line_color = line.get_color()
+                            break
+                    p.tracer_trajectoire(ax, E_min, 0, local_x_max, color = line_color, label= label)
+                else :
+                    label = None
+                    for line in ax.get_lines():
+                        if line.get_label() == f"Trajectoire de {V} V":
+                            line_color = line.get_color()
+                            break
+                    p.tracer_trajectoire(ax, E_min, 0,local_x_max, color = line_color, label= label)
+
+            all_x_max.append(local_x_max)
     
     if len(all_x_max) > 0:
         ax.plot([0, max(all_x_max) * 1.2], [0, 0], c='black', linewidth=5, label='Échantillon')
@@ -765,6 +769,18 @@ Test fonction tracer_ensemble_trajectoires_avec_incertitudes
 
 #     tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
 
+
+"""
+Test fonction tracer_ensemble_trajectoires_potentiels_avec_incertitudes
+"""
+# if __name__ == '__main__' :
+#     rapports_mq, vo = (1, 1), 1e5
+#     potentiels = [0, 50]
+#     h_initiale = 0.1
+#     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+
+
+#     tracer_ensemble_trajectoires_potentiels_avec_incertitudes(rapports_mq, vo, incertitudes, potentiels=potentiels, hauteur_initiale=h_initiale)
 
 
 """
