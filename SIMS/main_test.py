@@ -270,7 +270,7 @@ class ParticleApp:
 
         tree_frame = ttk.Frame(parent); tree_frame.pack(pady=5, padx=10, fill=tk.BOTH, expand=True, ipady=10)
         self.particle_tree = ttk.Treeview(tree_frame, columns=('Name', 'Mass (u)', 'Charge (e)'), show='headings', height=6)
-        self.particle_tree.heading('Name', text='Nom'); self.particle_tree.column('Name', width=120, anchor=tk.W)
+        self.particle_tree.heading('Name', text='Nom'); self.particle_tree.column('Name', width=100, anchor=tk.CENTER)
         self.particle_tree.heading('Mass (u)', text='Masse (u)'); self.particle_tree.column('Mass (u)', width=100, anchor=tk.CENTER)
         self.particle_tree.heading('Charge (e)', text='Charge (e)'); self.particle_tree.column('Charge (e)', width=100, anchor=tk.CENTER)
         scrollbar_tree = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.particle_tree.yview)
