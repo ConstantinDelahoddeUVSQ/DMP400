@@ -1,8 +1,7 @@
 # Objectif 1
 
 import matplotlib.pyplot as plt
-# Retirer Slider si non utilisé
-# from matplotlib.widgets import Slider
+from matplotlib.widgets import Slider
 import numpy as np
 from scipy.optimize import fsolve
 import scipy.constants as constants
@@ -55,33 +54,13 @@ class particule :
         """
         if abs(Bz) < 1e-15:
              # Trajectoire droite si Bz=0
-             if isinstance(x, np.ndarray): return np.zeros_like(x) # Ou plutôt y=vo*t, x=0? Non, v0 est en y.
-             else: return 0.0 # y reste 0 si v0 en y et B=0? Non plus.
-             # Si v0 est en y, et B=0, la particule continue en ligne droite sur l'axe y.
-             # La fonction y(x) n'est pas définie sauf pour x=0 où y=0.
-             # Retourner NaN est peut-être le plus sûr pour indiquer un problème.
+             if isinstance(x, np.ndarray): return np.zeros_like(x)
+             else: return 0.0 
              if isinstance(x, np.ndarray): return np.full_like(x, np.nan)
              else: return np.nan
 
-
-        # R = self.mq * self.vo / abs(Bz) # Le rayon dépend de |B|
-        # Pour être cohérent avec la formule utilisant arccos(1-x/prefix)
-        # où prefix = mq/Bz, il faut que le signe de Bz soit pris en compte dans prefix.
-        # Si Bz > 0 et q > 0, force vers +x. Si Bz < 0 et q > 0, force vers -x.
-        # Si q < 0, c'est inversé. La formule donne y>=0, donc elle représente
-        # la forme de la déviation, pas nécessairement la direction exacte sans
-        # considérer q*Bz. Pour l'instant, on garde la formule telle quelle.
         prefix = self.mq / Bz # Attention, mq>0. Signe de prefix = signe de Bz.
 
-        # Le rayon de courbure physique est R = mq*vo/|Bz|
-        # L'argument de arccos est 1 - x / prefix = 1 - x*Bz / mq
-        # Il doit être entre -1 et 1.
-        # 1 - x*Bz/mq <= 1  => -x*Bz/mq <= 0 => x*Bz >= 0.
-        # 1 - x*Bz/mq >= -1 => 2 >= x*Bz/mq => 2*mq/Bz >= x (si Bz>0) ou 2*mq/Bz <= x (si Bz<0) ?
-        # C'est plus simple avec R: l'argument est 1 - x*sgn(Bz)/R
-        # 1 - x*sgn(Bz)/R <= 1 => -x*sgn(Bz)/R <= 0 => x*sgn(Bz) >= 0
-        # 1 - x*sgn(Bz)/R >= -1 => 2 >= x*sgn(Bz)/R => 2R >= x*sgn(Bz) => x <= 2R si sgn(Bz)>0, x >= -2R si sgn(Bz)<0?
-        # La formule y=sqrt(2Rx-x^2) est pour x dans [0, 2R]. Utilisons cela.
         R = self.mq * self.vo / abs(Bz)
         # Calculer y seulement pour x dans le domaine valide
         x_valid = np.where((x >= 0) & (x <= 2 * R), x, np.nan)
@@ -115,31 +94,14 @@ class particule :
              print("Avertissement: Objectif (x,y) doit être dans le quadrant x>0, y>=0.")
              return None
         if y_objective == 0: # Arrivée sur l'axe x
-             # y = sqrt(2Rx - x^2) = 0 => 2Rx - x^2 = 0 => x(2R-x)=0
-             # Donc soit x=0 (départ), soit x=2R.
-             # On cherche B tel que 2R = x_objective
-             # 2 * (mq*vo / |B|) = x_objective => |B| = 2*mq*vo / x_objective
-             # Il faut choisir le signe. Si q>0, déviation vers +x => Bz>0. Si q<0, déviation vers -x? Non, v0 // y.
-             # Si v0 // +y et B // +z, force F ~ q (v ^ B) ~ q (uy ^ uz) ~ q (-ux). Force vers -x si q>0.
-             # Si v0 // +y et B // -z, force F ~ q (uy ^ -uz) ~ q (+ux). Force vers +x si q>0.
-             # Donc pour atteindre x_objective > 0 avec q>0, il faut Bz < 0.
-             # Et pour atteindre x_objective > 0 avec q<0, il faut Bz > 0.
              signe_q = np.sign(self.charge_affichage)
              signe_B = -signe_q
              return signe_B * (2 * self.mq * self.vo / x_objective)
 
-        # Cas général y_objective > 0
-        # y^2 = 2Rx - x^2 => y^2 = 2*(mq*vo/|B|)*x - x^2
-        # y^2 + x^2 = 2*mq*vo*x / |B|
-        # |B| = 2*mq*vo*x / (x^2 + y^2)
-        # Choisir le signe comme avant
         signe_q = np.sign(self.charge_affichage)
         signe_B = -signe_q
-        # Utiliser les objectifs x, y
         abs_B = (2 * self.mq * self.vo * x_objective) / (x_objective**2 + y_objective**2)
         return signe_B * abs_B
-        # La méthode fsolve est plus générale mais peut échouer ou converger vers mauvaise solution.
-        # L'expression analytique est préférable ici.
 
 # --- Fonction de Traçage Ensemble (Adaptée) ---
 
@@ -171,8 +133,6 @@ def tracer_ensemble_trajectoires(
         try:
             y_contact = p_local.equation_trajectoire(x_detecteur, Bz)
             p_local.tracer_trajectoire(ax, Bz, 0, x_detecteur, label=label)
-            # Récupérer la ligne tracée pour info couleur (si besoin plus tard)
-            # plotted_lines.append(ax.get_lines()[-1])
             if y_contact is not None and not np.isnan(y_contact):
                 all_y_contact.append(y_contact)
             else: # Si NaN (hors domaine ou Bz=0)

@@ -62,121 +62,90 @@ class particule:
         self.base_mq = base_mq if base_mq else (mass_u, charge_e)
 
 
-    def equation_trajectoire(self, x : float | np.ndarray, E : float) -> float | np.ndarray:
+    def equation_trajectoire(self, x : float, E : float) -> float:
         """
-        Equation de la trajectoire y(x) pour un champ E constant selon +y.
-        Basée sur y(t) = h0 + vy0*t + 0.5*ay*t^2, avec vy0 = -vo*cos(angle vs +y).
+        Equation de la trajectoire de la particule y(x)
+        
+        Parameters
+        ----------
+        x : float
+            L'abscisse à laquelle on veut calculer la coordonnée en y
+        E : float
+            Valeur du champ électrique à proximité de la plaque dirigé selon y
+        
+        Returns
+        -------
+        float
+            Coordonée y de la particule au point x
         """
-        angle = self.angle # Angle vs +y, dans ]0, pi/2[
-        h0 = self.height
-        v0 = self.vo
-        mq = self.mq
+        X = x / (self.vo * np.sin(self.angle))
+        return 0.5 * E / self.mq * X * X - self.vo * np.cos(self.angle) * X + self.height
 
-        vx0 = v0 * np.sin(angle)
-        vy0 = -v0 * np.cos(angle) # Vers le bas
-        ay = E / mq
+    def trajectoire(self, E : float, x_min : float, x_max : float, n_points : int = 10000) -> tuple[np.ndarray, np.ndarray] :
+        """
+        Calcule la trajectoire entre un x minimum et un x maximum
 
-        if abs(vx0) < 1e-15:
-            return np.nan * np.ones_like(x) if isinstance(x, np.ndarray) else np.nan
-
-        t = x / vx0
-        y = h0 + vy0 * t + 0.5 * ay * t**2
-        return y
-
-    def trajectoire(self, E : float, x_min : float, x_max : float, n_points : int = 1000) -> tuple[np.ndarray, np.ndarray]:
-        """Calcule les points (x, y) de la trajectoire."""
-        # ... (code inchangé) ...
-        if x_max <= x_min: return np.array([]), np.array([])
+        Parameters
+        ----------
+        E : float
+            Valeur du champ électrique à proximité de la plaque dirigé selon y
+        x_min : float
+            Position en x minimale (en m)
+        x_max : float
+            Position en x maximale (en m)   
+        n_points : int
+            Nombre de points où la position sera calculée entre x_min et x_max
+        
+        Returns
+        -------
+        tuple of (numpy.ndarray, numpy.ndarray)
+            - Positions en x
+            - Positions en y
+        
+        """
         x = np.linspace(x_min, x_max, n_points)
-        y = self.equation_trajectoire(x, E)
-        mask = ~np.isnan(y)
-        return x[mask], y[mask]
+        return x, self.equation_trajectoire(x, E)
 
-
-    def point_contact(self, E : float) -> float | None:
+    def point_contact(self, E : float) -> float :
         """
-        Calcule l'abscisse x > 0 où la particule atteint y=0.
-        Retourne None si pas de contact ou contact en x <= 0.
-        Utilise np.isfinite et tolérance delta.
+        Calcule l'abscisse où la particule touche la plaque chargée
+
+        Parameters
+        ----------
+        E : float
+            Valeur du champ électrique à proximité de la plaque dirigé selon y
+        
+        Returns
+        -------
+        float
+            abscisse du point de contact (depuis son abscisse initiale)
         """
-        vx0 = self.vo * np.sin(self.angle)
-        # Correction: vy0 doit être négatif pour correspondre à la physique de l'équation
-        # qui a été dérivée pour un départ vers le bas.
-        vy0 = -self.vo * np.cos(self.angle) # <= Assurer la cohérence avec equation_trajectoire
-        ay = E / self.mq
+        with np.errstate(invalid='ignore') :
+            if (self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq >= 0 :
+                if E != 0 :
+                    return self.mq * self.vo * np.sin(self.angle) / E * (self.vo * np.cos(self.angle) - np.sqrt((self.vo * np.cos(self.angle)) ** 2 - 2 * self.height * E / self.mq))
+                else :
+                    return self.height * np.tan(self.angle)
+            else :
+                return None
+                # raise ValueError("La particule n'a aucun point de contact avec l'échantillon")
 
-        # Vérifier validité des paramètres initiaux
-        if not np.isfinite(vx0) or not np.isfinite(vy0) or not np.isfinite(ay):
-            # print(f"Debug: Paramètres invalides pour point_contact - vx0={vx0}, vy0={vy0}, ay={ay}")
-            return None
-        if abs(vx0) < 1e-15: return None # Mouvement vertical
+    def angle_incident(self, E : float) -> float :
+        """
+        Calcule l'angle que la trajectoire forme avec l'axe y au point de contact avec la plaque en radians
 
-        a = 0.5 * ay / (vx0**2)
-        b = vy0 / vx0 # = -1 / tan(angle)
-        c = self.height
-
-        # Vérifier si a, b, c sont finis
-        if not np.isfinite(a) or not np.isfinite(b) or not np.isfinite(c):
-             # print(f"Debug: Coeffs invalides pour point_contact - a={a}, b={b}, c={c}")
-             return None
-
-        with np.errstate(divide='ignore', invalid='ignore'):
-            if abs(a) < 1e-15: # Cas quasi-linéaire
-                x_contact = -c / b if abs(b) > 1e-9 else None
-            else:
-                delta = b**2 - 4*a*c
-                # --- MODIFICATION : Tolérance pour delta ---
-                if delta < -1e-12: # Si clairement négatif (avec marge pour flottants)
-                    x_contact = None
-                else:
-                    # Traiter delta proche de 0 comme 0 pour éviter erreurs sqrt
-                    sqrt_delta = np.sqrt(max(0.0, delta))
-                    # Calculer les racines
-                    # Gérer division par zéro si 'a' est minuscule mais non nul
-                    denom = 2*a
-                    if abs(denom) < 1e-15:
-                         x1 = np.inf if np.sign(-b + sqrt_delta) == np.sign(denom) else -np.inf
-                         x2 = np.inf if np.sign(-b - sqrt_delta) == np.sign(denom) else -np.inf
-                    else:
-                         x1 = (-b + sqrt_delta) / denom
-                         x2 = (-b - sqrt_delta) / denom
-                    # --- FIN MODIFICATION ---
-
-                    solutions_positives = []
-                    tolerance = 1e-9
-                    # --- MODIFICATION : Vérifier le type et la finitude AVANT la comparaison ---
-                    if isinstance(x1, (int, float)) and np.isfinite(x1):
-                        if x1 > tolerance:
-                            solutions_positives.append(x1)
-                    # else: # Debug si x1 n'est pas un scalaire fini
-                    #     print(f"Debug point_contact: x1 non valide - type={type(x1)}, value={x1}")
-
-                    if isinstance(x2, (int, float)) and np.isfinite(x2):
-                        if x2 > tolerance:
-                            solutions_positives.append(x2)
-                    # else: # Debug
-                    #     print(f"Debug point_contact: x2 non valide - type={type(x2)}, value={x2}")
-                    # --- FIN MODIFICATION ---
-
-                    x_contact = min(solutions_positives) if solutions_positives else None
-        return x_contact
-
-    def angle_incident(self, E : float) -> float | None:
-        """Calcule l'angle (radians) de la tangente vs +x au point de contact."""
-        # ... (code inchangé - utilise point_contact corrigé) ...
+        Parameters
+        ----------
+        E : float
+            Valeur du champ électrique à proximité de la plaque dirigé selon y
+        
+        Returns
+        -------
+        float
+            Angle formé par la trajectoire et l'axe y au point de contact avec l'échantillon en radians
+        """
         x_contact = self.point_contact(E)
-        if x_contact is None: return None
-
-        vx0 = self.vo * np.sin(self.angle)
-        vy0 = -self.vo * np.cos(self.angle)
-        ay = E / self.mq
-
-        if abs(vx0) < 1e-15: return None # Vertical
-
-        dydx = (vy0 / vx0) + (ay * x_contact) / (vx0**2)
-        alpha = np.arctan(dydx)
-        return alpha
-
+        return  np.arctan(-1 / (E * x_contact / (self.mq * self.vo * np.sin(self.angle) * self.vo * np.sin(self.angle)) - 1 / np.tan(self.angle)))
 
     def tracer_trajectoire(self, ax, E : float, x_min : float, x_max : float, color=None, label=None, is_uncertainty_plot=False, n_points : int = 1000) -> None:
         """Trace la trajectoire sur ax. Gère style/couleur."""
@@ -562,7 +531,7 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
     ax.plot([0, xlim_max], [0, 0], c='black', linewidth=3, label='Échantillon (y=0)')
     ax.text(0.98, 0.98, texte_angles, transform=ax.transAxes, fontsize=9,
             verticalalignment='top', horizontalalignment='right',
-            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.7))
+            bbox=dict(boxstyle="round", facecolor="white", alpha=0.7))
 
     ax.set_xlabel("Position x (m)")
     ax.set_ylabel("Position y (m)")
