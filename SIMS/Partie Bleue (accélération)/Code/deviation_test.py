@@ -1,14 +1,7 @@
-# --- START OF FILE deviation_final.py ---
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.constants as constants
-import itertools # Pour les couleurs dans les fonctions potentiel
 
-# Optionnel: import incertitude # Décommenter si besoin futur
-# from matplotlib.widgets import Slider # Retiré car géré par l'UI principale
-
-# --- Fonctions Utilitaires ---
 
 def champ_electrique_v2(distance: float, difference_potentiel: float) -> float:
     """
