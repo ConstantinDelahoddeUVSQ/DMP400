@@ -32,7 +32,7 @@ for ratio in m_sur_q:
 
 # Tracé
 plt.figure(figsize=(10, 6))
-plt.plot(m_sur_q, xs_values, label=r"$x_s$ en fonction de $m/q$")
+plt.plot(m_sur_q, xs_values, label="$x_s$ en fonction de $m/q$")
 plt.xlabel("$m/q$")
 plt.ylabel("$x_s$")
 plt.title("Variation de $x_s$ en fonction du rapport $m/q$")
