@@ -6,20 +6,17 @@ import matplotlib.pyplot as plt
 # --- Configuration des chemins ---
 folder = os.path.dirname(os.path.abspath(__file__))
 path_partie_bleue = os.path.join(folder, "Partie Bleue (accélération)", "Code")
-path_partie_verte = os.path.join(folder, "Partie Verte (déviation magnétique)", "Code")
 sys.path.append(path_partie_bleue)
-sys.path.append(path_partie_verte)
+
 
 # --- Importations des modules de simulation ---
 try:
     import deviation # type: ignore
-    import partie_electroaimant # type: ignore
 except ImportError as e:
     print(f"Erreur d'importation: {e}")
     print("Impossible d'importer les modules de simulation.")
     print(f"Vérifiez l'existence des fichiers .py dans:")
     print(f"  '{path_partie_bleue}'")
-    print(f"  '{path_partie_verte}'")
     print("Assurez-vous que ces dossiers sont corrects et contiennent les fichiers __init__.py si nécessaire.")
     sys.exit(1)
 
