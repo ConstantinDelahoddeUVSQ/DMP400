@@ -465,10 +465,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(
     if create_plot : plt.show()
 
 
-# --- Fonctions Potentiels Multiples (NON MODIFIÉES - non appelées par l'UI pour incertitudes) ---
-# ... (tracer_ensemble_potentiels et tracer_ensemble_trajectoires_potentiels_avec_incertitudes inchangées) ...
 def tracer_ensemble_potentiels(
-        # ... (code inchangé) ...
         masse_charge_particule : tuple[float, float],
         vitesse_initiale : float,
         potentiels : list[float],
@@ -478,6 +475,27 @@ def tracer_ensemble_potentiels(
         create_plot=True,
         ax=None
     ) -> None:
+    """
+    Trace les trajectoires jusqu'au contact d'une particule pour plusieurs potentiels de manière statique
+
+    Parameters
+    ----------
+    masse_charge_particule : tuple of float
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour la particule
+    vitesse_initiale : float
+        Vitesse intiale commune à toutes les particules du faisceau
+    potentiels : list of float
+        Différence de potentiel entre les plaques (en V)
+    angle_initial : float
+            Angle initial entre v_initiale et l'axe y en radians
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+    create_plot : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+    ax : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+
+    """
     if create_plot or ax is None : fig, ax = plt.subplots(figsize=(10, 8))
 
     p = particule(masse_charge_particule, vitesse_initiale, angle_initial, hauteur_initiale)
@@ -491,7 +509,6 @@ def tracer_ensemble_potentiels(
             color = cmap(i / len(potentiels))
         else :
             color = cmap(0.5)
-        # color = cmap(i / len(potentiels) if len(potentiels) > 1 else 0.5)
         E = champ_electrique_v2(hauteur_initiale, V)
         x_contact = p.point_contact(E)
         label = f"V = {V:.1f} V"
@@ -533,7 +550,6 @@ def tracer_ensemble_potentiels(
 
 
 def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
-    # ... (code inchangé) ...
     masse_charge_particule : tuple[float, float],
     vitesse_initiale : float,
     incertitudes : dict,
@@ -544,6 +560,29 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
     create_plot=True,
     ax=None
 ) -> None:
+    """
+    Trace les trajectoires jusqu'au contact de différentes particules de manière statique avec le tracé des incertitudes (couloirs)
+
+    Parameters
+    ----------
+    masse_charge_particules : tuple of float
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
+    vitesse_initiale : float
+        Vitesse intiale commune à toutes les particules du faisceau
+    incertitudes : dict
+        Dictionnaire des incertitudes sur les différents paramètres (pourcentages)
+    potentiels : float
+        Différence de potentiel entre les plaques (en V)
+    angle_initial : float
+            Angle initial entre v_initiale et l'axe y en radians
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+    create_plot : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+    ax : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+
+    """
     if create_plot or ax is None: fig, ax = plt.subplots(figsize=(10, 8))
 
     p_base = particule(masse_charge_particule, vitesse_initiale, angle_initial, hauteur_initiale)
@@ -555,7 +594,10 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
     non_contact_incert_info = []
 
     for i, V in enumerate(sorted(potentiels)):
-        color = cmap(i / len(potentiels) if len(potentiels) > 1 else 0.5)
+        if len(potentiels) > 1 :
+            color = cmap(i / len(potentiels))
+        else :
+            color = cmap(0.5)
         E_nominal = champ_electrique_v2(hauteur_initiale, V)
         label_base = f"V={V:.1f} V (Nominal)"
         label_incert = f"V={V:.1f} V (Incert.)"
@@ -622,7 +664,52 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
 
 
 
-# --- Bloc Test ---
-if __name__ == '__main__':
-    # ... (tests précédents) ...
-    pass # Plus de tests par défaut
+
+"""
+Test fonction tracer_ensemble_trajectoires
+"""
+# if __name__ == '__main__' :
+#     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
+#     potentiel = 5000
+#     h_initiale = 0.1
+
+
+#     tracer_ensemble_trajectoires(rapports_mq, vo, potentiel=potentiel, hauteur_initiale=h_initiale)
+
+
+"""
+Test fonction tracer_ensemble_trajectoires_avec_incertitudes
+"""
+# if __name__ == '__main__' :
+#     rapports_mq, vo = [(1, 1), (3, 1)], 1e6
+#     potentiel = 5000
+#     h_initiale = 0.1
+#     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+
+
+#     tracer_ensemble_trajectoires_avec_incertitudes(rapports_mq, vo, incertitudes, potentiel=potentiel, hauteur_initiale=h_initiale)
+
+
+"""
+Test fonction tracer_ensemble_trajectoires_potentiels_avec_incertitudes
+"""
+# if __name__ == '__main__' :
+#     rapports_mq, vo = (1, 1), 1e5
+#     potentiels = [0, 50]
+#     h_initiale = 0.1
+#     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+
+
+#     tracer_ensemble_trajectoires_potentiels_avec_incertitudes(rapports_mq, vo, incertitudes, potentiels=potentiels, hauteur_initiale=h_initiale)
+
+
+"""
+Test fonction tracer_ensemble_trajectoires_dynamique
+"""
+# if __name__ == '__main__' :
+#     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
+#     pot_min, pot_max = -5000, 5000
+#     h_initiale = 0.1
+
+
+#     tracer_ensemble_trajectoires_dynamique(rapports_mq, vo, potentiel_min=pot_min, potentiel_max=pot_max, hauteur_initiale=h_initiale)
