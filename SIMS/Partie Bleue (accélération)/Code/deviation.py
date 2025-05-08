@@ -566,10 +566,15 @@ def tracer_ensemble_potentiels(
             verticalalignment='top', horizontalalignment='right',
             bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.7))
 
-    delta_xs = calculer_delta_impact(masse_charge_particule, vitesse_initiale, potentiels[0], potentiels[1], angle_initial, hauteur_initiale)
+    try :
+        delta_xs = calculer_delta_impact(masse_charge_particule, vitesse_initiale, potentiels[0], potentiels[1], angle_initial, hauteur_initiale)
+        ax.set_title(f"Effet Potentiel sur {p.m:.1f}u, {p.c:+.0f}e\n Delta Xs : {delta_xs:+.3e}")
+    except :
+        delta_xs = "Pas de contact"
+        ax.set_title(f"Effet Potentiel sur {p.m:.1f}u, {p.c:+.0f}e\n Delta Xs : {delta_xs}")
     ax.set_xlabel("Position x (m)")
     ax.set_ylabel("Position y (m)")
-    ax.set_title(f"Effet Potentiel sur {p.m:.1f}u, {p.c:+.0f}e\n Delta Xs : {delta_xs:+.3e}")
+    
     ax.legend(title="Potentiel (V)", fontsize='small')
     ax.grid(True, linestyle='--', alpha=0.6)
     if create_plot : plt.show()
@@ -681,10 +686,15 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
             verticalalignment='top', horizontalalignment='right',
             bbox=dict(boxstyle="round", facecolor="white", alpha=0.7))
 
-    delta_xs = calculer_delta_impact(masse_charge_particule, vitesse_initiale, potentiels[0], potentiels[1], angle_initial, hauteur_initiale)
+    try :
+        delta_xs = calculer_delta_impact(masse_charge_particule, vitesse_initiale, potentiels[0], potentiels[1], angle_initial, hauteur_initiale)
+        ax.set_title(f"Effet Potentiel sur {p_base.m:.1f}u, {p_base.c:+.0f}e (avec Incertitudes) \n delta Xs : {delta_xs:+.3e}")
+    except : 
+        delta_xs = "Pas de contacts"
+        ax.set_title(f"Effet Potentiel sur {p_base.m:.1f}u, {p_base.c:+.0f}e (avec Incertitudes) \n delta Xs : {delta_xs}")
     ax.set_xlabel("Position x (m)")
     ax.set_ylabel("Position y (m)")
-    ax.set_title(f"Effet Potentiel sur {p_base.m:.1f}u, {p_base.c:+.0f}e (avec Incertitudes) \n delta Xs : {delta_xs:+.3e}")
+    
     ax.legend(title="Potentiel (V) / Courbe", fontsize='small')
     ax.grid(True, linestyle='--', alpha=0.6)
     if create_plot : plt.show()
