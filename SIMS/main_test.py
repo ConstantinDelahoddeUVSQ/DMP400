@@ -46,22 +46,6 @@ except Exception as e_other:
      sys.exit(1)
 
 
-# --- Vérification fonction critique ---
-# S'assurer que la fonction nécessaire pour le nouvel onglet est bien présente
-if not hasattr(deviation, 'calculer_trajectoire_et_impact'):
-    print("\n" + "="*50)
-    print("ERREUR CRITIQUE: La fonction 'calculer_trajectoire_et_impact'")
-    print("n'est pas définie dans le module 'deviation_test.py'.")
-    print("Cette fonction est INDISPENSABLE pour l'onglet 'Potentiel'.")
-    print("Veuillez l'ajouter ou corriger son nom dans deviation_test.py.")
-    print("="*50 + "\n")
-    messagebox.showerror("Erreur Module",
-                         "Fonction 'calculer_trajectoire_et_impact' manquante dans deviation_test.py.\n"
-                         "L'onglet 'Potentiel' ne fonctionnera pas.")
-    # On ne quitte pas, mais l'onglet sera inutilisable
-
-
-# --- Classe principale de l'application ---
 class ParticleApp:
     def __init__(self, root):
         # ... (Initialisation root, titre, protocol, style - INCHANGÉ) ...
@@ -836,12 +820,7 @@ class ParticleApp:
             self.status_var.set("Sélectionnez une particule.")
             return
 
-        # Vérifier si la fonction nécessaire existe
-        # On a besoin de la fonction AVEC incertitudes si la case est cochée
-        func_needed = 'tracer_ensemble_trajectoires_potentiels_avec_incertitudes' if self.show_uncertainty_pot_var.get() else 'calculer_trajectoire_et_impact'
-        if not hasattr(deviation, func_needed):
-             messagebox.showerror("Erreur Module", f"Fonction '{func_needed}' requise dans deviation_test.py.", parent=self.root)
-             return
+
 
         try:
             # Lire les paramètres spécifiques à cet onglet
@@ -903,7 +882,6 @@ class ParticleApp:
                       messagebox.showerror("Erreur Module", "Fonction 'tracer_ensemble_trajectoires_potentiels_avec_incertitudes' manquante.", parent=self.root)
                       return # Ne peut pas continuer
             else:
-                # Tracé SANS incertitudes (utilise calculer_trajectoire_et_impact)
                 deviation.tracer_ensemble_potentiels(masse_charge_particule=particle_data, vitesse_initiale=v0, potentiels=[potentiel1, potentiel2], angle_initial=angle_rad, hauteur_initiale=hauteur_initiale, create_plot=False, ax=self.ax)
                 status_end_message = "Comparaison tracée."
 

@@ -188,49 +188,6 @@ class particule:
         ax.plot(x, y, **plot_kwargs)
 
 
-def calculer_trajectoire_et_impact(
-    masse_charge: tuple[float, float],
-    vitesse_initiale: float,
-    potentiel: float,
-    angle_initial_rad: float,
-    hauteur_initiale: float,
-    n_points: int = 1000
-) -> tuple[np.ndarray, np.ndarray, float | None]:
-    """
-    Fonction utilisée pour la variation de potentiel.
-    Calcule les trajectoires et le x_impact
-
-    Parameters
-    ----------
-    masse_charge : tuple of float
-        Masse (en unités atomiques), Charge (nombre de charge élémentaire) de la particule
-    vitesse_initiale : float
-        Vitesse intiale de la particule
-    potentiel : float
-        Différence de potentiel entre les plaques (en V)
-    angle_initial_rad : float
-        Angle initial entre v_initiale et l'axe y en radians 
-    hauteur_initiale : float
-        Coordonnée en y du point de départ
-    n_points : int
-        Nombre de points pour calculer la trajectoire
-    """
-    try:
-        p = particule(masse_charge, vitesse_initiale, angle_initial_rad, hauteur_initiale)
-        E = champ_electrique_v2(hauteur_initiale, potentiel)
-        x_impact = p.point_contact(E) 
-
-        if x_impact is not None and x_impact > 0:
-            x_traj, y_traj = p.trajectoire(E, 0, x_impact, n_points) 
-        else:
-            x_max_plot = max(hauteur_initiale * np.tan(angle_initial_rad) * 2, 0.1) if np.tan(angle_initial_rad)!=0 else 0.1
-            x_traj, y_traj = p.trajectoire(E, 0, x_max_plot, n_points)
-            x_impact = None
-
-        return x_traj, y_traj, x_impact
-    except ValueError as e:
-        print(f"Erreur calcul traj.: {e}")
-        return np.array([]), np.array([]), None
 
 def tracer_ensemble_trajectoires(
         masse_charge_particules : list[tuple[float, float]],
