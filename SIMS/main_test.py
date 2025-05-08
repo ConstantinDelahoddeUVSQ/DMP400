@@ -29,8 +29,8 @@ if folder not in sys.path:
 # --- Importations des modules de simulation ---
 try:
     # Utiliser le nom final du module
-    import deviation_test as deviation # type : ignore
-    import partie_electroaimant_test as partie_electroaimant# type : ignore
+    import deviation as deviation # type : ignore
+    import partie_electroaimant as partie_electroaimant# type : ignore
     print("Modules de simulation importés.")
 except ImportError as e:
     print(f"ERREUR FATALE d'importation: {e}")
@@ -893,64 +893,32 @@ class ParticleApp:
             self.status_var.set(status_message)
             self.ax.cla(); self.root.update_idletasks()
 
-            # --- Appels Backend ---
-            imp1, imp2 = None, None # Initialiser les impacts
 
             if show_uncertainty and incertitudes_dict is not None:
                  # Appeler la fonction qui trace les deux potentiels ET leurs incertitudes
                  if hasattr(deviation, 'tracer_ensemble_trajectoires_potentiels_avec_incertitudes'):
                      deviation.tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_particule=particle_data, vitesse_initiale=v0, incertitudes=incertitudes_dict, potentiels=[potentiel1, potentiel2], angle_initial=angle_rad, hauteur_initiale=hauteur_initiale, create_plot=False, ax=self.ax)
-                     # Recalculer les impacts NOMINAUX pour delta_x
-                     _, _, imp1 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel1, angle_rad, hauteur_initiale)
-                     _, _, imp2 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel2, angle_rad, hauteur_initiale)
                      status_end_message = "Comparaison avec incertitudes tracée."
                  else:
                       messagebox.showerror("Erreur Module", "Fonction 'tracer_ensemble_trajectoires_potentiels_avec_incertitudes' manquante.", parent=self.root)
                       return # Ne peut pas continuer
             else:
-                 # Tracé SANS incertitudes (utilise calculer_trajectoire_et_impact)
-                 xt1, yt1, imp1 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel1, angle_rad, hauteur_initiale)
-                 xt2, yt2, imp2 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel2, angle_rad, hauteur_initiale)
-
-                 # Tracer les lignes et points d'impact si valides
-                 line1, = self.ax.plot(xt1, yt1, label=f'V₁ = {potentiel1:.1f} V')
-                 line2, = self.ax.plot(xt2, yt2, label=f'V₂ = {potentiel2:.1f} V')
-                 if isinstance(imp1, (int, float)) and not np.isnan(imp1): self.ax.plot(imp1, 0, 'o', color=line1.get_color(), markersize=5)
-                 if isinstance(imp2, (int, float)) and not np.isnan(imp2): self.ax.plot(imp2, 0, 'x', color=line2.get_color(), markersize=6)
-                 status_end_message = "Comparaison tracée."
+                # Tracé SANS incertitudes (utilise calculer_trajectoire_et_impact)
+                deviation.tracer_ensemble_potentiels(masse_charge_particule=particle_data, vitesse_initiale=v0, potentiels=[potentiel1, potentiel2], angle_initial=angle_rad, hauteur_initiale=hauteur_initiale, create_plot=False, ax=self.ax)
+                status_end_message = "Comparaison tracée."
 
 
-            # --- Calcul et Affichage Delta X (commun) ---
-            delta_x_str = "N/A"; delta_x = None
-            # Utiliser les impacts recalculés ou ceux du tracé sans incertitude
-            imp1_valid = isinstance(imp1, (int, float)) and not np.isnan(imp1)
-            imp2_valid = isinstance(imp2, (int, float)) and not np.isnan(imp2)
-            if imp1_valid and imp2_valid:
-                delta_x = abs(imp1 - imp2); delta_x_str = f"{delta_x:.3e} m"
-            elif imp1_valid: delta_x_str = f"Seul V₁ impacte ({imp1:.3e} m)"
-            elif imp2_valid: delta_x_str = f"Seul V₂ impacte ({imp2:.3e} m)"
-            else: delta_x_str = "Aucun impact (x>0)"
+            # self.ax.set_xlim(left=0, right=xmax_plot)
 
-            # --- Finalisation Plot (commun) ---
-            # Déterminer xmax en fonction des impacts calculés
-            xmax_plot = max([0.01] + ([imp1] if imp1_valid else []) + ([imp2] if imp2_valid else []) + [hauteur_initiale]) * 1.15 # Assurer un xmax min
-            # Ajouter/Vérifier la plaque (y=0)
-            plaque_presente = any(line.get_label() == 'Plaque (y=0)' for line in self.ax.get_lines())
-            if not plaque_presente:
-                self.ax.plot([0, xmax_plot], [0, 0], 'k-', linewidth=2, label='Plaque (y=0)')
-            self.ax.set_xlim(left=0, right=xmax_plot)
-
-            self.ax.set_xlabel("Position x (m)"); self.ax.set_ylabel("Position y (m)")
-            titre = f"Comparaison Potentiels pour {particle_name}"
-            if show_uncertainty: titre += " (avec Incertitudes)"
-            titre += f"\nΔx = {delta_x_str}"
-            self.ax.set_title(titre)
-            self.ax.grid(True, linestyle=':')
-            self.ax.legend(loc='best'); self.ax.relim(); self.ax.autoscale_view(True, True, True)
-            ymin, ymax = self.ax.get_ylim(); self.ax.set_ylim(min(ymin, -0.01*hauteur_initiale), ymax)
+            # self.ax.set_xlabel("Position x (m)"); self.ax.set_ylabel("Position y (m)")
+            # titre = f"Comparaison Potentiels pour {particle_name}"
+            # if show_uncertainty: titre += " (avec Incertitudes)"
+            # self.ax.set_title(titre)
+            # self.ax.grid(True, linestyle=':')
+            # self.ax.legend(loc='best'); self.ax.relim(); self.ax.autoscale_view(True, True, True)
+            # ymin, ymax = self.ax.get_ylim(); self.ax.set_ylim(min(ymin, -0.01*hauteur_initiale), ymax)
 
             self.canvas.draw()
-            self.status_var.set(f"{status_end_message} Δx = {delta_x_str}")
 
         except ValueError as e:
             messagebox.showerror("Erreur Paramètre", f"Inv. (Potentiel): {e}", parent=self.root); self.status_var.set(f"Erreur param (Pot): {e}")
