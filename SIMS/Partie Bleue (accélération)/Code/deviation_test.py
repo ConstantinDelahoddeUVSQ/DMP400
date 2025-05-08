@@ -1,14 +1,7 @@
-# --- START OF FILE deviation_final.py ---
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.constants as constants
-import itertools # Pour les couleurs dans les fonctions potentiel
 
-# Optionnel: import incertitude # Décommenter si besoin futur
-# from matplotlib.widgets import Slider # Retiré car géré par l'UI principale
-
-# --- Fonctions Utilitaires ---
 
 def champ_electrique_v2(distance: float, difference_potentiel: float) -> float:
     """
@@ -258,42 +251,32 @@ def tracer_ensemble_trajectoires(
     ax.grid(True, linestyle='--', alpha=0.6)
     if create_plot : plt.show()
 
-# --- Fonctions Incertitudes (avec clamp_angle corrigé) ---
-def create_incertitude_params(p : particule, incertitudes : dict, E : float) -> tuple:
-    """Crée les particules bornes et E bornes."""
-    def clamp_angle(angle, min_rad=np.radians(0.1), max_rad=np.radians(89.9)):
-        return np.clip(angle, min_rad, max_rad)
 
-    # Vérifier que les clés existent dans incertitudes ou utiliser 0
-    m_inc = incertitudes.get('m', 0.0)
-    q_inc = incertitudes.get('q', 0.0)
-    v0_inc = incertitudes.get('v0', 0.0)
-    theta_inc = incertitudes.get('theta', 0.0)
-    h_inc = incertitudes.get('h', 0.0)
-    E_inc = incertitudes.get('E', 0.0)
+def create_incertitude_params(p : particule, incertitudes : dict, E : float) :
+    """
+    Crée une des particules min et max 'incertitude' et les E_min, E_max
 
-    # Calcul bornes params
-    m_p, m_m = p.m * (1 + m_inc), p.m * (1 - m_inc)
-    c_p, c_m = p.c * (1 + q_inc), p.c * (1 - q_inc) # Suppose q_inc positif
-    v0_p, v0_m = p.vo * (1 + v0_inc), p.vo * (1 - v0_inc)
-    a_p_raw, a_m_raw = p.angle * (1 + theta_inc), p.angle * (1 - theta_inc)
-    a_p, a_m = clamp_angle(a_p_raw), clamp_angle(a_m_raw) # Borner
-    h_p, h_m = p.height * (1 + h_inc), p.height * (1 - h_inc)
-    E_p, E_m = E * (1 + E_inc), E * (1 - E_inc)
+    Parameters
+    ----------
+    p : particule
+        objects particule
+    incertitudes : dict
+        Dictionnaire des incertitudes de chaque paramètre (en pourcentages)
+    E : float
+        Champ électrique (T)
+    """
+    if p.c * E >= 0 :
+            min_particule = particule((p.m * (1 + incertitudes['m']), p.c * (1 - incertitudes['q'])), p.vo * (1 + incertitudes['v0']), p.angle * (1 - incertitudes['theta']), p.height * (1 - incertitudes['h']), is_incertitude=True, incertitude_unique = True, base_mq=(p.m, p.c))
+            max_particule = particule((p.m * (1 - incertitudes['m']), p.c * (1 + incertitudes['q'])), p.vo * (1 - incertitudes['v0']), p.angle * (1 + incertitudes['theta']), p.height * (1 + incertitudes['h']), is_incertitude=True, base_mq=(p.m, p.c))
+            E_min = E * (1 - incertitudes['E'])
+            E_max = E * (1 + incertitudes['E'])
+    else :
+            min_particule = particule((p.m * (1 - incertitudes['m']), p.c * (1 + incertitudes['q'])), p.vo * (1 - incertitudes['v0']), p.angle * (1 - incertitudes['theta']), p.height * (1 - incertitudes['h']), is_incertitude=True, incertitude_unique = True, base_mq=(p.m, p.c))
+            max_particule = particule((p.m * (1 + incertitudes['m']), p.c * (1 - incertitudes['q'])), p.vo * (1 + incertitudes['v0']), p.angle * (1 + incertitudes['theta']), p.height * (1 + incertitudes['h']), is_incertitude=True, base_mq=(p.m, p.c))
+            E_min = E * (1 + incertitudes['E'])
+            E_max = E * (1 - incertitudes['E'])
 
-    # Validation
-    if m_m <= 0 or v0_m < 0 or h_m <= 0:
-        print("Avertissement: Incertitudes trop grandes, params invalides.")
-        # Fallback: utiliser valeurs nominales pour les particules d'incertitude
-        p_a = particule((p.m, p.c), p.vo, p.angle, p.height, True, True, (p.m, p.c))
-        p_b = particule((p.m, p.c), p.vo, p.angle, p.height, True, False, (p.m, p.c))
-        return p_a, p_b, E, E
-
-    # Créer particules bornes
-    p_a = particule((m_m, c_m), v0_m, a_m, h_m, True, True, (p.m, p.c))
-    p_b = particule((m_p, c_p), v0_p, a_p, h_p, True, False, (p.m, p.c))
-
-    return p_a, p_b, E_m, E_p # Retourne bornes E aussi
+    return min_particule, max_particule, E_min, E_max
 
 def tracer_ensemble_trajectoires_avec_incertitudes(
         # ... (Arguments inchangés) ...
@@ -407,7 +390,7 @@ def tracer_ensemble_potentiels(
     p = particule(masse_charge_particule, vitesse_initiale, angle_initial, hauteur_initiale)
     texte_angles = "Angles incidents (vs +x):"
     all_x_max = []
-    cmap = plt.cm.viridis.resampled(len(potentiels)) # Colormap
+    cmap = plt.cm.viridis(len(potentiels)) # Colormap
     non_contact_list_info = []
 
     for i, V in enumerate(sorted(potentiels)): # Trier pour ordre couleurs
@@ -470,7 +453,7 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
     all_x_max = []
     texte_angles = "Angles incidents (Nominal) (vs +x):"
     plotted_incert_labels = set()
-    cmap = plt.cm.viridis.resampled(len(potentiels)) # Colormap pour potentiels
+    cmap = plt.cm.viridis(len(potentiels)) # Colormap pour potentiels
     non_contact_nominal_info = []
     non_contact_incert_info = []
 
