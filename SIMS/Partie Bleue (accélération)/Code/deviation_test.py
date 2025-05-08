@@ -506,6 +506,7 @@ def tracer_ensemble_potentiels(
 
     for i, V in enumerate(sorted(potentiels)): # Trier pour ordre couleurs
         if len(potentiels) > 1 :
+            print(i)
             color = cmap(i / len(potentiels))
         else :
             color = cmap(0.5)
@@ -595,6 +596,7 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
 
     for i, V in enumerate(sorted(potentiels)):
         if len(potentiels) > 1 :
+            print(i)
             color = cmap(i / len(potentiels))
         else :
             color = cmap(0.5)
@@ -668,13 +670,13 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
 """
 Test fonction tracer_ensemble_trajectoires
 """
-# if __name__ == '__main__' :
-#     rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
-#     potentiel = 5000
-#     h_initiale = 0.1
+if __name__ == '__main__' :
+    rapports_mq, vo = [(1, 1), (2, 1), (3, 1)], 1e6
+    potentiel = 5000
+    h_initiale = 0.1
+    angle_initial = np.pi / 6
 
-
-#     tracer_ensemble_trajectoires(rapports_mq, vo, potentiel=potentiel, hauteur_initiale=h_initiale)
+    tracer_ensemble_trajectoires(rapports_mq, vo, potentiel=potentiel, hauteur_initiale=h_initiale, labels_particules=["P1", "P2", "P3"])
 
 
 """
