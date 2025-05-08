@@ -152,14 +152,6 @@ class ParticleApp:
         status_bar = ttk.Label(root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
-    # --- Fonctions Scrollbar, Fermeture, Tableau Périodique (INCHANGÉES) ---
-    # ... (Copier les méthodes _bind_mousewheel, _update_scroll_region_and_bar,
-    #      _resize_canvas_content_and_update_bar, _update_scrollbar_state,
-    #      _check_and_set_scrollbar_state, _on_mousewheel, _on_closing,
-    #      ouvrir_fenetre_tp, construction_de_molecule, reset_molecule,
-    #      _update_molecule_display, ajt_particle_connue, submit_molecule
-    #      depuis main_v3.py ici, elles sont correctes) ...
-    # --- Fonctions de Gestion Scrollbar ---
     def _bind_mousewheel(self, enter):
         """Lie ou délie les événements de molette pour le canvas."""
         if enter:
@@ -508,11 +500,10 @@ class ParticleApp:
     # --- Widgets Onglet Électrique Standard (INCHANGÉ) ---
     def create_electric_widgets(self, parent):
         frame = ttk.Frame(parent, padding="10"); frame.pack(fill=tk.BOTH, expand=True)
-        self.angle_var = tk.StringVar(value="30")
-        self.add_labeled_entry(frame, "Angle Initial (° vs +y):", self.angle_var).pack(fill=tk.X, pady=3)
-        self.dist_var = tk.StringVar(value="0.05")
-        self.add_labeled_entry(frame, "Distance/Hauteur (m):", self.dist_var).pack(fill=tk.X, pady=3)
+        self.angle_var = tk.StringVar(value="30"); self.add_labeled_entry(frame, "Angle Initial (° vs +y):", self.angle_var).pack(fill=tk.X, pady=3)
+        self.dist_var = tk.StringVar(value="0.05"); self.add_labeled_entry(frame, "Distance/Hauteur (m):", self.dist_var).pack(fill=tk.X, pady=3)
 
+        # Checkbox et Frame Incertitudes
         self.show_uncertainty_var = tk.BooleanVar(value=False)
         self.uncertainty_check = ttk.Checkbutton(frame, text="Afficher Incertitudes", variable=self.show_uncertainty_var, command=self.toggle_uncertainty_inputs); self.uncertainty_check.pack(anchor=tk.W, padx=5, pady=(5, 0))
         self.uncertainty_inputs_frame = ttk.LabelFrame(frame, text="Paramètres d'incertitude relative (%)")
@@ -522,32 +513,26 @@ class ParticleApp:
         self.delta_E_percent_var = tk.StringVar(value="1.0"); self.add_labeled_entry(self.uncertainty_inputs_frame, "ΔE/E (%):", self.delta_E_percent_var).pack(fill=tk.X, pady=2, padx=5)
         ttk.Label(self.uncertainty_inputs_frame, text="Note: Δm/m (0.1%), Δq/q (0.01%) fixes", font=('Segoe UI', 8)).pack(pady=(5,0))
 
+        # Séparateur et Checkbox Mode Dynamique
         self.elec_separator = ttk.Separator(frame, orient=tk.HORIZONTAL); self.elec_separator.pack(fill=tk.X, pady=10, padx=5)
         self.dynamic_elec_var = tk.BooleanVar(value=False)
         self.dynamic_elec_check = ttk.Checkbutton(frame, text="Mode Dynamique (Sliders)", variable=self.dynamic_elec_var, command=self.toggle_dynamic_electric); self.dynamic_elec_check.pack(anchor=tk.W, padx=5, pady=(5, 0))
 
+        # Frames Statique et Dynamique
         self.dynamic_electric_inputs_frame = ttk.Frame(frame); self.base_electric_inputs_frame = ttk.Frame(frame)
         parent_base = self.base_electric_inputs_frame
         self.v0_elec_var = tk.StringVar(value="1e5"); self.add_labeled_entry(parent_base, "Vitesse Initiale (m/s):", self.v0_elec_var).pack(fill=tk.X, pady=3)
         self.diff_pot_var = tk.StringVar(value="-5000"); self.add_labeled_entry(parent_base, "Diff. Potentiel (V):", self.diff_pot_var).pack(fill=tk.X, pady=3)
         trace_btn_base = ttk.Button(parent_base, text="Tracer Simulation", command=self.run_electric_simulation); trace_btn_base.pack(pady=15)
         parent_dyn = self.dynamic_electric_inputs_frame
-        self.elec_v0_min_var = tk.StringVar(value="1e4"); self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.elec_v0_min_var).pack(fill=tk.X, pady=3)
-        self.elec_v0_max_var = tk.StringVar(value="2e5"); self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.elec_v0_max_var).pack(fill=tk.X, pady=3)
-        ttk.Label(parent_dyn, text="Vitesse Initiale V₀ (m/s):").pack(anchor=tk.W, pady=(5, 0))
-        self.slider_frame_v0_elec = ttk.Frame(parent_dyn); self.slider_frame_v0_elec.pack(fill=tk.X, pady=(0, 5))
-        self.v0_var_elec = tk.DoubleVar(value=1e5)
-        self.v0_slider_elec = ttk.Scale(self.slider_frame_v0_elec, from_=1e4, to=2e5, orient=tk.HORIZONTAL, variable=self.v0_var_elec, command=self._on_v0_slider_change_elec); self.v0_slider_elec.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        self.v0_label_var_elec = tk.StringVar(value=f"{self.v0_var_elec.get():.2e} m/s"); ttk.Label(self.slider_frame_v0_elec, textvariable=self.v0_label_var_elec, width=12).pack(side=tk.LEFT)
-        self.diff_pot_min_var = tk.StringVar(value="-10000"); self.add_labeled_entry(parent_dyn, "Potentiel min (V):", self.diff_pot_min_var).pack(fill=tk.X, pady=3)
-        self.diff_pot_max_var = tk.StringVar(value="10000"); self.add_labeled_entry(parent_dyn, "Potentiel max (V):", self.diff_pot_max_var).pack(fill=tk.X, pady=3)
-        ttk.Label(parent_dyn, text="Diff. Potentiel (V):").pack(anchor=tk.W, pady=(5, 0))
-        self.slider_frame_v = ttk.Frame(parent_dyn); self.slider_frame_v.pack(fill=tk.X, pady=(0, 5))
-        self.pot_var = tk.DoubleVar(value=-5000)
-        self.pot_slider = ttk.Scale(self.slider_frame_v, from_=-10000, to=10000, orient=tk.HORIZONTAL, variable=self.pot_var, command=self._on_pot_slider_change); self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.1f} V"); ttk.Label(self.slider_frame_v, textvariable=self.pot_label_var, width=12).pack(side=tk.LEFT)
+        self.elec_v0_min_var = tk.StringVar(value="1e4"); self.add_labeled_entry(parent_dyn, "V0 min (m/s):", self.elec_v0_min_var).pack(fill=tk.X, pady=3); self.elec_v0_max_var = tk.StringVar(value="2e5"); self.add_labeled_entry(parent_dyn, "V0 max (m/s):", self.elec_v0_max_var).pack(fill=tk.X, pady=3)
+        ttk.Label(parent_dyn, text="Vitesse Initiale V₀ (m/s):").pack(anchor=tk.W, pady=(5, 0)); self.slider_frame_v0_elec = ttk.Frame(parent_dyn); self.slider_frame_v0_elec.pack(fill=tk.X, pady=(0, 5)); self.v0_var_elec = tk.DoubleVar(value=1e5)
+        self.v0_slider_elec = ttk.Scale(self.slider_frame_v0_elec, from_=1e4, to=2e5, variable=self.v0_var_elec, command=self._on_v0_slider_change_elec); self.v0_slider_elec.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10)); self.v0_label_var_elec = tk.StringVar(value=f"{self.v0_var_elec.get():.2e} m/s"); ttk.Label(self.slider_frame_v0_elec, textvariable=self.v0_label_var_elec, width=12).pack(side=tk.LEFT)
+        self.diff_pot_min_var = tk.StringVar(value="-10000"); self.add_labeled_entry(parent_dyn, "Potentiel min (V):", self.diff_pot_min_var).pack(fill=tk.X, pady=3); self.diff_pot_max_var = tk.StringVar(value="10000"); self.add_labeled_entry(parent_dyn, "Potentiel max (V):", self.diff_pot_max_var).pack(fill=tk.X, pady=3)
+        ttk.Label(parent_dyn, text="Diff. Potentiel (V):").pack(anchor=tk.W, pady=(5, 0)); self.slider_frame_v = ttk.Frame(parent_dyn); self.slider_frame_v.pack(fill=tk.X, pady=(0, 5)); self.pot_var = tk.DoubleVar(value=-5000)
+        self.pot_slider = ttk.Scale(self.slider_frame_v, from_=-10000, to=10000, variable=self.pot_var, command=self._on_pot_slider_change); self.pot_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10)); self.pot_label_var = tk.StringVar(value=f"{self.pot_var.get():.1f} V"); ttk.Label(self.slider_frame_v, textvariable=self.pot_label_var, width=12).pack(side=tk.LEFT)
         apply_limits_btn_dyn = ttk.Button(parent_dyn, text="Appliquer Limites & Tracer", command=self.run_electric_simulation); apply_limits_btn_dyn.pack(pady=15)
-        self.toggle_uncertainty_inputs(); self.toggle_dynamic_electric()
+        self.toggle_uncertainty_inputs(); self.toggle_dynamic_electric() # Affichage initial
 
     def toggle_dynamic_electric(self):
         if self.dynamic_elec_var.get(): self.base_electric_inputs_frame.pack_forget(); self.dynamic_electric_inputs_frame.pack(fill=tk.X, pady=5, padx=5, after=self.dynamic_elec_check)
@@ -561,11 +546,11 @@ class ParticleApp:
 
     def _on_pot_slider_change(self, event=None): self._update_pot_label(); self.run_electric_simulation(called_by_slider=True)
     def _on_v0_slider_change_elec(self, event=None) : self._update_v0_label_elec(); self.run_electric_simulation(called_by_slider=True)
-    def _update_pot_label(self, event=None): self.pot_label_var.set(f"{self.pot_var.get():.1f}\u00A0V") # Espace insécable
+    def _update_pot_label(self, event=None): self.pot_label_var.set(f"{self.pot_var.get():.1f}\u00A0V")
     def _update_v0_label_elec(self, event=None): self.v0_label_var_elec.set(f"{self.v0_var_elec.get():.2e}\u00A0m/s")
 
 
-    # --- Widgets Onglet Potentiel (NOUVEAU) ---
+    # --- Widgets Onglet Potentiel (MODIFIÉ pour incertitudes) ---
     def create_potential_widgets(self, parent):
         """Crée les widgets pour l'onglet de comparaison de potentiels."""
         self.pot_frame = ttk.Frame(parent, padding="10")
@@ -581,6 +566,7 @@ class ParticleApp:
         self.selected_particle_label_var = tk.StringVar(value="Aucune particule sélectionnée")
         self.selected_particle_label = ttk.Label(self.pot_controls_frame, textvariable=self.selected_particle_label_var, font=('Helvetica', 10, 'italic', 'bold'), anchor='center')
 
+        # --- Paramètres Communs pour cet onglet ---
         self.angle_pot_var = tk.StringVar(value="30")
         self.angle_pot_entry_frame = self.add_labeled_entry(self.pot_controls_frame, "Angle Initial (° vs +y):", self.angle_pot_var)
 
@@ -590,19 +576,34 @@ class ParticleApp:
         self.v0_pot_var = tk.StringVar(value="1e5")
         self.v0_pot_entry_frame = self.add_labeled_entry(self.pot_controls_frame, "Vitesse Initiale (m/s):", self.v0_pot_var)
 
-        # Potentiels à comparer
-        self.pot1_var = tk.StringVar(value="0") # Potentiel référence souvent 0V
+        # --- Checkbox et Frame Incertitudes (spécifique à cet onglet) ---
+        self.show_uncertainty_pot_var = tk.BooleanVar(value=False) # Variable distincte
+        self.uncertainty_check_pot = ttk.Checkbutton(self.pot_controls_frame, text="Afficher Incertitudes", variable=self.show_uncertainty_pot_var, command=self.toggle_uncertainty_inputs_pot)
+        # Ne pas packer ici, on le fera dans _update_potential_tab_state
+
+        self.uncertainty_inputs_frame_pot = ttk.LabelFrame(self.pot_controls_frame, text="Paramètres d'incertitude relative (%)")
+        self.delta_v0_percent_pot_var = tk.StringVar(value="1.0"); self.add_labeled_entry(self.uncertainty_inputs_frame_pot, "ΔV₀/V₀ (%):", self.delta_v0_percent_pot_var).pack(fill=tk.X, pady=2, padx=5)
+        self.delta_theta_percent_pot_var = tk.StringVar(value="1.0"); self.add_labeled_entry(self.uncertainty_inputs_frame_pot, "Δθ/θ (%):", self.delta_theta_percent_pot_var).pack(fill=tk.X, pady=2, padx=5)
+        self.delta_h_percent_pot_var = tk.StringVar(value="1.0"); self.add_labeled_entry(self.uncertainty_inputs_frame_pot, "Δh/h (%):", self.delta_h_percent_pot_var).pack(fill=tk.X, pady=2, padx=5)
+        self.delta_E_percent_pot_var = tk.StringVar(value="1.0"); self.add_labeled_entry(self.uncertainty_inputs_frame_pot, "ΔE/E (%):", self.delta_E_percent_pot_var).pack(fill=tk.X, pady=2, padx=5)
+        ttk.Label(self.uncertainty_inputs_frame_pot, text="Note: Δm/m (0.1%), Δq/q (0.01%) fixes", font=('Segoe UI', 8)).pack(pady=(5,0))
+        # Ne pas packer le frame lui-même ici
+
+        # --- Potentiels à comparer ---
+        self.pot1_var = tk.StringVar(value="0")
         self.pot1_entry_frame = self.add_labeled_entry(self.pot_controls_frame, "Potentiel Référence (V):", self.pot1_var)
 
-        self.pot2_var = tk.StringVar(value="-5000") # Potentiel de test
+        self.pot2_var = tk.StringVar(value="-5000")
         self.pot2_entry_frame = self.add_labeled_entry(self.pot_controls_frame, "Potentiel Test (V):", self.pot2_var)
 
+        # --- Boutons Action ---
         self.trace_pot_button = ttk.Button(self.pot_controls_frame, text="Tracer Comparaison & Calculer Δx", command=self.run_potential_comparison_simulation)
         self.change_particle_button = ttk.Button(self.pot_controls_frame, text="Changer Particule", command=self.open_particle_selection_window)
 
-        # Affichage initial
-        self._update_potential_tab_state()
+        # --- Affichage initial ---
+        self._update_potential_tab_state() # Gère l'affichage initial des contrôles ou du bouton start
 
+    # --- MODIFICATION: Gérer affichage état Potentiel + Incertitudes ---
     def _update_potential_tab_state(self):
         """Affiche/cache widgets de l'onglet Potentiel."""
         if self.selected_potential_particle_index is None:
@@ -611,18 +612,39 @@ class ParticleApp:
         else:
             self.start_pot_sim_button.pack_forget()
             self.pot_controls_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+            # Packer les widgets DANS le pot_controls_frame s'ils ne le sont pas déjà
+            # En respectant l'ordre: Label > Params > Checkbox Incert > Frame Incert (si visible) > Pots > Boutons
             if not self.selected_particle_label.winfo_ismapped():
-                # Packer dans l'ordre souhaité
                 self.selected_particle_label.pack(pady=(5, 10))
                 self.angle_pot_entry_frame.pack(fill=tk.X, pady=3)
                 self.dist_pot_entry_frame.pack(fill=tk.X, pady=3)
                 self.v0_pot_entry_frame.pack(fill=tk.X, pady=3)
+                # Packer le checkbox incertitude ici
+                self.uncertainty_check_pot.pack(anchor=tk.W, padx=5, pady=(10, 0))
+                # Le frame d'incertitude sera packé par son toggle juste après
                 ttk.Separator(self.pot_controls_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
                 self.pot1_entry_frame.pack(fill=tk.X, pady=3)
                 self.pot2_entry_frame.pack(fill=tk.X, pady=3)
                 self.trace_pot_button.pack(pady=15)
                 self.change_particle_button.pack(pady=(0,10))
+
+            # Mettre à jour le label de la particule sélectionnée
             self.selected_particle_label_var.set(f"Particule : {self.selected_potential_particle_name}")
+            # Appeler le toggle pour afficher/cacher le frame incertitude correctement
+            self.toggle_uncertainty_inputs_pot()
+
+        self.root.after(50, self._update_scroll_region_and_bar)
+
+    # --- NOUVEAU: Toggle pour incertitudes Potentiel ---
+    def toggle_uncertainty_inputs_pot(self):
+        """Affiche ou cache le frame des entrées d'incertitude pour l'onglet Potentiel."""
+        if self.show_uncertainty_pot_var.get():
+            # Packer le frame incertitude APRÈS le checkbox correspondant
+            self.uncertainty_inputs_frame_pot.pack(fill=tk.X, pady=(0,5), padx=5, after=self.uncertainty_check_pot)
+        else:
+            self.uncertainty_inputs_frame_pot.pack_forget()
+        # Mettre à jour la scrollregion
         self.root.after(50, self._update_scroll_region_and_bar)
 
     def _reset_potential_selection(self):
@@ -806,18 +828,23 @@ class ParticleApp:
 
 
     # Simulation Comparaison Potentiels (NOUVEAU)
-    def run_potential_comparison_simulation(self):
+    def run_potential_comparison_simulation(self, called_by_slider=False): # Ajouter called_by_slider (même si pas de slider ici)
         """Lance la simulation pour la particule sélectionnée avec deux potentiels."""
         if self.selected_potential_particle_index is None:
-            messagebox.showerror("Erreur", "Sélectionnez une particule pour cette simulation.", parent=self.root)
+            # Ne pas montrer de popup si appelé par slider (n'arrive pas ici mais par cohérence)
+            if not called_by_slider: messagebox.showerror("Erreur", "Sélectionnez une particule.", parent=self.root)
+            self.status_var.set("Sélectionnez une particule.")
             return
 
-        if not hasattr(deviation, 'calculer_trajectoire_et_impact'):
-             messagebox.showerror("Erreur Module", "Fonction 'calculer_trajectoire_et_impact' requise.", parent=self.root)
+        # Vérifier si la fonction nécessaire existe
+        # On a besoin de la fonction AVEC incertitudes si la case est cochée
+        func_needed = 'tracer_ensemble_trajectoires_potentiels_avec_incertitudes' if self.show_uncertainty_pot_var.get() else 'calculer_trajectoire_et_impact'
+        if not hasattr(deviation, func_needed):
+             messagebox.showerror("Erreur Module", f"Fonction '{func_needed}' requise dans deviation_test.py.", parent=self.root)
              return
 
         try:
-            # Lire params de l'onglet Potentiel
+            # Lire les paramètres spécifiques à cet onglet
             angle_deg = float(self.angle_pot_var.get().strip().replace(',', '.'))
             hauteur_distance = float(self.dist_pot_var.get().strip().replace(',', '.'))
             v0 = float(self.v0_pot_var.get().strip().replace(',', '.'))
@@ -830,55 +857,104 @@ class ParticleApp:
             if v0 <= 0: raise ValueError("V0 > 0.")
 
             angle_rad = np.radians(angle_deg); hauteur_initiale = hauteur_distance
+            # S'assurer que l'index est toujours valide (peut avoir changé si suppression)
+            if self.selected_potential_particle_index >= len(self.particles_data):
+                self._reset_potential_selection()
+                messagebox.showerror("Erreur", "La particule sélectionnée n'existe plus. Veuillez resélectionner.")
+                return
             particle_data = self.particles_data[self.selected_potential_particle_index]
-            particle_name = self.selected_potential_particle_name
+            particle_name = self.particle_names[self.selected_potential_particle_index]
 
-            self.status_var.set(f"Calcul pour {particle_name} (V1={potentiel1}V, V2={potentiel2}V)...")
+            # --- Logique Incertitude ---
+            show_uncertainty = self.show_uncertainty_pot_var.get() # Lire checkbox de CET onglet
+            incertitudes_dict = None
+            status_message = f"Calcul pour {particle_name} (V1={potentiel1:.0f}V, V2={potentiel2:.0f}V)"
+
+            if show_uncertainty:
+                try:
+                    # Lire les entrées d'incertitude de CET onglet
+                    # Utiliser les variables _pot
+                    incertitudes_dict = {
+                        'v0': float(self.delta_v0_percent_pot_var.get().strip().replace(',', '.')) / 100.0,
+                        'theta': float(self.delta_theta_percent_pot_var.get().strip().replace(',', '.')) / 100.0,
+                        'h': float(self.delta_h_percent_pot_var.get().strip().replace(',', '.')) / 100.0,
+                        'E': float(self.delta_E_percent_pot_var.get().strip().replace(',', '.')) / 100.0,
+                        'm': 0.001, 'q': 0.0001 # Valeurs fixes
+                    }
+                    status_message += " avec incertitudes..."
+                except ValueError as e_inc:
+                    messagebox.showerror("Erreur Incertitude", f"Valeur invalide:\n{e_inc}", parent=self.root)
+                    self.status_var.set("Erreur param incertitude (Pot).")
+                    return
+            else:
+                 status_message += "..."
+
+
+            self.status_var.set(status_message)
             self.ax.cla(); self.root.update_idletasks()
 
-            # Appels Backend
-            xt1, yt1, imp1 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel1, angle_rad, hauteur_initiale)
-            xt2, yt2, imp2 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel2, angle_rad, hauteur_initiale)
+            # --- Appels Backend ---
+            imp1, imp2 = None, None # Initialiser les impacts
 
-            # Affichage
-            line1, = self.ax.plot(xt1, yt1, label=f'V₁ = {potentiel1:.1f} V')
-            line2, = self.ax.plot(xt2, yt2, label=f'V₂ = {potentiel2:.1f} V')
+            if show_uncertainty and incertitudes_dict is not None:
+                 # Appeler la fonction qui trace les deux potentiels ET leurs incertitudes
+                 if hasattr(deviation, 'tracer_ensemble_trajectoires_potentiels_avec_incertitudes'):
+                     deviation.tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_particule=particle_data, vitesse_initiale=v0, incertitudes=incertitudes_dict, potentiels=[potentiel1, potentiel2], angle_initial=angle_rad, hauteur_initiale=hauteur_initiale, create_plot=False, ax=self.ax)
+                     # Recalculer les impacts NOMINAUX pour delta_x
+                     _, _, imp1 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel1, angle_rad, hauteur_initiale)
+                     _, _, imp2 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel2, angle_rad, hauteur_initiale)
+                     status_end_message = "Comparaison avec incertitudes tracée."
+                 else:
+                      messagebox.showerror("Erreur Module", "Fonction 'tracer_ensemble_trajectoires_potentiels_avec_incertitudes' manquante.", parent=self.root)
+                      return # Ne peut pas continuer
+            else:
+                 # Tracé SANS incertitudes (utilise calculer_trajectoire_et_impact)
+                 xt1, yt1, imp1 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel1, angle_rad, hauteur_initiale)
+                 xt2, yt2, imp2 = deviation.calculer_trajectoire_et_impact(particle_data, v0, potentiel2, angle_rad, hauteur_initiale)
 
+                 # Tracer les lignes et points d'impact si valides
+                 line1, = self.ax.plot(xt1, yt1, label=f'V₁ = {potentiel1:.1f} V')
+                 line2, = self.ax.plot(xt2, yt2, label=f'V₂ = {potentiel2:.1f} V')
+                 if isinstance(imp1, (int, float)) and not np.isnan(imp1): self.ax.plot(imp1, 0, 'o', color=line1.get_color(), markersize=5)
+                 if isinstance(imp2, (int, float)) and not np.isnan(imp2): self.ax.plot(imp2, 0, 'x', color=line2.get_color(), markersize=6)
+                 status_end_message = "Comparaison tracée."
+
+
+            # --- Calcul et Affichage Delta X (commun) ---
             delta_x_str = "N/A"; delta_x = None
+            # Utiliser les impacts recalculés ou ceux du tracé sans incertitude
             imp1_valid = isinstance(imp1, (int, float)) and not np.isnan(imp1)
             imp2_valid = isinstance(imp2, (int, float)) and not np.isnan(imp2)
-
             if imp1_valid and imp2_valid:
-                delta_x = abs(imp1 - imp2)
-                delta_x_str = f"{delta_x:.3e} m"
-            elif imp1_valid:
-                 delta_x_str = f"Seul V₁ impacte ({imp1:.3e} m)"
-            elif imp2_valid:
-                 delta_x_str = f"Seul V₂ impacte ({imp2:.3e} m)"
-            else:
-                 delta_x_str = "Aucun impact > 0"
+                delta_x = abs(imp1 - imp2); delta_x_str = f"{delta_x:.3e} m"
+            elif imp1_valid: delta_x_str = f"Seul V₁ impacte ({imp1:.3e} m)"
+            elif imp2_valid: delta_x_str = f"Seul V₂ impacte ({imp2:.3e} m)"
+            else: delta_x_str = "Aucun impact (x>0)"
 
-
-            # Plaque
-            xmax_plot = max([0] + ([imp1] if imp1_valid else []) + ([imp2] if imp2_valid else []) + [hauteur_initiale]) * 1.15
-            self.ax.plot([0, xmax_plot], [0, 0], 'k-', linewidth=2, label='Plaque (y=0)')
+            # --- Finalisation Plot (commun) ---
+            # Déterminer xmax en fonction des impacts calculés
+            xmax_plot = max([0.01] + ([imp1] if imp1_valid else []) + ([imp2] if imp2_valid else []) + [hauteur_initiale]) * 1.15 # Assurer un xmax min
+            # Ajouter/Vérifier la plaque (y=0)
+            plaque_presente = any(line.get_label() == 'Plaque (y=0)' for line in self.ax.get_lines())
+            if not plaque_presente:
+                self.ax.plot([0, xmax_plot], [0, 0], 'k-', linewidth=2, label='Plaque (y=0)')
             self.ax.set_xlim(left=0, right=xmax_plot)
 
-            # Annoter les points d'impact si > 0
-            if imp1_valid: self.ax.plot(imp1, 0, 'o', color=line1.get_color(), markersize=5)
-            if imp2_valid: self.ax.plot(imp2, 0, 'x', color=line2.get_color(), markersize=6)
-
             self.ax.set_xlabel("Position x (m)"); self.ax.set_ylabel("Position y (m)")
-            self.ax.set_title(f"Comparaison Potentiels pour {particle_name}\nΔx = {delta_x_str}")
+            titre = f"Comparaison Potentiels pour {particle_name}"
+            if show_uncertainty: titre += " (avec Incertitudes)"
+            titre += f"\nΔx = {delta_x_str}"
+            self.ax.set_title(titre)
             self.ax.grid(True, linestyle=':')
             self.ax.legend(loc='best'); self.ax.relim(); self.ax.autoscale_view(True, True, True)
-            ymin, ymax = self.ax.get_ylim(); self.ax.set_ylim(min(ymin, -0.01*hauteur_initiale), ymax) # Espace sous y=0
+            ymin, ymax = self.ax.get_ylim(); self.ax.set_ylim(min(ymin, -0.01*hauteur_initiale), ymax)
 
             self.canvas.draw()
-            self.status_var.set(f"Comparaison tracée. Δx = {delta_x_str}")
+            self.status_var.set(f"{status_end_message} Δx = {delta_x_str}")
 
-        except ValueError as e: messagebox.showerror("Erreur Paramètre", f"Inv. (Potentiel): {e}", parent=self.root); self.status_var.set(f"Erreur param (Pot): {e}")
-        except NameError as e: messagebox.showerror("Erreur Module", f"'{e}' non trouvé. Module manquant?", parent=self.root); self.status_var.set("Erreur module/nom (Pot).")
+        except ValueError as e:
+            messagebox.showerror("Erreur Paramètre", f"Inv. (Potentiel): {e}", parent=self.root); self.status_var.set(f"Erreur param (Pot): {e}")
+        except NameError as e: messagebox.showerror("Erreur Module", f"'{e}' non trouvé.", parent=self.root); self.status_var.set("Erreur module/nom (Pot).")
         except Exception as e:
             messagebox.showerror("Erreur", f"Erreur (Pot):\n{type(e).__name__}: {e}", parent=self.root)
             import traceback; traceback.print_exc()
