@@ -215,7 +215,6 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
         Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
     ax : bool
         Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
-
     """
     particules_init = masse_charge_particules
 

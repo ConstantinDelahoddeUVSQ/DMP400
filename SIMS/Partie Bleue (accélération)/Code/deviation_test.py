@@ -34,19 +34,36 @@ def champ_electrique_v2(distance: float, difference_potentiel: float) -> float:
 
 class particule:
     def __init__(self, masse_charge : tuple[float, float], v_initiale : float = 0, angle_initial : float = np.pi / 4, hauteur_initiale : float = 0.5, is_incertitude : bool = False, incertitude_unique : bool = False, base_mq : tuple = None) -> None :
-        # ... (code __init__ précédent, s'assurer que self.angle = angle_initial) ...
+        """
+        Objet particule avec vitesse initiale dévié par un champ électrique d'axe y
+
+        Parameters
+        ----------
+        masse_charge : tuple of float
+            Masse (en u) / Charge (nombre de charge élémentaire) de la particule
+        v_initiale : float
+            Vitesse initiale de la particule (en m/s)   
+        angle_initial : float
+            Angle initial entre v_initiale et l'axe y en radians
+        hauteur_initiale : float
+            Coordonnée en y du point de départ
+        is_incertitude : bool
+            Permet de savoir si la particule est une incertitude qui sera tracée
+        incertitude_unique : bool
+            Permet de savoir si cette particule représente la première ou deuxième incertitude (pour ne pas donner le label 2 fois)
+        base_mq : tuple 
+            Si la particule est une particule incertitude permet d'avoir le couple masse charge de la vraie particule d'origine
+        """
         mass_u, charge_e = masse_charge
         if charge_e == 0: raise ValueError("La charge ne peut pas être nulle.")
         if mass_u <= 0: raise ValueError("La masse doit être positive.")
         if v_initiale < 0: raise ValueError("La vitesse initiale ne peut être négative.")
-        # Validation angle critique pour incertitudes
-        # On la garde stricte ici, mais create_incertitude_params bornera
         if not (0 < angle_initial < np.pi/2): raise ValueError("L'angle initial doit être entre 0 et pi/2 radians (exclus).")
         if hauteur_initiale <= 0: raise ValueError("La hauteur initiale doit être positive.")
 
-        self.mq = (mass_u * constants.u) / (charge_e * constants.e) # kg/C (signé!)
+        self.mq = (mass_u * constants.u) / (charge_e * constants.e)
         self.vo = v_initiale
-        self.angle = angle_initial # Angle vs +y <<< Garder cette ligne
+        self.angle = angle_initial 
         self.height = hauteur_initiale
         self.m = mass_u
         self.c = charge_e
@@ -121,7 +138,6 @@ class particule:
                     return self.height * np.tan(self.angle)
             else :
                 return None
-                # raise ValueError("La particule n'a aucun point de contact avec l'échantillon")
 
     def angle_incident(self, E : float) -> float :
         """
@@ -141,8 +157,26 @@ class particule:
         return  np.arctan(-1 / (E * x_contact / (self.mq * self.vo * np.sin(self.angle) * self.vo * np.sin(self.angle)) - 1 / np.tan(self.angle)))
 
     def tracer_trajectoire(self, ax, E : float, x_min : float, x_max : float, color=None, label=None, is_uncertainty_plot=False, n_points : int = 1000) -> None:
-        """Trace la trajectoire sur ax. Gère style/couleur."""
-        # ... (code inchangé) ...
+        """
+        Trace la trajectoire entre x_min et x_max sur ax
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            L'axe matplotlib sur lequel on veut tracer la trajectoire
+        E : float
+            Valeur du champ électrique à proximité de la plaque dirigé selon y
+        x_min : float
+            Position en x minimale (en m)
+        x_max : float
+            Position en x maximale (en m)
+        color : str or list
+            Couleur du tracé pour les incertitudes
+        label : str
+            Label du tracé pour les incertitudes
+        n_points : int
+            Nombre de points où la position sera calculée entre x_min et x_max
+        """
         x, y = self.trajectoire(E, x_min, x_max, n_points)
         if len(x) == 0: return
         plot_kwargs = {}
@@ -154,9 +188,7 @@ class particule:
         ax.plot(x, y, **plot_kwargs)
 
 
-# ... (Fonction calculer_trajectoire_et_impact inchangée - utilise les méthodes corrigées) ...
 def calculer_trajectoire_et_impact(
-    # ... (code inchangé) ...
     masse_charge: tuple[float, float],
     vitesse_initiale: float,
     potentiel: float,
@@ -164,13 +196,32 @@ def calculer_trajectoire_et_impact(
     hauteur_initiale: float,
     n_points: int = 1000
 ) -> tuple[np.ndarray, np.ndarray, float | None]:
+    """
+    Fonction utilisée pour la variation de potentiel.
+    Calcule les trajectoires et le x_impact
+
+    Parameters
+    ----------
+    masse_charge : tuple of float
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire) de la particule
+    vitesse_initiale : float
+        Vitesse intiale de la particule
+    potentiel : float
+        Différence de potentiel entre les plaques (en V)
+    angle_initial_rad : float
+        Angle initial entre v_initiale et l'axe y en radians 
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+    n_points : int
+        Nombre de points pour calculer la trajectoire
+    """
     try:
         p = particule(masse_charge, vitesse_initiale, angle_initial_rad, hauteur_initiale)
         E = champ_electrique_v2(hauteur_initiale, potentiel)
-        x_impact = p.point_contact(E) # Utilise la méthode corrigée
+        x_impact = p.point_contact(E) 
 
         if x_impact is not None and x_impact > 0:
-            x_traj, y_traj = p.trajectoire(E, 0, x_impact, n_points) # Utilise la méthode corrigée
+            x_traj, y_traj = p.trajectoire(E, 0, x_impact, n_points) 
         else:
             x_max_plot = max(hauteur_initiale * np.tan(angle_initial_rad) * 2, 0.1) if np.tan(angle_initial_rad)!=0 else 0.1
             x_traj, y_traj = p.trajectoire(E, 0, x_max_plot, n_points)
@@ -181,9 +232,7 @@ def calculer_trajectoire_et_impact(
         print(f"Erreur calcul traj.: {e}")
         return np.array([]), np.array([]), None
 
-# ... (Fonction tracer_ensemble_trajectoires inchangée - utilise les méthodes corrigées) ...
 def tracer_ensemble_trajectoires(
-    # ... (code inchangé) ...
         masse_charge_particules : list[tuple[float, float]],
         vitesse_initiale : float,
         potentiel : float,
@@ -193,6 +242,28 @@ def tracer_ensemble_trajectoires(
         create_plot=True,
         ax=None
     ) -> None :
+    """
+    Trace les trajectoires jusqu'au contact de différentes particules de manière statique
+
+    Parameters
+    ----------
+    masse_charge_particules : list of tuple of float
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
+    vitesse_initiale : float
+        Vitesse intiale commune à toutes les particules du faisceau
+    potentiel : float
+        Différence de potentiel entre les plaques (en V)
+    angle_initial : float
+            Angle initial entre v_initiale et l'axe y en radians
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+    labels_particules : list of str
+        Liste des labels pour toutes les particules
+    create_plot : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+    ax : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+    """
     if create_plot or ax is None : fig, ax = plt.subplots(figsize=(10, 8))
     if labels_particules is None: labels_particules = [f"Particule {i+1}" for i in range(len(masse_charge_particules))]
     if len(labels_particules) != len(masse_charge_particules):
@@ -203,7 +274,7 @@ def tracer_ensemble_trajectoires(
     all_x_max = []
     texte_angles = "Angles incidents (vs +x):"
     is_contact = False
-    non_contact_list_info = [] # Stocker (particule, label)
+    non_contact_list_info = [] 
 
     for i, mc in enumerate(masse_charge_particules):
         try:
@@ -279,7 +350,6 @@ def create_incertitude_params(p : particule, incertitudes : dict, E : float) :
     return min_particule, max_particule, E_min, E_max
 
 def tracer_ensemble_trajectoires_avec_incertitudes(
-        # ... (Arguments inchangés) ...
         masse_charge_particules : list[tuple[float, float]],
         vitesse_initiale : float,
         incertitudes : dict,
@@ -290,7 +360,31 @@ def tracer_ensemble_trajectoires_avec_incertitudes(
         create_plot=True,
         ax=None
     ) -> None:
-    # ... (Setup inchangé: créer fig/ax, vérifier labels, calculer E_nominal) ...
+    """
+    Trace les trajectoires jusqu'au contact de différentes particules de manière statique avec le tracé des incertitudes (couloirs)
+
+    Parameters
+    ----------
+    masse_charge_particules : list of tupleof int
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
+    vitesse_initiale : float
+        Vitesse intiale commune à toutes les particules du faisceau
+    incertitudes : dict
+        Dictionnaire des incertitudes sur les différents paramètres (pourcentages)
+    potentiel : float
+        Différence de potentiel entre les plaques (en V)
+    angle_initial : float
+            Angle initial entre v_initiale et l'axe y en radians
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+    labels_particules : list of str
+        Liste des labels pour toutes les particules
+    create_plot : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+    ax : bool
+        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+
+    """
     if create_plot or ax is None: fig, ax = plt.subplots(figsize=(10, 8))
     if labels_particules is None: labels_particules = [f"P{i+1}" for i in range(len(masse_charge_particules))]
     if len(labels_particules) != len(masse_charge_particules): labels_particules = [f"{mc[0]:.1f}u,{mc[1]:+.0f}e" for mc in masse_charge_particules]
@@ -302,14 +396,13 @@ def tracer_ensemble_trajectoires_avec_incertitudes(
     texte_angles = "Angles incidents (Nominal) (vs +x):"
     plotted_incert_labels = set()
     colors = plt.cm.viridis(np.linspace(0, 1, len(particules_base)))
-    non_contact_nominal_info = [] # (p_base, color, label_base)
-    non_contact_incert_info = [] # (p_inc, E_bound, color, label_to_use)
+    non_contact_nominal_info = [] 
+    non_contact_incert_info = [] 
 
     for i, p_base in enumerate(particules_base):
         color = colors[i]; label_base = labels_particules[i]
         label_incert = f"Incert. {label_base}"
 
-        # Tracer nominal
         x_contact_nom = p_base.point_contact(E_nominal)
         if x_contact_nom is not None and x_contact_nom > 0:
             all_x_max_global.append(x_contact_nom)
@@ -394,7 +487,11 @@ def tracer_ensemble_potentiels(
     non_contact_list_info = []
 
     for i, V in enumerate(sorted(potentiels)): # Trier pour ordre couleurs
-        color = cmap(i / len(potentiels) if len(potentiels) > 1 else 0.5)
+        if len(potentiels) > 1 :
+            color = cmap(i / len(potentiels))
+        else :
+            color = cmap(0.5)
+        # color = cmap(i / len(potentiels) if len(potentiels) > 1 else 0.5)
         E = champ_electrique_v2(hauteur_initiale, V)
         x_contact = p.point_contact(E)
         label = f"V = {V:.1f} V"
