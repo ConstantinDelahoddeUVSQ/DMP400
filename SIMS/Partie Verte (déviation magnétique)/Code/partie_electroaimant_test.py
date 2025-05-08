@@ -3,9 +3,8 @@
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import numpy as np
-from scipy.optimize import fsolve
 import scipy.constants as constants
-import itertools # Si besoin pour couleurs par défaut
+from scipy.optimize import fsolve
 
 class particule :
     def __init__(self, masse_charge : tuple[float, float], v_initiale : float) -> None :
@@ -21,221 +20,154 @@ class particule :
             Vitesse initiale en y (m/s)
         """
         mass_u, charge_e = masse_charge
-        if charge_e == 0: raise ValueError("La charge ne peut pas être nulle.")
-        if mass_u <= 0: raise ValueError("La masse doit être positive.")
-        if v_initiale <= 0: raise ValueError("La vitesse initiale doit être positive.")
-
-        # mq est utilisé pour le rayon R = mq * v / B, donc doit utiliser |q|
-        self.mq = (mass_u * constants.u) / (abs(charge_e) * constants.e) # kg/C (toujours positif)
+        self.mq = (mass_u * constants.u) / (abs(charge_e) * constants.e) # (toujours positif)
         self.vo = v_initiale
         self.m = mass_u
         # Stocker la charge signée pour l'affichage
         self.charge_affichage = charge_e
 
-    def equation_trajectoire(self, x : float | np.ndarray, Bz : float) -> float | np.ndarray:
+    # Niveau 5 : L'equation de la trajectoire d'une particule en fonction de son rapport masse/charge et sa vitesse initiale
+    def equation_trajectoire(self, x : float, Bz : float) -> float :    
         """
-        Calcule la position y pour une position x donnée.
-        Formule équivalente à y = sqrt(2Rx - x^2) où R = mq*vo/Bz.
-        Attention: Bz ne doit pas être nul.
-        L'équation suppose une déviation vers x positif. Le signe de q*Bz détermine
-        si la déviation est réellement vers +x ou -x, mais la formule donne la forme.
+        La position y de la particule en x
 
         Parameters
         ----------
-        x : float or np.ndarray
-            Position(s) en x (en m). Doit être dans [0, 2R].
+        x : float
+            Position en x de la particule (en m)
         Bz : float
-            Valeur du champ magnétique (en T). Doit être != 0.
+            Valeur du champ magnétique d'axe z (en T)
 
         Returns
         -------
-        float or np.ndarray
-            Position(s) en y (en m). NaN si x est hors domaine.
+        float
+            Position en y de la particule (en m)
+        """             
+        with np.errstate(invalid='ignore') :
+            prefix = self.mq / Bz
+            return self.vo * prefix * np.sin(np.arccos(1 - x / (self.vo * prefix)))
+
+    # Niveau 4 : Renvoie un tuple de la trajectoire de la particule (liste des abscisses, liste des ordonnées)
+    def trajectoire(self, Bz : float, x_min : float, x_max : float, n_points : int = 10000) -> tuple[np.ndarray, np.ndarray] :
         """
-        if abs(Bz) < 1e-15:
-             # Trajectoire droite si Bz=0
-             if isinstance(x, np.ndarray): return np.zeros_like(x)
-             else: return 0.0 
-             if isinstance(x, np.ndarray): return np.full_like(x, np.nan)
-             else: return np.nan
+        Calcule la trajectoire entre un x minimum et un x maximum
 
-        prefix = self.mq / Bz # Attention, mq>0. Signe de prefix = signe de Bz.
-
-        R = self.mq * self.vo / abs(Bz)
-        # Calculer y seulement pour x dans le domaine valide
-        x_valid = np.where((x >= 0) & (x <= 2 * R), x, np.nan)
-
-        with np.errstate(invalid='ignore'): # Ignore sqrt(negatif) qui donnera NaN
-            y = np.sqrt(2 * R * x_valid - x_valid**2)
-        return y
-
-    def trajectoire(self, Bz : float, x_min : float, x_max : float, n_points : int = 1000) -> tuple[np.ndarray, np.ndarray]:
-        """Calcule les points (x, y) de la trajectoire."""
-        if x_max <= x_min: return np.array([]), np.array([])
+        Parameters
+        ----------
+        Bz : float
+            Valeur du champ magnétique d'axe z (en T)
+        x_min : float
+            Position en x minimale (en m)
+        x_max : float
+            Position en x maximale (en m)   
+        n_points : int
+            Nombre de points où la position sera calculée entre x_min et x_max
+        
+        Returns
+        -------
+        tuple of (numpy.ndarray, numpy.ndarray)
+            - Positions en x
+            - Positions en y
+        
+        """
         x = np.linspace(x_min, x_max, n_points)
-        y = self.equation_trajectoire(x, Bz)
-        # Retourner seulement les points valides (où y n'est pas NaN)
-        mask = ~np.isnan(y)
-        return x[mask], y[mask]
+        return x, self.equation_trajectoire(x, Bz)
 
     def tracer_trajectoire(self, ax, Bz : float, x_min : float, x_max : float, color=None, label=None, n_points : int = 1000) -> None:
-        """Trace la trajectoire sur ax en utilisant couleur et label."""
+        """
+        Trace la trajectoire entre x_min et x_max sur ax
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            L'axe matplotlib sur lequel on veut tracer la trajectoire
+        Bz : float
+            Valeur du champ magnétique d'axe z (en T)
+        x_min : float
+            Position en x minimale (en m)
+        x_max : float
+            Position en x maximale (en m)
+        color : str or list or array
+            couleur à tracer
+        label : str
+            label du tracé
+        n_points : int
+            Nombre de points où la position sera calculée entre x_min et x_max
+
+        """
         x, y = self.trajectoire(Bz, x_min, x_max, n_points)
         if len(x) == 0: return # Ne rien tracer si vide
 
         plot_kwargs = {'c': color if color else None}
         if label: plot_kwargs['label'] = label
-
         ax.plot(x, y, **plot_kwargs)
 
-    def determiner_champ_magnetique(self, x_objective : float, y_objective : float, B0 : float = None) -> float | None:
-        """Donne Bz pour atteindre (x, y). Retourne None si impossible."""
-        if x_objective <= 0 or y_objective < 0:
-             print("Avertissement: Objectif (x,y) doit être dans le quadrant x>0, y>=0.")
-             return None
-        if y_objective == 0: # Arrivée sur l'axe x
-             signe_q = np.sign(self.charge_affichage)
-             signe_B = -signe_q
-             return signe_B * (2 * self.mq * self.vo / x_objective)
 
-        signe_q = np.sign(self.charge_affichage)
-        signe_B = -signe_q
-        abs_B = (2 * self.mq * self.vo * x_objective) / (x_objective**2 + y_objective**2)
-        return signe_B * abs_B
+    # Niveau 2.1 : Détermine la puissance du champ magnétique nécéssaire pour dévier une particule à un point précis
+    def determiner_champ_magnetique(self, x_objective : float, y_objective : float, B0 : float = None) -> float :
+        """
+        Donne le champ magnétique pour dévier la particule en (x_objective, y_objective) depuis l'origine
 
-# --- Fonction de Traçage Ensemble (Adaptée) ---
+        Parameters
+        ----------
+        x_objective : float
+            Position en x voulue à l'état final
+        y_objective : float
+            Position en y voulue à l'état final
+        B0 : float
+            Valeur de départ de recherche du champ magnétique (pour la fonction fsolve de scipy)
 
-def tracer_ensemble_trajectoires(
-        masses_charges_particules : list[tuple[float, float]], # Accepte (m, c)
-        vitesse_initiale : float,
-        Bz : float,
-        x_detecteur : float,
-        labels_particules: list[str] = None, # NOUVEAU: Noms des particules
-        create_plot : bool = True,
-        ax = None
-    ) -> None:
+        Returns
+        -------
+        float
+            Champ magnétique (en T)
+        """
+        if B0 == None : B0 = self.mq
+        equation_func = lambda B : y_objective - (self.mq * self.vo / B) * np.sin(np.arccos(1 - x_objective * B / (self.vo * self.mq)))
+        return fsolve(equation_func, B0)[0]
+
+# Niveau 2.2 : Tracer l'ensemble des trajectoires des particules d'un faisceau
+def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple], vitesse_initiale : float, Bz : float, x_detecteur : float, labels_particules: list[str] = None, create_plot : bool = True, ax = None) -> None:
     """
-    Trace les trajectoires pour un ensemble de particules avec labels fournis.
-    """
-    if ax is None or create_plot :
-        fig, ax = plt.subplots(figsize=(10, 8))
-    if labels_particules is None: labels_particules = [f"Particule {i+1}" for i in range(len(masses_charges_particules))]
-    if len(labels_particules) != len(masses_charges_particules):
-        print("Avertissement: Noms/Particules mismatch.")
-        labels_particules = [f"{mc[0]:.1f}u,{mc[1]:+.0f}e" for mc in masses_charges_particules]
-
-    particules_objs = [particule(mc, vitesse_initiale) for mc in masses_charges_particules]
-    all_y_contact = []
-    plotted_lines = [] # Pour obtenir les couleurs si besoin
-
-    for i, p_local in enumerate(particules_objs):
-        label = labels_particules[i] # Utiliser le nom fourni
-        try:
-            y_contact = p_local.equation_trajectoire(x_detecteur, Bz)
-            p_local.tracer_trajectoire(ax, Bz, 0, x_detecteur, label=label)
-            if y_contact is not None and not np.isnan(y_contact):
-                all_y_contact.append(y_contact)
-            else: # Si NaN (hors domaine ou Bz=0)
-                 all_y_contact.append(np.nan) # Garder trace qu'on n'a pas de y valide
-
-        except ValueError as e:
-             print(f"Erreur calcul/tracé pour {label}: {e}")
-             all_y_contact.append(np.nan)
-
-    # Tracer le détecteur en ajustant sa hauteur
-    valid_y_contact = [y for y in all_y_contact if y is not None and not np.isnan(y)]
-    if valid_y_contact:
-        min_y = min(valid_y_contact)
-        max_y = max(valid_y_contact)
-        marge_y = abs(max_y - min_y) * 0.1 + 0.01 # Marge + petit offset
-        y_det_min = min_y - marge_y
-        y_det_max = max_y + marge_y
-        ax.plot([x_detecteur, x_detecteur], [y_det_min, y_det_max], c='black', linewidth=3, label='Détecteur')
-        # Ajuster les limites y
-        ymin_plot, ymax_plot = ax.get_ylim()
-        ax.set_ylim(min(ymin_plot, y_det_min), max(ymax_plot, y_det_max))
-    else: # Si aucune particule n'atteint x_detecteur
-         # Tracer un détecteur par défaut près de y=0 ?
-         ax.plot([x_detecteur, x_detecteur], [-0.01, 0.01], c='black', linewidth=3, label='Détecteur')
-
-    ax.set_xlabel('Position x (m)')
-    ax.set_ylabel('Position y (m)')
-    ax.set_title(f"Déviation Magnétique (Bz={Bz:.3f} T)")
-    ax.legend(fontsize='small')
-    ax.grid(True, linestyle='--', alpha=0.6)
-
-    if create_plot : plt.show()
-
-def tracer_trajectoires_dynamiquement(masses_charges_particules : list[tuple], vi_min : float, vi_max : float, Bz_min : float, Bz_max : float, x_detecteur : float) -> None:
-    """
-    Trace les trajectoires entre 0 et x_detecteur pour un ensemble de particules d'un faisceau de manière dynamique
+    Trace les trajectoires entre 0 et x_detecteur pour un ensemble de particules d'un faisceau
 
     Parameters
     ----------
     masses_charges_particules : list of tuple
         Masse (en unités atomiques), Charge (en eV)  pour toutes les particules
-    vi_min : float
-        Vitesse intiale en y minimale (en m/s)
-    vi_max : float
-        Vitesse intiale en y maximale (en m/s)
-    Bz_min : float
-        Valeur minimale du champ magnétique d'axe z (en T)
-    Bz_max : float
-        Valeur maximale du champ magnétique d'axe z (en T)
+    vitesse_initiale : float
+        Vitesse intiale en y commune à toutes les particules du faisceau
+    Bz : float
+            Valeur du champ magnétique d'axe z (en T)
     x_detecteur : float
         L'abscisse du détecteur (en m)
     """
-    particules = [particule(masse_charge, 0.5 * (vi_min + vi_max)) for masse_charge in masses_charges_particules]
-    fig, ax = plt.subplots()
-    plt.subplots_adjust(left=0.1, bottom=0.25)
+    particules = [particule(masse_charge, vitesse_initiale) for masse_charge in masses_charges_particules]    # Liste d'objets particule représentant toutes les particules
+    if ax == None or create_plot == True :
+        fig, ax = plt.subplots()
     
     all_y_contact = []
-    all_lines = []
-    Bz0 = 0.5 * (Bz_min + Bz_max)
+    labels = {}
+    for i in range(len(particules)) :
+        labels[particules[i]] = labels_particules[i] 
+
     for particule_locale in particules :
-        y_contact = particule_locale.equation_trajectoire(x_detecteur, Bz0)
+        y_contact = particule_locale.equation_trajectoire(x_detecteur, Bz)
         all_y_contact.append(y_contact)
         label = ''
-        if np.isnan(y_contact) :
+        if np.isnan(y_contact) : 
             label = ' ; Pas de contact'
-        all_lines.append(particule_locale.tracer_trajectoire(ax, Bz0, 0, x_detecteur, add_label=label))
-        
-
-    detecteur = ax.plot([x_detecteur, x_detecteur], [ax.get_ybound()[0], ax.get_ybound()[1]], c='black', linewidth=5, label='Détecteur')
-
-    ax.legend()
-
-    ax_a = plt.axes([0.1, 0.15, 0.8, 0.03])
-    ax_b = plt.axes([0.1, 0.1, 0.8, 0.03])
-    slider_a = Slider(ax_a, 'V0 (m/s)', vi_min, vi_max, valinit= 0.5 * (vi_min + vi_max))
-    slider_b = Slider(ax_b, 'Bz (T)', Bz_min, Bz_max, valinit= Bz0)
-
-    def update(val) :
-        v0 = slider_a.val
-        Bz = slider_b.val
-        particules = [particule(masse_charge, v0) for masse_charge in masses_charges_particules]
-        for i in range(len(all_lines)) :
-            all_lines[i][0].set_ydata(particules[i].trajectoire(Bz, 0, x_detecteur)[1])
-        fig.canvas.draw_idle()
+        particule_locale.tracer_trajectoire(ax, Bz, 0, x_detecteur, label=labels[particule_locale])
     
-    slider_a.on_changed(update)
-    slider_b.on_changed(update)
+    if np.all(np.isnan(all_y_contact)):
+        all_y_contact = [0.07 * x_detecteur]
+    ax.plot([x_detecteur, x_detecteur], [ax.get_ybound()[0], ax.get_ybound()[1]], c='black', linewidth=5, label='Détecteur')
+    ax.set_xlabel('Position x (en m)')
+    ax.set_ylabel('Position y (en m)')
+    ax.legend()
+    if create_plot :
+        plt.show()
 
-    plt.show()
-
-
-# --- Bloc Test ---
-if __name__ == '__main__':
-    mq_list = [(1, 1), (2, 1), (4, -2)] # H+, D+, He-- ? Test avec charge neg
-    vo = 1e6
-    bz = -0.2 # Bz négatif pour dévier H+ et D+ vers +x
-    x_det = 0.1
-    noms = ["Proton (H+)", "Deutéron (D+)", "Alpha--?"] # Noms exemples
-
-    fig_test, ax_test = plt.subplots()
-    tracer_ensemble_trajectoires(mq_list, vo, bz, x_det, labels_particules=noms, ax=ax_test, create_plot=False)
-    ax_test.set_title("Test partie_electroaimant avec noms")
-    plt.show()
 
 '''
 Test de la fonction tracer_ensemble_trajectoires (valeurs non représentatives)
@@ -247,32 +179,4 @@ On trace les trajectoires de particules avec des rapports m/q différents dans u
 #     Bz = 1
 #     x_detecteur = 1e-4
     
-#     tracer_ensemble_trajectoires(rapports_masse_charge, vitesse_initiale, Bz, x_detecteur)
-
-
-'''
-Test de la fonction déterminer_champ_magnétique (valeurs non représentatives)
-
-On cherche le champ magnétique pour dévier la trajectoire en x_max, x_max
-Puis on trace la trajectoire jusqu'en x_max
-On remarque que la particule finit effectivement à la position prévue
-'''
-# if __name__ == '__main__' :
-#     rapports_masse_charge, vi = [(1, 1)], 1e7
-#     p = particule(rapports_masse_charge[0], vi)
-#     x_max = 4.95e-2
-#     Bz = p.determiner_champ_magnetique(x_max, x_max)
-#     print(Bz)
-#     tracer_ensemble_trajectoires(rapports_masse_charge, vi, Bz, x_max)
-    
-
-"""
-Test de la fonction tracer_trajectoires_dynamiquement (valeurs non représentatives)
-"""
-# if __name__ == '__main__' :
-#     rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
-#     vi_min, vi_max = 1e4, 1e6
-#     Bz_min, Bz_max = 1, 5
-#     x_detecteur = 0.1
-    
-#     tracer_trajectoires_dynamiquement(rapports_masse_charge, vi_min, vi_max, Bz_min, Bz_max, x_detecteur)
+#     tracer_ensemble_trajectoires(rapports_masse_charge, vitesse_initiale, Bz, x_detecteur, labels_particules=['P1', 'P2', 'P3'])
