@@ -1,3 +1,9 @@
+#A présent nous vérifions la cohérence de nos valeurs pour les points de contact des faisceaux avec la plaque, 
+#pour se faire nous calculons manuellement nos valeurs et les comparons a celles que l'on trouve avec le module deviation
+
+
+
+
 import sys, os
 import numpy as np
 import scipy.constants as constants
