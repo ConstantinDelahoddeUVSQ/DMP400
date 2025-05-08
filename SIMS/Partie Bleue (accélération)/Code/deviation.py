@@ -232,23 +232,24 @@ def tracer_ensemble_trajectoires(
     texte_angles = "Angles incidents (vs +x):"
     is_contact = False
     non_contact_list_info = [] 
+    colors = plt.cm.viridis(np.linspace(0, 1, len(masse_charge_particules)))
 
     for i, mc in enumerate(masse_charge_particules):
         try:
+            color = colors[i]
             p = particule(mc, vitesse_initiale, angle_initial, hauteur_initiale)
             label = labels_particules[i]
             x_contact = p.point_contact(E)
 
             if x_contact is not None and x_contact > 0:
                 all_x_max.append(x_contact)
-                p.tracer_trajectoire(ax, E, 0, x_contact, label=label) # Utilise label fourni
+                p.tracer_trajectoire(ax, E, 0, x_contact, label=label, color=color) # Utilise label fourni
                 angle_inc = p.angle_incident(E) # Angle vs +x
                 angle_deg = np.degrees(angle_inc) if angle_inc is not None else None
                 texte_angles += f"\n- {label}: {angle_deg:.1f}°" if angle_deg is not None else f"\n- {label}: Contact?" # Garder tel quel
-                is_contact = True
             else:
                 texte_angles += f"\n- {label}: Pas de contact (x>0)"
-                non_contact_list_info.append({'p': p, 'label': label}) # Garder pour tracer après xlim
+                non_contact_list_info.append({'p': p, 'label': label, 'c' : color}) # Garder pour tracer après xlim
 
         except ValueError as e:
             print(f"Erreur pour particule {mc}: {e}")
@@ -261,8 +262,8 @@ def tracer_ensemble_trajectoires(
 
     # Tracer les non-contacts
     for item in non_contact_list_info:
-        p = item['p']; label = item['label']
-        p.tracer_trajectoire(ax, E, 0, xlim_max, label=f"{label} (pas contact)")
+        p = item['p']; label = item['label'] ; color = item['c']
+        p.tracer_trajectoire(ax, E, 0, xlim_max, label=f"{label} (pas contact)", color=color)
         if xlim_max not in all_x_max: all_x_max.append(xlim_max)
 
 
