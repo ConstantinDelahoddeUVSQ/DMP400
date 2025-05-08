@@ -33,12 +33,13 @@ E = -100.0
 x0 = 0.0       
 
 
-m_sur_q = np.linspace(1, 100, 500)  # évite division par 0
+m = np.linspace(1, 100, 500)  # évite division par 0
+# on prend q =1 donc le rapport masse sur devient juste m
 
 xs_values = []
 
-for ratio in m_sur_q:
-    m = ratio *constants.u
+for e in m:
+    m = e *constants.u
     q = 1.0 * constants.e
     cos_theta = np.cos(theta)
     sin_theta = np.sin(theta)
@@ -54,12 +55,10 @@ for ratio in m_sur_q:
     
     xs_values.append(xs)
 
-m_deviation = m_sur_q
-
 xs_deviation = []
 
-for i in range (len(m_sur_q)) :
-    p =deviation.particule((m_sur_q[i],1) , v0 , theta, y0)
+for i in range (len(m)) :
+    p =deviation.particule((m[i],1) , v0 , theta, y0)
     xs_deviation.append(p.point_contact(E))
 
 
