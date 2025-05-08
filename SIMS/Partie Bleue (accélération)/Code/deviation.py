@@ -7,27 +7,6 @@ import scipy.constants as constants
 import incertitude
 
 
-def calcul_champ_electrique(charge_plaque : float, surface : float) -> float :
-    """
-    Fonction calculant le champ électrique uniforme créé par l'échantillon (plaque chargée)
-
-    Parameters
-    ----------
-    charge_plaque : float
-        Charge totale de la plaque (en C)
-    surface : float
-        Surface totale de la plaque (en m²)
-    
-    Returns
-    -------
-    float
-        Valeur du champ électrique à proximité de la plaque dirigé selon y
-    """
-    if surface > 0 :
-        return charge_plaque / (2 * surface * constants.epsilon_0)
-    else : raise ValueError("La surface ne peut être nulle ou négative")
-
-
 def champ_electrique_v2(distance: float, différence_potentiel: float) -> float:
     """
     Calcule le champ électrique uniforme entre deux plaques parallèles.
@@ -225,7 +204,7 @@ def tracer_ensemble_trajectoires(masse_charge_particules : list[tuple[int, int]]
     masse_charge_particules : list of tuple of float
         Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
     vitesse_initiale : float
-        Vitesse intiale en y commune à toutes les particules du faisceau
+        Vitesse intiale commune à toutes les particules du faisceau
     potentiel : float
         Différence de potentiel entre les plaques (en V)
     angle_initial : float
@@ -331,7 +310,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
     masse_charge_particules : list of tupleof int
         Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
     vitesse_initiale : float
-        Vitesse intiale en y commune à toutes les particules du faisceau
+        Vitesse intiale commune à toutes les particules du faisceau
     incertitudes : dict
         Dictionnaire des incertitudes sur les différents paramètres (pourcentages)
     potentiel : float
@@ -449,6 +428,31 @@ def tracer_ensemble_trajectoires_avec_incertitudes(masse_charge_particules : lis
 
 
 
+def calculer_trajectoire_et__impact(masse_charge_tuple : tuple, vitesse_initiale : float, potentiel_ref : float, potentiel : float, angle_initial_rad : float, hauteur_initiale : float) -> float :
+    """
+    Fonction qui calcule l'écart de point de contact pour une particule entre 2 potentiels
+
+    Parameters
+    ----------
+    masse_charge_tuple : tuple of float
+        Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour la particule
+    vitesse_initiale : float
+        Vitesse intiale
+    potentiel_ref : float
+        Différence de potentiel entre les plaques (en V) référence
+    potentiel : float
+        Différence de potentiel entre les plaques (en V) référence
+    angle_initial_rad : float
+            Angle initial entre v_initiale et l'axe y en radians
+    hauteur_initiale : float
+        Coordonnée en y du point de départ
+    """
+    p = particule(masse_charge_tuple, vitesse_initiale, angle_initial_rad, hauteur_initiale)
+    xs_ref = p.point_contact(champ_electrique_v2(hauteur_initiale, potentiel_ref))
+    xs = p.point_contact-champ_electrique_v2(hauteur_initiale, potentiel)
+    return xs - xs_ref
+
+
 def tracer_ensemble_potentiels(masse_charge_particule : tuple[int, int], vitesse_initiale : float, potentiels : list, angle_initial=np.pi/6, hauteur_initiale = 0.15, create_plot=True, ax=None) -> None :
     """
     Trace les trajectoires jusqu'au contact de différentes particules de manière statique
@@ -458,7 +462,7 @@ def tracer_ensemble_potentiels(masse_charge_particule : tuple[int, int], vitesse
     masse_charge_particule : tuple of float
         Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour la particule
     vitesse_initiale : float
-        Vitesse intiale en y commune à toutes les particules du faisceau
+        Vitesse intiale commune à toutes les particules du faisceau
     potentiels : list of float
         Différence de potentiel entre les plaques (en V)
     angle_initial : float
@@ -528,7 +532,7 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(masse_charge_parti
     masse_charge_particules : tuple of float
         Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
     vitesse_initiale : float
-        Vitesse intiale en y commune à toutes les particules du faisceau
+        Vitesse intiale commune à toutes les particules du faisceau
     incertitudes : dict
         Dictionnaire des incertitudes sur les différents paramètres (pourcentages)
     potentiels : float
@@ -651,7 +655,7 @@ def tracer_ensemble_trajectoires_dynamique(masse_charge_particules : list[tuple[
     masse_charge_particules : list of tupleof int
         Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
     vitesse_initiale : float
-        Vitesse intiale en y commune à toutes les particules du faisceau
+        Vitesse intiale commune à toutes les particules du faisceau
     potentiel_min : float
         Valeur minimale du potentiel 
     potentiel_max : float
