@@ -183,9 +183,9 @@ class particule:
         # ... (code inchangé) ...
         x, y = self.trajectoire(E, x_min, x_max, n_points)
         if len(x) == 0: return
-
-        plot_kwargs = {'c': color if color else None}
-        if label: plot_kwargs['label'] = label
+        plot_kwargs = {}
+        plot_kwargs['c'] = color
+        plot_kwargs['label'] = label
         if is_uncertainty_plot:
             plot_kwargs['linestyle'] = '--'; plot_kwargs['alpha'] = 0.7
 
