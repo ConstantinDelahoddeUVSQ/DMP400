@@ -1,5 +1,5 @@
-#A présent nous vérifions la cohérence de nos valeurs pour les points de contact des faisceaux avec la plaque, 
-#pour se faire nous calculons manuellement nos valeurs et les comparons a celles que l'on trouve avec le module deviation
+# A présent nous vérifions la cohérence de nos valeurs pour les points de contact des faisceaux avec la plaque, 
+# pour se faire nous calculons manuellement nos valeurs et les comparons a celles que l'on trouve avec le module deviation
 
 
 
@@ -10,8 +10,8 @@ import scipy.constants as constants
 import matplotlib.pyplot as plt
 
 # --- Configuration des chemins ---
-folder = os.path.dirname(os.path.abspath(__file__))
-path_partie_bleue = os.path.join(folder, "Partie Bleue (accélération)", "Code")
+folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+path_partie_bleue = os.path.join(folder, "SIMS", "deviation_electrique", "Code")
 sys.path.append(path_partie_bleue)
 
 
@@ -77,3 +77,5 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 plt.show()
+
+# On remarque que les tracés sont confondus. Cela confirme donc la correcte exécution de notre programme.

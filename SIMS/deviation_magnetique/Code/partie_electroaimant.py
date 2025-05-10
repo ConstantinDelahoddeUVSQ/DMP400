@@ -73,7 +73,7 @@ class particule :
         x = np.linspace(x_min, x_max, n_points)
         return x, self.equation_trajectoire(x, Bz)
 
-    def tracer_trajectoire(self, ax, Bz : float, x_min : float, x_max : float, color=None, label=None, n_points : int = 1000) -> None:
+    def tracer_trajectoire(self, ax, Bz : float, x_min : float, x_max : float, color=None, label=None, n_points : int = 10000) -> None:
         """
         Trace la trajectoire entre x_min et x_max sur ax
 
@@ -127,20 +127,26 @@ class particule :
         return fsolve(equation_func, B0)[0]
 
 # Niveau 2.2 : Tracer l'ensemble des trajectoires des particules d'un faisceau
-def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple], vitesse_initiale : float, Bz : float, x_detecteur : float, labels_particules: list[str] = None, create_plot : bool = True, ax = None) -> None:
+def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[float, float]], vitesse_initiale : float, Bz : float, x_detecteur : float, labels_particules: list[str] = None, create_plot : bool = True, ax = None) -> None:
     """
     Trace les trajectoires entre 0 et x_detecteur pour un ensemble de particules d'un faisceau
 
     Parameters
     ----------
-    masses_charges_particules : list of tuple
-        Masse (en unités atomiques), Charge (en eV)  pour toutes les particules
+    masses_charges_particules : list of tuple of float
+        Liste des Masse (en unités atomiques), Charge (nombre de charges élémentaires)  pour les particules
     vitesse_initiale : float
         Vitesse intiale en y commune à toutes les particules du faisceau
     Bz : float
-            Valeur du champ magnétique d'axe z (en T)
+        Valeur du champ magnétique d'axe z (en T)
     x_detecteur : float
         L'abscisse du détecteur (en m)
+    labels_particules : list of str 
+        Liste des labels pour chaque particule
+    create_plot : bool
+        True s'il faut que la fonction crée un plot et l'affiche, False sinon (et l'argument ax est nécéssaire)
+    ax : matplotlib.axes.Axes
+        Axe matplotlib sur lequel le tracé sera fait (uniquement si create_plot = False)
     """
     particules = [particule(masse_charge, vitesse_initiale) for masse_charge in masses_charges_particules]    # Liste d'objets particule représentant toutes les particules
     if ax == None or create_plot == True :
@@ -154,9 +160,6 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple], vitess
     for particule_locale in particules :
         y_contact = particule_locale.equation_trajectoire(x_detecteur, Bz)
         all_y_contact.append(y_contact)
-        label = ''
-        if np.isnan(y_contact) : 
-            label = ' ; Pas de contact'
         particule_locale.tracer_trajectoire(ax, Bz, 0, x_detecteur, label=labels[particule_locale])
     
     if np.all(np.isnan(all_y_contact)):
@@ -164,6 +167,8 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple], vitess
     ax.plot([x_detecteur, x_detecteur], [ax.get_ybound()[0], ax.get_ybound()[1]], c='black', linewidth=5, label='Détecteur')
     ax.set_xlabel('Position x (en m)')
     ax.set_ylabel('Position y (en m)')
+    ax.set_title(f"Déviation magnétique dans un champ de {Bz:.3f} T")
+    ax.grid(True, linestyle='--', alpha=0.6)
     ax.legend()
     if create_plot :
         plt.show()
@@ -171,7 +176,7 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple], vitess
 
 '''
 Test de la fonction tracer_ensemble_trajectoires (valeurs non représentatives)
-On trace les trajectoires de particules avec des rapports m/q différents dans un champ magnétique donné
+On trace les trajectoires de particules avec des (masses, charges) différentes dans un champ magnétique donné
 '''
 # if __name__ == '__main__' :
 #     rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]

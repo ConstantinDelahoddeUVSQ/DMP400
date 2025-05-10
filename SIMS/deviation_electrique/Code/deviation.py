@@ -19,7 +19,7 @@ def champ_electrique_v2(distance: float, difference_potentiel: float) -> float:
     Returns
     -------
     float
-        Intensité du champ électrique E (en V/m). Signé.
+        Intensité du champ électrique E (en V/m).
 
     Raises
     ------
@@ -33,14 +33,14 @@ def champ_electrique_v2(distance: float, difference_potentiel: float) -> float:
 # --- Classe Particule ---
 
 class particule:
-    def __init__(self, masse_charge : tuple[float, float], v_initiale : float = 0, angle_initial : float = np.pi / 4, hauteur_initiale : float = 0.5, is_incertitude : bool = False, incertitude_unique : bool = False, base_mq : tuple = None) -> None :
+    def __init__(self, masse_charge : tuple[float, float], v_initiale : float, angle_initial : float = np.pi / 6, hauteur_initiale : float = 0.5, is_incertitude : bool = False, incertitude_unique : bool = False, base_mq : tuple = None) -> None :
         """
         Objet particule avec vitesse initiale dévié par un champ électrique d'axe y
 
         Parameters
         ----------
         masse_charge : tuple of float
-            Masse (en u) / Charge (nombre de charge élémentaire) de la particule
+            Masse (en u) / Charge (nombre de charge élémentaires) de la particule
         v_initiale : float
             Vitesse initiale de la particule (en m/s)   
         angle_initial : float
@@ -51,7 +51,7 @@ class particule:
             Permet de savoir si la particule est une incertitude qui sera tracée
         incertitude_unique : bool
             Permet de savoir si cette particule représente la première ou deuxième incertitude (pour ne pas donner le label 2 fois)
-        base_mq : tuple 
+        base_mq : tuple of float
             Si la particule est une particule incertitude permet d'avoir le couple masse charge de la vraie particule d'origine
         """
         mass_u, charge_e = masse_charge
@@ -118,7 +118,7 @@ class particule:
 
     def point_contact(self, E : float) -> float :
         """
-        Calcule l'abscisse où la particule touche la plaque chargée
+        Calcule l'abscisse où la particule touche l'échantillon
 
         Parameters
         ----------
@@ -141,7 +141,7 @@ class particule:
 
     def angle_incident(self, E : float) -> float :
         """
-        Calcule l'angle que la trajectoire forme avec l'axe y au point de contact avec la plaque en radians
+        Calcule l'angle que la trajectoire forme avec l'axe y au point de contact avec l'échantillon en radians
 
         Parameters
         ----------
@@ -156,7 +156,7 @@ class particule:
         x_contact = self.point_contact(E)
         return  np.arctan(-1 / (E * x_contact / (self.mq * self.vo * np.sin(self.angle) * self.vo * np.sin(self.angle)) - 1 / np.tan(self.angle)))
 
-    def tracer_trajectoire(self, ax, E : float, x_min : float, x_max : float, color=None, label=None, is_uncertainty_plot=False, n_points : int = 1000) -> None:
+    def tracer_trajectoire(self, ax, E : float, x_min : float, x_max : float, color=None, label=None, is_uncertainty_plot : bool =False, n_points : int = 1000) -> None:
         """
         Trace la trajectoire entre x_min et x_max sur ax
 
@@ -171,9 +171,11 @@ class particule:
         x_max : float
             Position en x maximale (en m)
         color : str or list
-            Couleur du tracé pour les incertitudes
+            Couleur du tracé
         label : str
-            Label du tracé pour les incertitudes
+            Label du tracé
+        is_uncertainty_plot : bool
+            Change le tracé si le tracé est pour l'incertitude
         n_points : int
             Nombre de points où la position sera calculée entre x_min et x_max
         """
@@ -288,11 +290,22 @@ def create_incertitude_params(p : particule, incertitudes : dict, E : float) :
     Parameters
     ----------
     p : particule
-        objects particule
+        Particule d'origine
     incertitudes : dict
         Dictionnaire des incertitudes de chaque paramètre (en pourcentages)
     E : float
-        Champ électrique (T)
+        Champ électrique (V/m)
+    
+    Returns
+    -------
+    min_particule : particule
+        La particule incertitude qui aura la trajectoire la plus basse
+    max_particule : particule
+        La particule incertitude qui aura la trajectoire la plus haute
+    E_min : float 
+        Le champ E minimal, sera utilisé pour la particule incertitude la moins déviée
+    E_max : float 
+        Le champ E maximal, sera utilisé pour la particule incertitude la plus déviée
     """
     if p.c * E >= 0 :
             min_particule = particule((p.m * (1 + incertitudes['m']), p.c * (1 - incertitudes['q'])), p.vo * (1 + incertitudes['v0']), p.angle * (1 - incertitudes['theta']), p.height * (1 - incertitudes['h']), is_incertitude=True, incertitude_unique = True, base_mq=(p.m, p.c))
@@ -323,7 +336,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(
 
     Parameters
     ----------
-    masse_charge_particules : list of tupleof int
+    masse_charge_particules : list of tuple of float
         Masse (en unités atomiques), Charge (nombre de charge élémentaire)  pour toutes les particules
     vitesse_initiale : float
         Vitesse intiale commune à toutes les particules du faisceau
@@ -436,11 +449,16 @@ def calculer_delta_impact(masse_charge_tuple : tuple, vitesse_initiale : float, 
     potentiel_ref : float
         Différence de potentiel entre les plaques (en V) référence
     potentiel : float
-        Différence de potentiel entre les plaques (en V) référence
+        Différence de potentiel entre les plaques (en V)
     angle_initial_rad : float
             Angle initial entre v_initiale et l'axe y en radians
     hauteur_initiale : float
         Coordonnée en y du point de départ
+
+    Returns
+    -------
+    float
+        Ecart algébrique entre les 2 points de contact (en m)
     """
     p = particule(masse_charge_tuple, vitesse_initiale, angle_initial_rad, hauteur_initiale)
     xs_ref = p.point_contact(champ_electrique_v2(hauteur_initiale, potentiel_ref))
@@ -468,16 +486,17 @@ def tracer_ensemble_potentiels(
     vitesse_initiale : float
         Vitesse intiale commune à toutes les particules du faisceau
     potentiels : list of float
-        Différence de potentiel entre les plaques (en V)
+        Liste des différences de potentiel entre les plaques (en V)
     angle_initial : float
-            Angle initial entre v_initiale et l'axe y en radians
+        Angle initial entre v_initiale et l'axe y en radians
     hauteur_initiale : float
         Coordonnée en y du point de départ
     create_plot : bool
-        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
+        Permet de manoeuvrer la meme fonction pour l'utilisateur et l'interface.
     ax : bool
-        Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
-
+        Permet de manoeuvrer la meme fonction pour l'utilisateur et l'interface.
+    label_particule : str
+        Label attribué à la particule sur le graphique
     """
     if create_plot or ax is None : fig, ax = plt.subplots(figsize=(10, 8))
 
@@ -550,7 +569,7 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
     label_particule=None
 ) -> None:
     """
-    Trace les trajectoires jusqu'au contact de différentes particules de manière statique avec le tracé des incertitudes (couloirs)
+    Trace les trajectoires jusqu'au contact d'une particule pour différents potentiels de manière statique avec le tracé des incertitudes (couloirs)
 
     Parameters
     ----------
@@ -570,7 +589,8 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
         Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
     ax : bool
         Permet de maneuvrer la meme fonction pour l'utilisateur et l'interface.
-
+    label_particule : str
+        Label attribué à la particule sur le graphique
     """
     if create_plot or ax is None: fig, ax = plt.subplots(figsize=(10, 8))
 

@@ -1,5 +1,3 @@
-# --- START OF FILE main_final.py ---
-
 import sys, os
 import tkinter as tk
 from tkinter import ttk, messagebox, font, Listbox
@@ -8,27 +6,20 @@ import scipy.constants as constants
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
-# --- Configuration des chemins (revue pour robustesse) ---
 folder = os.path.dirname(os.path.abspath(__file__))
-# Créer les chemins absolus
-path_partie_bleue = os.path.abspath(os.path.join(folder, "Partie Bleue (accélération)", "Code"))
-path_partie_verte = os.path.abspath(os.path.join(folder, "Partie Verte (déviation magnétique)", "Code"))
+path_partie_bleue = os.path.abspath(os.path.join(folder, "deviation_electrique", "Code"))
+path_partie_verte = os.path.abspath(os.path.join(folder, "deviation_magnetique", "Code"))
 
-# Ajouter les chemins au sys.path s'ils existent et ne sont pas déjà présents
 paths_to_add = [path_partie_bleue, path_partie_verte]
 for pth in paths_to_add:
     if os.path.isdir(pth) and pth not in sys.path:
         sys.path.append(pth)
-    # else: # Décommenter pour debug
-    #     print(f"Info: Chemin ignoré ou inexistant - {pth}")
 
-# Ajouter le dossier courant si besoin (pour deviation_test.py)
 if folder not in sys.path:
     sys.path.append(folder)
 
 # --- Importations des modules de simulation ---
 try:
-    # Utiliser le nom final du module
     import deviation as deviation # type : ignore
     import partie_electroaimant as partie_electroaimant# type : ignore
     print("Modules de simulation importés.")
@@ -48,7 +39,6 @@ except Exception as e_other:
 
 class ParticleApp:
     def __init__(self, root):
-        # ... (Initialisation root, titre, protocol, style - INCHANGÉ) ...
         self.root = root
         self.root.title("Simulateur SIMS - Déviations vFinal")
         self.root.geometry("1600x800")
@@ -71,10 +61,10 @@ class ParticleApp:
         self.particle_names = [] # Liste parallèle pour stocker les noms/formules
 
         # --- Données spécifiques à l'onglet Potentiel ---
-        self.selected_potential_particle_index = None # Index dans self.particles_data
+        self.selected_potential_particle_index = None 
         self.selected_potential_particle_name = None
 
-        # --- Structure Principale et Panneau de Contrôle Scrollable (INCHANGÉ) ---
+        # --- Structure Principale et Panneau de Contrôle Scrollable ---
         main_paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
         main_paned_window.pack(fill=tk.BOTH, expand=True)
         container_frame = ttk.Frame(main_paned_window, width=450)
@@ -106,19 +96,19 @@ class ParticleApp:
         # Créer les frames pour les onglets
         self.mag_tab = ttk.Frame(self.notebook)
         self.elec_tab = ttk.Frame(self.notebook)
-        self.pot_tab = ttk.Frame(self.notebook) # Frame pour le nouvel onglet
+        self.pot_tab = ttk.Frame(self.notebook)
 
         # Ajouter les onglets au Notebook
         self.notebook.add(self.mag_tab, text='Déviation Magnétique')
         self.notebook.add(self.elec_tab, text='Déviation Électrique')
-        self.notebook.add(self.pot_tab, text='Comparaison Potentiels') # Nom mis à jour
+        self.notebook.add(self.pot_tab, text='Comparaison Potentiels')
 
         # Créer les widgets pour chaque onglet
         self.create_magnetic_widgets(self.mag_tab)
         self.create_electric_widgets(self.elec_tab)
-        self.create_potential_widgets(self.pot_tab) # Appel de la nouvelle fonction
+        self.create_potential_widgets(self.pot_tab)
 
-        # --- Panneau Plot (Droite) (INCHANGÉ) ---
+        # --- Panneau Plot (Droite) ---
         plot_panel = ttk.Frame(main_paned_window)
         main_paned_window.add(plot_panel, weight=1)
         self.fig, self.ax = plt.subplots()
@@ -130,7 +120,7 @@ class ParticleApp:
         toolbar.update()
         toolbar.pack(side=tk.BOTTOM, fill=tk.X)
 
-        # --- Barre de Statut (INCHANGÉ) ---
+        # --- Barre de Statut ---
         self.status_var = tk.StringVar()
         self.status_var.set("Prêt.")
         status_bar = ttk.Label(root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
@@ -160,7 +150,6 @@ class ParticleApp:
 
     def _update_scrollbar_state(self):
         """Active ou désactive la scrollbar si le contenu dépasse."""
-        # Utiliser after pour laisser le temps à Tk de calculer les tailles
         self.root.after(10, self._check_and_set_scrollbar_state)
 
     def _check_and_set_scrollbar_state(self):
@@ -169,17 +158,13 @@ class ParticleApp:
             # Comparer la hauteur requise par le contenu au hauteur réelle du canvas
             canvas_height = self.control_canvas.winfo_height()
             content_height = self.scrollable_frame.winfo_reqheight()
-            # print(f"Canvas H: {canvas_height}, Content H: {content_height}") # Utile pour debug
             if content_height <= canvas_height:
-                # Cacher la scrollbar si pas nécessaire
                 if self.scrollbar.winfo_ismapped():
                     self.scrollbar.pack_forget()
             else:
-                # Afficher la scrollbar si nécessaire
                 if not self.scrollbar.winfo_ismapped():
                     self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         except tk.TclError:
-            # Ignorer l'erreur si la fenêtre est en cours de fermeture
             pass
 
     def _on_mousewheel(self, event):
@@ -188,9 +173,9 @@ class ParticleApp:
             canvas_height = self.control_canvas.winfo_height()
             content_height = self.scrollable_frame.winfo_reqheight()
             if content_height <= canvas_height:
-                return # Pas besoin de scroller
+                return 
         except tk.TclError:
-             return # Erreur si fenêtre fermée
+             return 
 
         # Calculer le facteur de défilement
         delta = 0
@@ -201,8 +186,6 @@ class ParticleApp:
 
         if delta != 0:
             self.control_canvas.yview_scroll(delta, "units")
-            # Mise à jour immédiate pour fluidité (peut être coûteux si contenu complexe)
-            # self.root.update_idletasks()
         return "break" # Empêche d'autres widgets de recevoir l'événement
 
 
@@ -433,9 +416,9 @@ class ParticleApp:
             if self.particle_tree.exists(item_id): self.particle_tree.delete(item_id)
 
         self.status_var.set(f"{deleted_count} particule(s) supprimée(s).")
-        self._update_potential_tab_state() # Mettre à jour l'affichage si besoin
+        self._update_potential_tab_state()
 
-    # --- Widgets Onglet Magnétique (INCHANGÉ) ---
+    # --- Widgets Onglet Magnétique ---
     def create_magnetic_widgets(self, parent):
         frame = ttk.Frame(parent, padding="10"); frame.pack(fill=tk.BOTH, expand=True)
         self.dynamic_inputs_frame = ttk.Frame(frame); self.base_inputs_frame = ttk.Frame(frame)
@@ -481,7 +464,7 @@ class ParticleApp:
     def _on_v0_slider_change(self, event=None): self._update_v0_label(); self.run_magnetic_simulation(called_by_slider=True)
     def _update_v0_label(self, event=None): self.v0_label_var.set(f"{self.v0_var.get():.2e}\u00A0m/s")
 
-    # --- Widgets Onglet Électrique Standard (INCHANGÉ) ---
+    # --- Widgets Onglet Électrique Standard ---
     def create_electric_widgets(self, parent):
         frame = ttk.Frame(parent, padding="10"); frame.pack(fill=tk.BOTH, expand=True)
         self.angle_var = tk.StringVar(value="30"); self.add_labeled_entry(frame, "Angle Initial (° vs +y):", self.angle_var).pack(fill=tk.X, pady=3)
@@ -534,7 +517,7 @@ class ParticleApp:
     def _update_v0_label_elec(self, event=None): self.v0_label_var_elec.set(f"{self.v0_var_elec.get():.2e}\u00A0m/s")
 
 
-    # --- Widgets Onglet Potentiel (MODIFIÉ pour incertitudes) ---
+    # --- Widgets Onglet Potentiel ---
     def create_potential_widgets(self, parent):
         """Crée les widgets pour l'onglet de comparaison de potentiels."""
         self.pot_frame = ttk.Frame(parent, padding="10")
@@ -563,7 +546,6 @@ class ParticleApp:
         # --- Checkbox et Frame Incertitudes (spécifique à cet onglet) ---
         self.show_uncertainty_pot_var = tk.BooleanVar(value=False) # Variable distincte
         self.uncertainty_check_pot = ttk.Checkbutton(self.pot_controls_frame, text="Afficher Incertitudes", variable=self.show_uncertainty_pot_var, command=self.toggle_uncertainty_inputs_pot)
-        # Ne pas packer ici, on le fera dans _update_potential_tab_state
 
         self.uncertainty_inputs_frame_pot = ttk.LabelFrame(self.pot_controls_frame, text="Paramètres d'incertitude relative (%)")
         self.delta_v0_percent_pot_var = tk.StringVar(value="1.0"); self.add_labeled_entry(self.uncertainty_inputs_frame_pot, "ΔV₀/V₀ (%):", self.delta_v0_percent_pot_var).pack(fill=tk.X, pady=2, padx=5)
@@ -571,7 +553,6 @@ class ParticleApp:
         self.delta_h_percent_pot_var = tk.StringVar(value="1.0"); self.add_labeled_entry(self.uncertainty_inputs_frame_pot, "Δh/h (%):", self.delta_h_percent_pot_var).pack(fill=tk.X, pady=2, padx=5)
         self.delta_E_percent_pot_var = tk.StringVar(value="1.0"); self.add_labeled_entry(self.uncertainty_inputs_frame_pot, "ΔE/E (%):", self.delta_E_percent_pot_var).pack(fill=tk.X, pady=2, padx=5)
         ttk.Label(self.uncertainty_inputs_frame_pot, text="Note: Δm/m (0.1%), Δq/q (0.01%) fixes", font=('Segoe UI', 8)).pack(pady=(5,0))
-        # Ne pas packer le frame lui-même ici
 
         # --- Potentiels à comparer ---
         self.pot1_var = tk.StringVar(value="0")
@@ -587,7 +568,7 @@ class ParticleApp:
         # --- Affichage initial ---
         self._update_potential_tab_state() # Gère l'affichage initial des contrôles ou du bouton start
 
-    # --- MODIFICATION: Gérer affichage état Potentiel + Incertitudes ---
+    # --- Gérer affichage état Potentiel + Incertitudes ---
     def _update_potential_tab_state(self):
         """Affiche/cache widgets de l'onglet Potentiel."""
         if self.selected_potential_particle_index is None:
@@ -597,16 +578,12 @@ class ParticleApp:
             self.start_pot_sim_button.pack_forget()
             self.pot_controls_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-            # Packer les widgets DANS le pot_controls_frame s'ils ne le sont pas déjà
-            # En respectant l'ordre: Label > Params > Checkbox Incert > Frame Incert (si visible) > Pots > Boutons
             if not self.selected_particle_label.winfo_ismapped():
                 self.selected_particle_label.pack(pady=(5, 10))
                 self.angle_pot_entry_frame.pack(fill=tk.X, pady=3)
                 self.dist_pot_entry_frame.pack(fill=tk.X, pady=3)
                 self.v0_pot_entry_frame.pack(fill=tk.X, pady=3)
-                # Packer le checkbox incertitude ici
                 self.uncertainty_check_pot.pack(anchor=tk.W, padx=5, pady=(10, 0))
-                # Le frame d'incertitude sera packé par son toggle juste après
                 ttk.Separator(self.pot_controls_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
                 self.pot1_entry_frame.pack(fill=tk.X, pady=3)
                 self.pot2_entry_frame.pack(fill=tk.X, pady=3)
@@ -620,11 +597,10 @@ class ParticleApp:
 
         self.root.after(50, self._update_scroll_region_and_bar)
 
-    # --- NOUVEAU: Toggle pour incertitudes Potentiel ---
+    # --- Toggle pour incertitudes Potentiel ---
     def toggle_uncertainty_inputs_pot(self):
         """Affiche ou cache le frame des entrées d'incertitude pour l'onglet Potentiel."""
         if self.show_uncertainty_pot_var.get():
-            # Packer le frame incertitude APRÈS le checkbox correspondant
             self.uncertainty_inputs_frame_pot.pack(fill=tk.X, pady=(0,5), padx=5, after=self.uncertainty_check_pot)
         else:
             self.uncertainty_inputs_frame_pot.pack_forget()
@@ -645,7 +621,7 @@ class ParticleApp:
 
         selection_win = tk.Toplevel(self.root)
         selection_win.title("Sélectionner Particule")
-        selection_win.geometry("400x300") # Taille ajustée
+        selection_win.geometry("400x300")
         selection_win.transient(self.root); selection_win.grab_set(); selection_win.resizable(False, True)
 
         ttk.Label(selection_win, text="Choisissez une particule:", font=('Helvetica', 10)).pack(pady=(10, 5))
@@ -692,7 +668,7 @@ class ParticleApp:
         selection_win.wait_window()
 
 
-    # --- Helper (INCHANGÉ) ---
+    # --- Helper ---
     def add_labeled_entry(self, parent, label_text, string_var):
         entry_frame = ttk.Frame(parent)
         entry_frame.columnconfigure(0, weight=0); entry_frame.columnconfigure(1, weight=1)
@@ -702,9 +678,8 @@ class ParticleApp:
 
     # --- Exécution des Simulations ---
 
-    # Simulation Magnétique (INCHANGÉE - mais passe les noms)
+    # Simulation Magnétique
     def run_magnetic_simulation(self, called_by_slider=False):
-        # ... (Code identique à la version précédente, s'assurer qu'il passe self.particle_names au backend si besoin) ...
         if not self.particles_data:
             if not called_by_slider: messagebox.showwarning("Aucune Particule", "Ajoutez des particules.", parent=self.root)
             self.status_var.set("Ajoutez des particules."); self.ax.cla(); self.canvas.draw(); return
@@ -736,11 +711,10 @@ class ParticleApp:
                 if abs(bz) < 1e-15: raise ValueError("Bz trop proche de zéro.")
 
             self.ax.cla(); self.status_var.set("Calcul déviation magnétique..."); self.root.update_idletasks()
-            # Appel Backend - passe les data (m,c) et les noms séparément
             partie_electroaimant.tracer_ensemble_trajectoires(
-                self.particles_data, # Le backend devrait extraire (m,c)
+                self.particles_data, 
                 v0, bz, x_detecteur, create_plot=False, ax=self.ax,
-                labels_particules=self.particle_names # Passer les noms
+                labels_particules=self.particle_names
             )
             self.ax.relim(); self.ax.autoscale_view(True, True, True); self.canvas.draw()
             self.status_var.set("Tracé déviation magnétique terminé.")
@@ -752,9 +726,8 @@ class ParticleApp:
             self.status_var.set("Erreur sim. mag.")
 
 
-    # Simulation Électrique Standard (INCHANGÉE - mais passe les noms)
+    # Simulation Électrique Standard
     def run_electric_simulation(self, called_by_slider=False):
-        # ... (Code identique à la version précédente, s'assurer qu'il passe self.particle_names au backend) ...
         if not self.particles_data:
             if not called_by_slider: messagebox.showwarning("Aucune Particule", "Ajoutez des particules.", parent=self.root)
             self.status_var.set("Ajoutez des particules."); self.ax.cla(); self.canvas.draw(); return
@@ -811,11 +784,10 @@ class ParticleApp:
             self.status_var.set("Erreur sim. elec.")
 
 
-    # Simulation Comparaison Potentiels (NOUVEAU)
-    def run_potential_comparison_simulation(self, called_by_slider=False): # Ajouter called_by_slider (même si pas de slider ici)
+    # Simulation Comparaison Potentiels 
+    def run_potential_comparison_simulation(self, called_by_slider=False):
         """Lance la simulation pour la particule sélectionnée avec deux potentiels."""
         if self.selected_potential_particle_index is None:
-            # Ne pas montrer de popup si appelé par slider (n'arrive pas ici mais par cohérence)
             if not called_by_slider: messagebox.showerror("Erreur", "Sélectionnez une particule.", parent=self.root)
             self.status_var.set("Sélectionnez une particule.")
             return
@@ -823,7 +795,6 @@ class ParticleApp:
 
 
         try:
-            # Lire les paramètres spécifiques à cet onglet
             angle_deg = float(self.angle_pot_var.get().strip().replace(',', '.'))
             hauteur_distance = float(self.dist_pot_var.get().strip().replace(',', '.'))
             v0 = float(self.v0_pot_var.get().strip().replace(',', '.'))
@@ -836,7 +807,6 @@ class ParticleApp:
             if v0 <= 0: raise ValueError("V0 > 0.")
 
             angle_rad = np.radians(angle_deg); hauteur_initiale = hauteur_distance
-            # S'assurer que l'index est toujours valide (peut avoir changé si suppression)
             if self.selected_potential_particle_index >= len(self.particles_data):
                 self._reset_potential_selection()
                 messagebox.showerror("Erreur", "La particule sélectionnée n'existe plus. Veuillez resélectionner.")
@@ -845,13 +815,12 @@ class ParticleApp:
             particle_name = self.particle_names[self.selected_potential_particle_index]
 
             # --- Logique Incertitude ---
-            show_uncertainty = self.show_uncertainty_pot_var.get() # Lire checkbox de CET onglet
+            show_uncertainty = self.show_uncertainty_pot_var.get()
             incertitudes_dict = None
             status_message = f"Calcul pour {particle_name} (V1 = {potentiel1:.0f} V, V2 = {potentiel2:.0f} V)"
 
             if show_uncertainty:
                 try:
-                    # Lire les entrées d'incertitude de CET onglet
                     # Utiliser les variables _pot
                     incertitudes_dict = {
                         'v0': float(self.delta_v0_percent_pot_var.get().strip().replace(',', '.')) / 100.0,
@@ -899,5 +868,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = ParticleApp(root)
     root.mainloop()
-
-# --- END OF FILE main_final.py ---
