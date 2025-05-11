@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 path_partie_verte = os.path.join(folder, "SIMS", "deviation_magnetique", "Code")
 sys.path.append(path_partie_verte)
-import partie_electroaimant
+import partie_electroaimant # type: ignore
 
 m_u, q_e = 1, 1 
 
