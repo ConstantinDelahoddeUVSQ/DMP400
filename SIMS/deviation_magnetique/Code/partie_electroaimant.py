@@ -34,14 +34,14 @@ class particule :
         Parameters
         ----------
         x : float
-            Position en x de la particule (en m)
+            Position en x de la particule (m)
         Bz : float
             Valeur du champ magnétique d'axe z (en T)
 
         Returns
         -------
         float
-            Position en y de la particule (en m)
+            Position en y de la particule (m)
         """             
         with np.errstate(invalid='ignore') :
             prefix = self.mq / Bz
@@ -57,9 +57,9 @@ class particule :
         Bz : float
             Valeur du champ magnétique d'axe z (en T)
         x_min : float
-            Position en x minimale (en m)
+            Position en x minimale (m)
         x_max : float
-            Position en x maximale (en m)   
+            Position en x maximale (m)   
         n_points : int
             Nombre de points où la position sera calculée entre x_min et x_max
         
@@ -84,9 +84,9 @@ class particule :
         Bz : float
             Valeur du champ magnétique d'axe z (en T)
         x_min : float
-            Position en x minimale (en m)
+            Position en x minimale (m)
         x_max : float
-            Position en x maximale (en m)
+            Position en x maximale (m)
         color : str or list or array
             couleur à tracer
         label : str
@@ -140,7 +140,7 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[float, f
     Bz : float
         Valeur du champ magnétique d'axe z (en T)
     x_detecteur : float
-        L'abscisse du détecteur (en m)
+        L'abscisse du détecteur (m)
     labels_particules : list of str 
         Liste des labels pour chaque particule
     create_plot : bool
@@ -160,13 +160,15 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[float, f
     for particule_locale in particules :
         y_contact = particule_locale.equation_trajectoire(x_detecteur, Bz)
         all_y_contact.append(y_contact)
+        if np.isnan(y_contact):
+            labels[particule_locale] += ' ; Pas de contact'
         particule_locale.tracer_trajectoire(ax, Bz, 0, x_detecteur, label=labels[particule_locale])
     
     if np.all(np.isnan(all_y_contact)):
         all_y_contact = [0.07 * x_detecteur]
     ax.plot([x_detecteur, x_detecteur], [ax.get_ybound()[0], ax.get_ybound()[1]], c='black', linewidth=5, label='Détecteur')
-    ax.set_xlabel('Position x (en m)')
-    ax.set_ylabel('Position y (en m)')
+    ax.set_xlabel('Position x (m)')
+    ax.set_ylabel('Position y (m)')
     ax.set_title(f"Déviation magnétique dans un champ de {Bz:.3f} T")
     ax.grid(True, linestyle='--', alpha=0.6)
     ax.legend()

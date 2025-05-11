@@ -265,7 +265,7 @@ def tracer_ensemble_trajectoires(
     # Tracer les non-contacts
     for item in non_contact_list_info:
         p = item['p']; label = item['label'] ; color = item['c']
-        p.tracer_trajectoire(ax, E, 0, xlim_max, label=f"{label} (pas contact)", color=color)
+        p.tracer_trajectoire(ax, E, 0, xlim_max, label=f"{label}", color=color)
         if xlim_max not in all_x_max: all_x_max.append(xlim_max)
 
 
@@ -382,7 +382,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(
             angle_deg = np.degrees(angle_inc) if angle_inc is not None else None
             texte_angles += f"\n{label_base}: {angle_deg:.1f}°" if angle_deg is not None else f"\n{label_base}: Contact?"
         else:
-            texte_angles += f"\n{label_base}: Pas contact (x>0)"
+            texte_angles += f"\n{label_base}: Pas de contact (x>0)"
             non_contact_nominal_info.append({'p':p_base, 'color':color, 'label':label_base})
 
         # Créer et tracer incertitudes
@@ -418,7 +418,7 @@ def tracer_ensemble_trajectoires_avec_incertitudes(
 
     # Tracer les non-contacts maintenant que xlim est défini
     for item in non_contact_nominal_info:
-        item['p'].tracer_trajectoire(ax, E_nominal, 0, xlim_max, color=item['color'], label=f"{item['label']} (pas contact)")
+        item['p'].tracer_trajectoire(ax, E_nominal, 0, xlim_max, color=item['color'], label=f"{item['label']}")
     for item in non_contact_incert_info:
         item['p'].tracer_trajectoire(ax, item['E'], 0, xlim_max, color=item['color'], label=item['label'], is_uncertainty_plot=True)
 
@@ -503,7 +503,7 @@ def tracer_ensemble_potentiels(
     p = particule(masse_charge_particule, vitesse_initiale, angle_initial, hauteur_initiale)
     texte_angles = "Angles incidents (vs +x):"
     all_x_max = []
-    cmap = plt.cm.viridis # Colormap
+    cmap = plt.cm.viridis
     non_contact_list_info = []
 
     for i, V in enumerate(sorted(potentiels)): # Trier pour ordre couleurs
@@ -520,10 +520,10 @@ def tracer_ensemble_potentiels(
             p.tracer_trajectoire(ax, E, 0, x_contact, color=color, label=label)
             angle_inc = p.angle_incident(E) # Angle vs +x
             angle_deg = np.degrees(angle_inc) if angle_inc is not None else None
-            texte_angles += f"\n{V:.0f} V : {angle_deg:.1f}°" if angle_deg is not None else f"\n{V:.0f} V : Contact ?" # Garder tel quel
+            texte_angles += f"\n{V:.0f} V : {angle_deg:.1f}°" if angle_deg is not None else f"\n{V:.0f} V : Contact ?"
             is_contact_found = True
         else:
-            texte_angles += f"\n{V:.0f} V : Pas contact (x>0)"
+            texte_angles += f"\n{V:.0f} V : Pas de contact (x>0)"
             non_contact_list_info.append({'p':p, 'E':E, 'color':color, 'label':label})
 
 
@@ -534,7 +534,7 @@ def tracer_ensemble_potentiels(
 
     # Tracer non-contacts
     for item in non_contact_list_info:
-        item['p'].tracer_trajectoire(ax, item['E'], 0, xlim_max, color=item['color'], label=f"{item['label']} (pas contact)")
+        item['p'].tracer_trajectoire(ax, item['E'], 0, xlim_max, color=item['color'], label=f"{item['label']}")
         if xlim_max not in all_x_max: all_x_max.append(xlim_max) # Au cas où TOUS sont non-contact
 
 
@@ -547,7 +547,7 @@ def tracer_ensemble_potentiels(
         delta_xs = calculer_delta_impact(masse_charge_particule, vitesse_initiale, potentiels[0], potentiels[1], angle_initial, hauteur_initiale)
         ax.set_title(f"Comparaison Potentiels pour {label_particule}\n Δx : {delta_xs:+.3e} m")
     except :
-        delta_xs = "Pas d'impact"
+        delta_xs = "Pas de contact"
         ax.set_title(f"Comparaison Potentiels pour {label_particule}\n Δx : {delta_xs}")
     ax.set_xlabel("Position x (m)")
     ax.set_ylabel("Position y (m)")
@@ -620,7 +620,7 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
             angle_deg = np.degrees(angle_inc) if angle_inc is not None else None
             texte_angles += f"\n{V:.0f} V : {angle_deg:.1f}°" if angle_deg is not None else f"\n{V:.0f} V : Contact?"
         else:
-            texte_angles += f"\n{V:.0f} V : Pas d'impact (x>0)"
+            texte_angles += f"\n{V:.0f} V : Pas de contact (x>0)"
             non_contact_nominal_info.append({'p':p_base, 'E':E_nominal, 'color':color, 'label':label_base})
 
 
@@ -655,7 +655,7 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
     ax.set_xlim(0, xlim_max)
 
     # Tracer non-contacts
-    for item in non_contact_nominal_info: item['p'].tracer_trajectoire(ax, item['E'], 0, xlim_max, color=item['color'], label=f"{item['label']} (pas contact)")
+    for item in non_contact_nominal_info: item['p'].tracer_trajectoire(ax, item['E'], 0, xlim_max, color=item['color'], label=f"{item['label']}")
     for item in non_contact_incert_info: item['p'].tracer_trajectoire(ax, item['E'], 0, xlim_max, color=item['color'], label=item['label'], is_uncertainty_plot=True)
     
 
@@ -665,10 +665,16 @@ def tracer_ensemble_trajectoires_potentiels_avec_incertitudes(
             bbox=dict(boxstyle="round", facecolor="white", alpha=0.7))
     try :
         delta_xs = calculer_delta_impact(masse_charge_particule, vitesse_initiale, potentiels[0], potentiels[1], angle_initial, hauteur_initiale)
-        ax.set_title(f"Comparaison Potentiels pour {label_particule} (avec Incertitudes) \n Δx : {delta_xs:+.3e} m")
+        if label_particule != None :
+            ax.set_title(f"Comparaison Potentiels pour {label_particule} (avec Incertitudes)\nΔx : {delta_xs:+.3e} m")
+        else : 
+            ax.set_title(f"Comparaison Potentiels pour {p_base.m:.1f} u, {p_base.c:+.0f} e (avec Incertitudes)\nΔx : {delta_xs:+.3e} m")
     except : 
-        delta_xs = "Pas de contacts"
-        ax.set_title(f"Comparaison Potentiels pour {label_particule} (avec Incertitudes) \n Δx : {delta_xs}")
+        delta_xs = "Pas de contact"
+        if label_particule != None :
+            ax.set_title(f"Comparaison Potentiels pour {label_particule} (avec Incertitudes)\nΔx : {delta_xs}")
+        else : 
+            ax.set_title(f"Comparaison Potentiels pour {p_base.m:.1f} u, {p_base.c:+.0f} e (avec Incertitudes)\nΔx : {delta_xs}")
     ax.set_xlabel("Position x (m)")
     ax.set_ylabel("Position y (m)")
     
@@ -707,11 +713,11 @@ Test fonction tracer_ensemble_trajectoires_avec_incertitudes
 """
 Test fonction tracer_ensemble_trajectoires_potentiels_avec_incertitudes
 """
-# if __name__ == '__main__' :
-#     rapports_mq, vo = (1, 1), 1e5
-#     potentiels = [0, 50]
-#     h_initiale = 0.1
-#     angle_initial = np.pi / 6
-#     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+if __name__ == '__main__' :
+    rapports_mq, vo = (1, 1), 1e5
+    potentiels = [0, 50]
+    h_initiale = 0.1
+    angle_initial = np.pi / 6
+    incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
 
-#     tracer_ensemble_trajectoires_potentiels_avec_incertitudes(rapports_mq, vo, incertitudes, potentiels=potentiels, angle_initial=angle_initial, hauteur_initiale=h_initiale)
+    tracer_ensemble_trajectoires_potentiels_avec_incertitudes(rapports_mq, vo, incertitudes, potentiels=potentiels, angle_initial=angle_initial, hauteur_initiale=h_initiale)
