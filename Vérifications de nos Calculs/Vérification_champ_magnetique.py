@@ -9,6 +9,7 @@ path_partie_verte = os.path.join(folder, "SIMS", "deviation_magnetique", "Code")
 sys.path.append(path_partie_verte)
 import partie_electroaimant
 
+m_u, q_e = 1, 1 
 
 m = 1*sc.u
 q = 1*sc.e
@@ -35,13 +36,13 @@ def y(x):
 y_values = y(x_values)
 
 y_deviation = []
+p =  partie_electroaimant.particule((m_u, q_e) , V_0 )
 for i in range(len(x_values)) :
-    p =  partie_electroaimant.particule((m,q) , V_0 )
-    y_deviation.append(p.equation_trajectoire(i, B_z))
+    y_deviation.append(p.equation_trajectoire(x_values[i], B_z))
 
 # Tracé
-# plt.plot(x_values, y_values, label='y(x)')
-plt.plot(x_values, y_deviation)
+plt.plot(x_values, y_values, label='Vérification')
+plt.plot(x_values, y_deviation, label='Expérimental')
 plt.xlabel('x (m)')
 plt.ylabel('y(x) (m)')
 plt.title('Trajectoire y(x) d\'une particule dans un champ Bz')
