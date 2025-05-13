@@ -23,7 +23,7 @@ On retrouvera ici la structure [structure.ipynb](./structure.ipynb) et ici les o
         - [Schéma_partie_bleue](./SIMS/deviation_electrique/Equations/schema_partie_bleue.png) : Schéma de la partie de déviation électrique (on considère que la partie bleue est prolongée jusqu'au contact de l'échantillon)<br>
         - [Schéma_racine](./SIMS/deviation_electrique/Equations/schema_racine.png) : Schéma justifiant une décision lors d'une équation<br>
         - [Calcul_angle_incident](./SIMS/deviation_electrique/Equations/Calcul_angle_incident.ipynb) : Ce fichier nous guide à travers le raisonnement qui nous a mené jusqu'à l'équation nous permettant de calculer l'angle incident.<br>
-        - [Calcul_champ_électrique](./SIMS/deviation_electrique/Equations/Calcul_champ_électrique.ipynb) : Ce fichier nous guide à travers le raisonnement qui nous a mené jusqu'à l'élaboration des équations d'une particule qui traverse le champ électrique de la partie violette du SIMS.<br><br><br>
+        - [Calcul_trajectoire](./SIMS/deviation_electrique/Equations/Calcul_trajectoire.ipynb) : Ce fichier nous guide à travers le raisonnement qui nous a mené jusqu'à l'élaboration des équations d'une particule qui traverse le champ électrique de la partie violette du SIMS.<br><br><br>
     - #### [Code](./SIMS/deviation_electrique/Code)
         - On y retrouve 2 fichiers : <br>
             - [deviation](./SIMS/deviation_electrique/Code/deviation.py) : Ce fichier est celui sur lequel on retrouve le code nécessaire pour remplir le second objectif. <br>
