@@ -351,7 +351,7 @@ class ParticleApp:
             charge_sign = '+' if charge_e > 0 else '-'
             charge_val = abs(int(charge_e)) if charge_e == int(charge_e) else abs(charge_e)
             charge_str_fmt = f"({charge_val}{charge_sign})" if charge_val != 1 else f"({charge_sign})"
-            nom = f"Particule {mass_u:.2f}u {charge_str_fmt}"
+            nom = f"Particule {mass_u:.2f} u {charge_str_fmt}"
             self._add_particle_to_list(mass_u, charge_e, nom)
             self.mass_entry.delete(0, tk.END); self.charge_entry.delete(0, tk.END)
         except ValueError as e: messagebox.showerror("Erreur d'Entrée", f"Entrée invalide : {e}")
