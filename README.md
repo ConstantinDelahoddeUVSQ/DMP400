@@ -12,7 +12,7 @@ On retrouvera ici la structure [structure.ipynb](./structure.ipynb) et ici les o
     - #### [Equations](./SIMS/deviation_magnetique/Equations)
         - On y retrouve 2 fichiers : <br>
             - [Schéma_partie_verte](./SIMS/deviation_magnetique/Equations/Schéma_partie_verte.png) : Schéma de la partie de déviation magnétique<br>
-            - [Trajectoire_champ_magnetique](./SIMS/deviation_magnetique/Equations/Trajectoire champ magnétique.ipynb) : Ce fichier nous guide à travers le raisonnement qui nous a mené jusqu'à l'équation de la trajectoire d'une particule qui traversait le champ magnétique de la partie verte du SIMS.<br><br><br>
+            - [Trajectoire_champ_magnetique](./SIMS/deviation_magnetique/Equations/Trajectoire_champ_magnétique.ipynb) : Ce fichier nous guide à travers le raisonnement qui nous a mené jusqu'à l'équation de la trajectoire d'une particule qui traversait le champ magnétique de la partie verte du SIMS.<br><br><br>
     - #### [Code](./SIMS/deviation_magnetique/Code)
         - On y retrouve 1 fichier :<br>
             - [partie_electroaimant](./SIMS/deviation_magnetique/Code/partie_electroaimant.py) : Ce fichier est celui sur lequel on retrouve tout le code nécessaire pour remplir le premier objectif. <br><br><br>
@@ -21,9 +21,9 @@ On retrouvera ici la structure [structure.ipynb](./structure.ipynb) et ici les o
     - #### [Equations](./SIMS/deviation_electrique/Equations)
     - On y retrouve 4 fichiers : <br>
         - [Schéma_partie_bleue](./SIMS/deviation_electrique/Equations/schema_partie_bleue.png) : Schéma de la partie de déviation électrique (on considère que la partie bleue est prolongée jusqu'au contact de l'échantillon)<br>
-        - [Schéma_racine](./SIMS/deviation_electrique/Equations/schema_partie_violette.png) : Schéma justifiant une décision lors d'une équation<br>
-        - [Calcul_angle_incident](./SIMS/deviation_electrique/Equations/Calcul angle incident.ipynb) : Ce fichier nous guide à travers le raisonnement qui nous a mené jusqu'à l'équation nous permettant de calculer l'angle incident.<br>
-        - [Calcul_champ_électrique](./SIMS/deviation_electrique/Equations/Calcul champ électrique.ipynb) : Ce fichier nous guide à travers le raisonnement qui nous a mené jusqu'à l'élaboration des équations d'une particule qui traverse le champ électrique de la partie violette du SIMS.<br><br><br>
+        - [Schéma_racine](./SIMS/deviation_electrique/Equations/schema_racine.png) : Schéma justifiant une décision lors d'une équation<br>
+        - [Calcul_angle_incident](./SIMS/deviation_electrique/Equations/Calcul_angle_incident.ipynb) : Ce fichier nous guide à travers le raisonnement qui nous a mené jusqu'à l'équation nous permettant de calculer l'angle incident.<br>
+        - [Calcul_champ_électrique](./SIMS/deviation_electrique/Equations/Calcul_champ_électrique.ipynb) : Ce fichier nous guide à travers le raisonnement qui nous a mené jusqu'à l'élaboration des équations d'une particule qui traverse le champ électrique de la partie violette du SIMS.<br><br><br>
     - #### [Code](./SIMS/deviation_electrique/Code)
         - On y retrouve 2 fichiers : <br>
             - [deviation](./SIMS/deviation_electrique/Code/deviation.py) : Ce fichier est celui sur lequel on retrouve le code nécessaire pour remplir le second objectif. <br>
@@ -44,3 +44,4 @@ On retrouvera ici la structure [structure.ipynb](./structure.ipynb) et ici les o
     - [Procédures_test_incertitudes](./Procédures_test/Procédures_test_incertitudes.ipynb) : Ce fichier est celui où nous donnons les procédures de test du fichier [incertitude.py](./SIMS/deviation_electrique/Code/incertitude.py) <br><br><br><br>
 
 On peut aussi trouver un fichier [SIMS diagram](./SIMS%20diagram.png) qui illustre le SIMS que l'on essaye de reproduire.
+[guide](./guide.ipynb) est un fichier identique à celui-ci permettant une meilleure lecture dans un éditeur
