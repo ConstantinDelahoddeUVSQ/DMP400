@@ -44,4 +44,4 @@ On retrouvera ici la structure [structure.ipynb](./structure.ipynb) et ici les o
     - [Procédures_test_incertitudes](./Procédures_test/Procédures_test_incertitudes.ipynb) : Ce fichier est celui où nous donnons les procédures de test du fichier [incertitude.py](./SIMS/deviation_electrique/Code/incertitude.py) <br><br><br><br>
 
 On peut aussi trouver un fichier [SIMS diagram](./SIMS%20diagram.png) qui illustre le SIMS que l'on essaye de reproduire.
-[guide](./guide.ipynb) est un fichier identique à celui-ci permettant une meilleure lecture dans un éditeur
+[Guide](./Guide.ipynb) est un fichier identique à celui-ci permettant une meilleure lecture dans un éditeur
