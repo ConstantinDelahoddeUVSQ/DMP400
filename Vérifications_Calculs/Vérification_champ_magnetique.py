@@ -17,10 +17,11 @@ m_sur_q = m / q  # Rapport masse / charge (kg/C)
 
 # Autres paramètres
 V_0 = 1e5  # Vitesse initiale (m/s)
-B_z = 1e-3  # Champ magnétique (T)
+B_z = 1  # Champ magnétique (T)
 
 # Constante utile
-K = 1 / (V_0 * m_sur_q)
+
+K = B_z / (V_0 * m_sur_q)
 
 # Calcul de la borne max admissible pour x
 x_max = 2 / K
@@ -29,8 +30,7 @@ x_values = np.linspace(0, x_max, 500)
 # Définition de la fonction y(x)
 def y(x):
     term = 1 - K * x
-    term = np.clip(term, -1, 1)  # Sécurité numérique
-    return (V_0 * m_sur_q) * np.sin(np.arccos(term))
+    return (V_0 * m_sur_q) / (B_z * 1) * np.sin(np.arccos(term))
 
 # Calcul des y
 y_values = y(x_values)
