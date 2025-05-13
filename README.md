@@ -3,7 +3,8 @@
 
 Notre objectif est de coder chaque partie du SIMS indépendamment l'une de l'autre. Dans cette mesure le projet est divisé en 2 parties (ou plus) indépendantes (les 2 parties du SIMS que l'on peut retrouver dans le diagramme : Violette (déviation électrique) et Verte (déviation magnétique). Nous pourrons également faire en option le reste des parties privées de la partie rose), et les utilisateurs pourront aborder le projet dans l'ordre souhaité.
 
-On retrouvera ici la structure [structure.ipynb](./structure.ipynb) et ici les objectifs du projet [objectifs.ipynb](./objectifs.ipynb)<br><br>
+On retrouvera ici la structure [structure.ipynb](./structure.ipynb) et ici les objectifs du projet [objectifs.ipynb](./objectifs.ipynb)<br>
+On pourra retrouver les librairies python nécéssaires dans [requirements.txt](./requirements.txt) si on utilise les fichiers python plutôt que la version .exe [Simulateur_SIMS.exe](./SIMS/Simulateur_SIMS.exe)<br><br>
 
 ## [SIMS](./SIMS)
  - ### [main](./SIMS/main.py)
@@ -45,5 +46,5 @@ On retrouvera ici la structure [structure.ipynb](./structure.ipynb) et ici les o
     - [Procédures_test_déviation](./Procédures_test/Procédures_test_déviation.ipynb) : Ce fichier est celui où nous donnons les procédures de test du fichier [deviation.py](./SIMS/deviation_electrique/Code/deviation.py) <br>
     - [Procédures_test_incertitudes](./Procédures_test/Procédures_test_incertitudes.ipynb) : Ce fichier est celui où nous donnons les procédures de test du fichier [incertitude.py](./SIMS/deviation_electrique/Code/incertitude.py) <br><br><br><br>
 
-On peut aussi trouver un fichier [SIMS diagram](./SIMS%20diagram.png) qui illustre le SIMS que l'on essaye de reproduire.
+On peut aussi trouver un fichier [SIMS diagram](./SIMS%20diagram.png) qui illustre le SIMS que l'on essaye de reproduire.<br>
 [Guide](./Guide.ipynb) est un fichier identique à celui-ci permettant une meilleure lecture dans un éditeur
