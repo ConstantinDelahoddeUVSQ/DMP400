@@ -9,7 +9,7 @@ On pourra retrouver les librairies python nécéssaires dans [requirements.txt](
 ## [SIMS](./SIMS)
  - ### [main](./SIMS/main.py)
     - Ce fichier est le fichier principal du projet. Il constitue l'interface principale permettant de naviguer à travers les différentes fonctionalités du projet.`
-    - ### [Simulateur SIMS.exe](./SIMS/Simulateur SIMS.exe)
+    - ### [Simulateur_SIMS.exe](./SIMS/Simulateur_SIMS.exe)
     - Ce fichier est la version exécutable de [main.py](./SIMS/main.py) afin de permettre un lancement fluide accessible à tout le monde sans l'encombrement des librairies.
  - ### [deviation_magnetique](./SIMS/deviation_magnetique)
     - #### [Equations](./SIMS/deviation_magnetique/Equations)
