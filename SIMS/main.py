@@ -422,7 +422,7 @@ class ParticleApp:
     def create_magnetic_widgets(self, parent):
         frame = ttk.Frame(parent, padding="10"); frame.pack(fill=tk.BOTH, expand=True)
         self.dynamic_inputs_frame = ttk.Frame(frame); self.base_inputs_frame = ttk.Frame(frame)
-        self.x_detecteur_var = tk.StringVar(value="0.1")
+        self.x_detecteur_var = tk.StringVar(value="0.05")
         self.add_labeled_entry(frame, "X détecteur (m):", self.x_detecteur_var).pack(fill=tk.X, pady=3)
         self.dynamic_trace_var = tk.BooleanVar(value=False)
         dynamic_check = ttk.Checkbutton(frame, text="Mode Dynamique (Sliders)", variable=self.dynamic_trace_var, command=self.toggle_dynamic_inputs); dynamic_check.pack(anchor=tk.W, pady=5)

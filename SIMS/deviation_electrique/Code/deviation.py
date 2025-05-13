@@ -234,7 +234,8 @@ def tracer_ensemble_trajectoires(
     texte_angles = "Angles incidents (vs +x):"
     is_contact = False
     non_contact_list_info = [] 
-    colors = plt.cm.viridis(np.linspace(0, 1, len(masse_charge_particules)))
+    colors = plt.cm.viridis([i/len(masse_charge_particules) for i in range(len(masse_charge_particules))])
+    # colors = plt.cm.viridis(np.linspace(0, 1, len(masse_charge_particules)))
 
     for i, mc in enumerate(masse_charge_particules):
         try:
@@ -366,7 +367,8 @@ def tracer_ensemble_trajectoires_avec_incertitudes(
     all_x_max_global = []
     texte_angles = "Angles incidents (vs +x):"
     plotted_incert_labels = set()
-    colors = plt.cm.viridis(np.linspace(0, 1, len(particules_base)))
+    colors = plt.cm.viridis([i/len(particules_base) for i in range(len(particules_base))])
+    # colors = plt.cm.viridis(np.linspace(0, 1, len(particules_base)))
     non_contact_nominal_info = [] 
     non_contact_incert_info = [] 
 

@@ -180,10 +180,10 @@ def tracer_ensemble_trajectoires(masses_charges_particules : list[tuple[float, f
 Test de la fonction tracer_ensemble_trajectoires (valeurs non représentatives)
 On trace les trajectoires de particules avec des (masses, charges) différentes dans un champ magnétique donné
 '''
-# if __name__ == '__main__' :
-#     rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
-#     vitesse_initiale = 1e7
-#     Bz = 1
-#     x_detecteur = 1e-4
+if __name__ == '__main__' :
+    rapports_masse_charge = [(1, 1), (2, 1), (3, 1)]
+    vitesse_initiale = 1e6
+    Bz = 1
+    x_detecteur = 0.05   # Position du détecteur dans le SIMS (ou le point à partir duquel les particules ne sont plus déviées)
     
-#     tracer_ensemble_trajectoires(rapports_masse_charge, vitesse_initiale, Bz, x_detecteur, labels_particules=['P1', 'P2', 'P3'])
+    tracer_ensemble_trajectoires(rapports_masse_charge, vitesse_initiale, Bz, x_detecteur, labels_particules=['P1 (1 u, 1 e)', 'P2 (2 u, 1 e)', 'P3 (3 u, 1 e)'])
