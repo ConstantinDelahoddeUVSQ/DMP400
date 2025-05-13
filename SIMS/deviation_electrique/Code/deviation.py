@@ -704,7 +704,7 @@ Test fonction tracer_ensemble_trajectoires_avec_incertitudes
 """
 # if __name__ == '__main__' :
 #     rapports_mq, vo = [(1, 1), (3, 1)], 1e6
-#     potentiel = 5000
+#     potentiel = -5000
 #     h_initiale = 0.1
 #     angle_initial = np.pi / 6
 #     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
@@ -715,11 +715,11 @@ Test fonction tracer_ensemble_trajectoires_avec_incertitudes
 """
 Test fonction tracer_ensemble_trajectoires_potentiels_avec_incertitudes
 """
-if __name__ == '__main__' :
-    rapports_mq, vo = (1, 1), 1e5
-    potentiels = [0, 50]
-    h_initiale = 0.1
-    angle_initial = np.pi / 6
-    incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
+# if __name__ == '__main__' :
+#     rapports_mq, vo = (1, 1), 1e5
+#     potentiels = [0, -50]
+#     h_initiale = 0.1
+#     angle_initial = np.pi / 6
+#     incertitudes = {'m' : 0.001, 'v0' : 0.01, 'theta' : 0.02, 'h' : 0.05, 'q' : 0.001, 'E' : 0.03}
 
-    tracer_ensemble_trajectoires_potentiels_avec_incertitudes(rapports_mq, vo, incertitudes, potentiels=potentiels, angle_initial=angle_initial, hauteur_initiale=h_initiale)
+#     tracer_ensemble_trajectoires_potentiels_avec_incertitudes(rapports_mq, vo, incertitudes, potentiels=potentiels, angle_initial=angle_initial, hauteur_initiale=h_initiale)
