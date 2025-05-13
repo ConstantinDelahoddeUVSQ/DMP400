@@ -8,7 +8,7 @@ On retrouvera ici la structure [structure.ipynb](./structure.ipynb) et ici les o
 ## [SIMS](./SIMS)
  - ### [main](./SIMS/main.py)
     - Ce fichier est le fichier principal du projet. Il constitue l'interface principale permettant de naviguer à travers les différentes fonctionalités du projet.`
-    - ### [main.exe](./SIMS/main.exe)
+    - ### [Simulateur SIMS.exe](./SIMS/Simulateur SIMS.exe)
     - Ce fichier est la version exécutable de [main.py](./SIMS/main.py) afin de permettre un lancement fluide accessible à tout le monde sans l'encombrement des librairies.
  - ### [deviation_magnetique](./SIMS/deviation_magnetique)
     - #### [Equations](./SIMS/deviation_magnetique/Equations)
