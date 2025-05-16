@@ -48,3 +48,14 @@ On pourra retrouver les librairies python nécéssaires dans [requirements.txt](
 
 On peut aussi trouver un fichier [SIMS diagram](./SIMS%20diagram.png) qui illustre le SIMS que l'on essaye de reproduire.<br>
 [Guide](./Guide.ipynb) est un fichier identique à celui-ci permettant une meilleure lecture dans un éditeur
+
+<br><br>
+## **Développeurs :**
+ 
+**Delahodde** Constantin<br>
+**Schaeffer** Lucas<br>
+**Chedozeau** Martin<br>
+**Spahr** Archibald<br>
+
+
+#### *© Copyright 2025 SIMU SIMS*
